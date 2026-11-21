@@ -199,6 +199,10 @@ void Taskbar::Relayout() {
     float buttonHeight = mButtonHeight.Evaluate(size->height);
     spacePerLine = size->width - mLayoutSettings.mPadding.left - mLayoutSettings.mPadding.right;
     lines = floorf((size->height + mLayoutSettings.mRowSpacing - mLayoutSettings.mPadding.top - mLayoutSettings.mPadding.bottom) / (mLayoutSettings.mRowSpacing + buttonHeight));
+    // Guard the degenerate case: if the taskbar is shorter than one full button
+    // row, `lines` floors to 0, which makes `buttonSize` negative below and hides
+    // every button. Always keep at least one row.
+    lines = std::max(1.0f, lines);
     // We need to consider that buttons can't be split between multiple lines.
     buttonSize = std::min(mButtonMaxWidth.Evaluate(size->width), std::min(spacePerLine * lines / (float)mButtonMap.size(), spacePerLine / ceil(mButtonMap.size() / lines)) - mLayoutSettings.mColumnSpacing);
     if (ydir == -1) {
@@ -222,6 +226,8 @@ void Taskbar::Relayout() {
     float buttonWidth = mButtonHeight.Evaluate(size->width);
     spacePerLine = size->height - mLayoutSettings.mPadding.top - mLayoutSettings.mPadding.bottom;
     lines = floorf((size->width + mLayoutSettings.mColumnSpacing - mLayoutSettings.mPadding.left - mLayoutSettings.mPadding.right) / (mLayoutSettings.mColumnSpacing + buttonWidth));
+    // Same degenerate-case guard as the horizontal branch: never fewer than one column.
+    lines = std::max(1.0f, lines);
     buttonSize = std::min((float)mButtonMaxHeight.Evaluate(size->height), std::min(spacePerLine * lines / (float)mButtonMap.size(), spacePerLine / ceil(mButtonMap.size() / lines)) - mLayoutSettings.mRowSpacing);
     if (ydir == -1) {
       y0 -= buttonSize;
