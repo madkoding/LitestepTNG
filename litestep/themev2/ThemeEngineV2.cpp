@@ -2,8 +2,8 @@
 
 #include "Parser.h"
 
-#include "../utility/logger.h"
-#include "../lsapi/lsapi.h"
+#include "../../utility/logger.h"
+#include "../../lsapi/lsapi.h"
 
 #include <algorithm>
 #include <cwctype>

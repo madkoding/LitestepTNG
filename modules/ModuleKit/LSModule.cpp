@@ -198,7 +198,7 @@ HINSTANCE LSModule::GetInstance() {
 LRESULT WINAPI LSModule::HandleMessage(HWND window, UINT message, WPARAM wParam, LPARAM lParam,
   LPVOID) {
   switch (message) {
-  case LM_GETREVID:
+  case LM_GETREVIDW:
     {
       size_t length;
       LSModule* lsModule = (LSModule*)GetWindowLongPtr(window, 0);

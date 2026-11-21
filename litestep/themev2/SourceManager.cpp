@@ -1,6 +1,6 @@
 #include "SourceManager.h"
 
-#include <Windows.h>
+#include "../../utility/common.h"
 #include <Shlwapi.h>
 #include <strsafe.h>
 

@@ -89,16 +89,7 @@ namespace themev2
     };
 
     struct Value;
-
-    struct ObjectProperty
-    {
-        std::wstring key;
-        Value value;
-        SourceLocation location;
-
-        ObjectProperty();
-        ObjectProperty(const std::wstring& keyName, const Value& propertyValue, const SourceLocation& locationInfo);
-    };
+    struct ObjectProperty;
 
     struct Value
     {
@@ -120,6 +111,16 @@ namespace themev2
         static Value CreateReference(const std::wstring& reference, const SourceLocation& locationInfo);
         static Value CreateObject(const SourceLocation& locationInfo);
         static Value CreateArray(const SourceLocation& locationInfo);
+    };
+
+    struct ObjectProperty
+    {
+        std::wstring key;
+        Value value;
+        SourceLocation location;
+
+        ObjectProperty();
+        ObjectProperty(const std::wstring& keyName, const Value& propertyValue, const SourceLocation& locationInfo);
     };
 
     struct Attribute
@@ -166,8 +167,6 @@ namespace themev2
         std::vector<Directive> directives;
         std::vector<ComponentNode> rootNodes;
     };
-}
-}
 
 inline SourceLocation::SourceLocation() noexcept : line(0), column(0)
 {
@@ -257,5 +256,8 @@ inline Value Value::CreateArray(const SourceLocation& locationInfo)
     Value value(ValueKind::Array);
     value.location = locationInfo;
     return value;
+}
+
+}
 }
 

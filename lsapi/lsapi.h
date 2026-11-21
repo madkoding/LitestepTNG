@@ -161,6 +161,11 @@ extern "C"
     LSAPI HRESULT LSCoCreateInstance(REFCLSID rclsid, LPUNKNOWN pUnkOuter, DWORD dwClsContext,
         REFIID riid, LPVOID *ppv);
 
+    LSAPI LSTASKHANDLE LSPostTask(LSTASKEXECUTEPROC executeProc, LPVOID executeContext,
+        LSTASKCOMPLETIONPROC completionProc, LPVOID completionContext);
+    LSAPI BOOL LSCancelTask(LSTASKHANDLE handle);
+    LSAPI BOOL LSWaitTask(LSTASKHANDLE handle, DWORD timeoutMs);
+
 #if defined(LSAPI_PRIVATE)
     LSAPI BOOL LSAPIInitialize(LPCWSTR pwzLitestepPath, LPCWSTR pwzRcPath);
     LSAPI void LSAPIReloadBangs(void);

@@ -283,6 +283,48 @@ typedef struct _LMBANGCOMMANDW
 
 
 //-----------------------------------------------------------------------------
+// SYSTRAY SHARED TYPES (used by core and modules)
+//-----------------------------------------------------------------------------
+#define TRAY_MAX_TIP_LENGTH       128
+#define TRAY_MAX_INFO_LENGTH      256
+#define TRAY_MAX_INFOTITLE_LENGTH 64
+
+typedef struct LSNOTIFYICONDATA
+{
+    DWORD cbSize;
+    HWND hWnd;
+    UINT uID;
+    UINT uFlags;
+    UINT uCallbackMessage;
+    HICON hIcon;
+    WCHAR szTip[TRAY_MAX_TIP_LENGTH];
+    DWORD dwState;
+    DWORD dwStateMask;
+    WCHAR szInfo[TRAY_MAX_INFO_LENGTH];
+    union
+    {
+        UINT uTimeout;
+        UINT uVersion;
+    } DUMMYUNIONNAME;
+    WCHAR szInfoTitle[TRAY_MAX_INFOTITLE_LENGTH];
+    DWORD dwInfoFlags;
+    GUID guidItem;
+    HICON hBalloonIcon;
+} *PLSNOTIFYICONDATA;
+typedef const LSNOTIFYICONDATA * PCLSNOTIFYICONDATA;
+typedef PLSNOTIFYICONDATA LPLSNOTIFYICONDATA;
+
+typedef struct _SYSTRAYINFOEVENT
+{
+    DWORD cbSize;
+    DWORD dwEvent;
+    HWND hWnd;
+    UINT uID;
+    GUID guidItem;
+} SYSTRAYINFOEVENT, *LPSYSTRAYINFOEVENT;
+
+
+//-----------------------------------------------------------------------------
 // VWM DEFINES
 //-----------------------------------------------------------------------------
 typedef struct LSDESKTOPINFO
@@ -345,5 +387,21 @@ typedef BOOL (CALLBACK* LSENUMMODULESPROCA)(LPCSTR, DWORD, LPARAM);
 typedef BOOL (CALLBACK* LSENUMMODULESPROCW)(LPCWSTR, DWORD, LPARAM);
 typedef BOOL (CALLBACK* LSENUMPERFORMANCEPROCA)(LPCSTR, DWORD, LPARAM);
 typedef BOOL (CALLBACK* LSENUMPERFORMANCEPROCW)(LPCWSTR, DWORD, LPARAM);
+
+#if defined(_UNICODE)
+typedef LSENUMBANGSPROCW ENUMBANGSPROC;
+typedef LSENUMMODULESPROCW ENUMMODULESPROC;
+#define LM_GETREVID        LM_GETREVIDW
+#define LM_UNLOADMODULE    LM_UNLOADMODULEW
+#define LM_RELOADMODULE    LM_RELOADMODULEW
+#define LM_SYSTRAY         LM_SYSTRAYW
+#else // _UNICODE
+typedef LSENUMBANGSPROCA ENUMBANGSPROC;
+typedef LSENUMMODULESPROCA ENUMMODULESPROC;
+#define LM_GETREVID        LM_GETREVIDA
+#define LM_UNLOADMODULE    LM_UNLOADMODULEA
+#define LM_RELOADMODULE    LM_RELOADMODULEA
+#define LM_SYSTRAY         LM_SYSTRAYA
+#endif // _UNICODE
 
 #endif // LSAPIDEFINES_H

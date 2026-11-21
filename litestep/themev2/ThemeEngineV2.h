@@ -1,5 +1,5 @@
 #pragma once
-#include <Windows.h>
+#include "../../utility/common.h"
 #include <string>
 
 #include "ThemeTypes.h"
