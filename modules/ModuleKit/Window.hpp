@@ -371,6 +371,15 @@ private:
     // If we are currently doing an animation, the position target of the animation.
     Rect mAnimationTarget;
 
+    // Entry (show) animation: fade-in + short slide, driven by a window timer.
+    static const UINT_PTR SHOW_ANIMATION_TIMER = 0x5A0E5A0E;
+    void BeginShowAnimation();
+    void StepShowAnimation();
+    void EndShowAnimation();
+    bool mShowAnimating = false;
+    bool mShowAnimationAddedLayered = false;
+    StopWatch mShowAnimationClock;
+
     // The children of this Window.
     std::list<Window*> children;
 

@@ -321,6 +321,72 @@ Window::PAINTER Window::AddPrePainter(IPainter* painter)
 
 
 /// <summary>
+/// Starts the entry animation: makes the window layered and fully transparent,
+/// then a timer fades it in while sliding it into place.
+/// </summary>
+void Window::BeginShowAnimation() {
+  LONG_PTR exStyle = GetWindowLongPtr(this->window, GWL_EXSTYLE);
+  mShowAnimationAddedLayered = (exStyle & WS_EX_LAYERED) == 0;
+  if (mShowAnimationAddedLayered) {
+    SetWindowLongPtr(this->window, GWL_EXSTYLE, exStyle | WS_EX_LAYERED);
+  }
+  SetLayeredWindowAttributes(this->window, 0, 0, LWA_ALPHA);
+
+  mShowAnimating = true;
+  mShowAnimationClock.Clock();
+  StepShowAnimation();
+  SetTimer(this->window, SHOW_ANIMATION_TIMER, 10, nullptr);
+}
+
+
+/// <summary>
+/// One frame of the entry animation. Uses an ease-out cubic curve so the window
+/// moves fast at first and settles gently, like the Windows 11 flyouts.
+/// </summary>
+void Window::StepShowAnimation() {
+  if (!mShowAnimating) {
+    return;
+  }
+
+  float t = Clamp(0.0f, mShowAnimationClock.GetTime() * 1000.0f / mWindowSettings.showAnimationDuration, 1.0f);
+  float eased = 1.0f - (1.0f - t) * (1.0f - t) * (1.0f - t);
+
+  SetLayeredWindowAttributes(this->window, 0, BYTE(255.0f * eased + 0.5f), LWA_ALPHA);
+
+  // Slide relative to mPosition, so a resize/move during the animation is respected.
+  if (mWindowSettings.showAnimationOffset != 0) {
+    float offset = mWindowSettings.showAnimationOffset * (1.0f - eased);
+    SetWindowPos(this->window, nullptr, int(mPosition.x + 0.5f), int(mPosition.y + offset + 0.5f),
+      0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+  }
+
+  if (t >= 1.0f) {
+    EndShowAnimation();
+  }
+}
+
+
+/// <summary>
+/// Finishes the entry animation and restores the window to its normal (non-layered) state.
+/// </summary>
+void Window::EndShowAnimation() {
+  KillTimer(this->window, SHOW_ANIMATION_TIMER);
+  mShowAnimating = false;
+
+  if (mShowAnimationAddedLayered) {
+    SetWindowLongPtr(this->window, GWL_EXSTYLE, GetWindowLongPtr(this->window, GWL_EXSTYLE) & ~WS_EX_LAYERED);
+    mShowAnimationAddedLayered = false;
+  } else {
+    SetLayeredWindowAttributes(this->window, 0, 255, LWA_ALPHA);
+  }
+
+  SetWindowPos(this->window, nullptr, int(mPosition.x + 0.5f), int(mPosition.y + 0.5f), 0, 0,
+    SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+  RedrawWindow(this->window, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
+}
+
+
+/// <summary>
 /// Performs an animation step.
 /// </summary>
 void Window::Animate() {
@@ -752,6 +818,11 @@ LRESULT WINAPI Window::HandleMessage(HWND window, UINT msg, WPARAM wParam, LPARA
         return 0;
 
     case WM_TIMER:
+        if (wParam == SHOW_ANIMATION_TIMER)
+        {
+            StepShowAnimation();
+            return 0;
+        }
         {
             UpdateLock updateLock(this);
             map<UINT_PTR, MessageHandler*>::const_iterator iter = timers.find(wParam);
@@ -830,6 +901,10 @@ void Window::Hide()
     this->visible = false;
     if (!mIsChild)
     {
+        if (mShowAnimating)
+        {
+            EndShowAnimation();
+        }
         ShowWindow(this->window, SW_HIDE);
         PostMessage(this->window, WM_HIDDEN, 0, 0);
     }
@@ -1610,6 +1685,13 @@ void Window::Show(int nCmdShow)
 {
     if (!mIsChild)
     {
+        // Only animate a real hidden -> visible transition (not re-shows of an
+        // already visible window, e.g. a thumbnail moving between buttons).
+        if (mWindowSettings.showAnimationDuration > 0 && nCmdShow != SW_HIDE &&
+            !IsWindowVisible(this->window))
+        {
+            BeginShowAnimation();
+        }
         ShowWindow(this->window, nCmdShow);
         if (mWindowSettings.alwaysOnTop)
         {
@@ -1653,6 +1735,10 @@ void Window::SetText(LPCWSTR text)
     else
     {
         this->text = StringUtils::ReallocOverwrite(const_cast<LPWSTR>(this->text), text);
+        if (mWindowSettings.textUppercase && this->text)
+        {
+            CharUpperW(const_cast<LPWSTR>(this->text));
+        }
         mStateRender->UpdateText(mWindowData);
     }
 }
@@ -1685,6 +1771,10 @@ void Window::UpdateText()
     else
     {
         this->text = StringUtils::ReallocOverwrite(const_cast<LPWSTR>(this->text), mWindowSettings.text);
+    }
+    if (mWindowSettings.textUppercase && this->text)
+    {
+        CharUpperW(const_cast<LPWSTR>(this->text));
     }
     mStateRender->UpdateText(mWindowData);
     Repaint();
