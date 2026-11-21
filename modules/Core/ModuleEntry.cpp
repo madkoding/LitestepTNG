@@ -6,7 +6,6 @@
 //-------------------------------------------------------------------------------------------------
 #include "CoreMessages.h"
 #include "ParsedText.hpp"
-#include "Scripting.h"
 #include "TextFunctions.h"
 #include "Version.h"
 
@@ -38,6 +37,93 @@ static const LPCWSTR gMsgHandler = L"LSnCore";
 
 // When the [time] text function should send out change notifications.
 UINT_PTR timeTimer;
+
+// --- Explorer's taskbar, when LiteStep runs on top of Explorer -----------------
+// "HideExplorerTaskbar true" keeps Explorer's taskbars hidden so the theme's own bars
+// replace them. Explorer stays the real shell (UWP apps, Settings, virtual desktops
+// keep working); we only hide its windows, and put them back when the module unloads.
+// Explorer re-shows a taskbar now and then (new monitor, Start menu), hence the timer.
+static bool sHideExplorerTaskbar = false;
+
+static BOOL CALLBACK ExplorerTaskbarProc(HWND window, LPARAM show) {
+  WCHAR className[64] = L"";
+  GetClassNameW(window, className, _countof(className));
+  if (_wcsicmp(className, L"Shell_TrayWnd") != 0 &&
+      _wcsicmp(className, L"Shell_SecondaryTrayWnd") != 0) {
+    return TRUE;
+  }
+
+  // LiteStep's tray service owns a window of the same class; leave it alone.
+  DWORD process = 0;
+  GetWindowThreadProcessId(window, &process);
+  if (process == GetCurrentProcessId()) {
+    return TRUE;
+  }
+
+  // Async, so a busy Explorer cannot stall the shell thread.
+  if (show) {
+    if (!IsWindowVisible(window)) ShowWindowAsync(window, SW_SHOWNA);
+  } else if (IsWindowVisible(window)) {
+    ShowWindowAsync(window, SW_HIDE);
+  }
+  return TRUE;
+}
+
+static void ShowExplorerTaskbar(bool show) {
+  EnumWindows(ExplorerTaskbarProc, show ? 1 : 0);
+}
+
+
+// Screen space for the theme's bars ("ReserveScreenTop" / "ReserveScreenBottom", pixels
+// on the primary monitor). Explorer owns the work area and knows nothing about our bars:
+// it reserves an edge for its own (hidden) taskbar and nothing for ours. We write the work
+// area we want and write it again whenever Explorer recomputes it, which only happens on
+// rare events (display change, taskbar settings). The change is deliberately NOT
+// broadcast: Explorer reacts to that broadcast by recomputing its own value at once.
+//
+// Registering AppBars would be the textbook way, but SHAppBarMessage talks to the first
+// Shell_TrayWnd it finds, and that is LiteStep's own tray service, not Explorer.
+static int sReserve[2] = { 0, 0 }; // top, bottom
+static bool sWorkAreaSaved = false;
+static RECT sOriginalWorkArea;     // what Explorer had when we loaded
+
+static bool DesiredWorkArea(RECT *desired) {
+  POINT origin = { 0, 0 };
+  MONITORINFO info = { sizeof(MONITORINFO) };
+  if (!GetMonitorInfoW(MonitorFromPoint(origin, MONITOR_DEFAULTTOPRIMARY), &info)) {
+    return false;
+  }
+  *desired = info.rcMonitor;
+  desired->top += sReserve[0];
+  desired->bottom -= sReserve[1];
+  return desired->bottom > desired->top;
+}
+
+/// <summary>
+/// Makes the primary work area the monitor minus our top and bottom strips.
+/// Does nothing when it already is, so it is cheap to call from the timer.
+/// </summary>
+static void EnforceWorkArea() {
+  RECT desired, current;
+  if ((sReserve[0] <= 0 && sReserve[1] <= 0) || !DesiredWorkArea(&desired) ||
+      !SystemParametersInfoW(SPI_GETWORKAREA, 0, &current, 0)) {
+    return;
+  }
+  if (!sWorkAreaSaved) {
+    sOriginalWorkArea = current;
+    sWorkAreaSaved = true;
+  }
+  if (!EqualRect(&desired, &current)) {
+    SystemParametersInfoW(SPI_SETWORKAREA, 0, &desired, 0);
+  }
+}
+
+static void RestoreWorkArea() {
+  if (sWorkAreaSaved) {
+    SystemParametersInfoW(SPI_SETWORKAREA, 0, &sOriginalWorkArea, SPIF_SENDCHANGE);
+    sWorkAreaSaved = false;
+  }
+}
 
 // Service functions
 EXPORT_CDECL(Window*) FindRegisteredWindow(LPCWSTR prefix);
@@ -108,6 +194,15 @@ static LRESULT WINAPI MainProc(HWND window, UINT message, WPARAM wParam, LPARAM 
       DynamicTextChangeNotification(L"Time", 0);
       DynamicTextChangeNotification(L"Time", 1);
       DynamicTextChangeNotification(L"WindowTitle", 1);
+      TextFunctions::_Sample();
+      DynamicTextChangeNotification(L"CPU", 0);
+      DynamicTextChangeNotification(L"Memory", 0);
+      DynamicTextChangeNotification(L"MemoryUsedGB", 0);
+      DynamicTextChangeNotification(L"NowPlaying", 0);
+      if (sHideExplorerTaskbar) {
+        ShowExplorerTaskbar(false);
+        EnforceWorkArea();
+      }
     }
     return 0;
 
@@ -181,6 +276,14 @@ EXPORT_CDECL(int) initModuleW(HWND parent, HINSTANCE instance, LPCWSTR path) {
   TextFunctions::_Register();
   timeTimer = SetTimer(ghWndMsgHandler, 1, 1000, nullptr);
 
+  sHideExplorerTaskbar = GetRCBoolDefW(L"HideExplorerTaskbar", FALSE) != FALSE;
+  if (sHideExplorerTaskbar) {
+    ShowExplorerTaskbar(false);
+    sReserve[0] = LiteStep::GetRCInt(L"ReserveScreenTop", 0);
+    sReserve[1] = LiteStep::GetRCInt(L"ReserveScreenBottom", 0);
+    EnforceWorkArea();
+  }
+
   // We need to be connected to the core for some of the functions in nShared to work... xD
   nCore::Connect(MakeVersion(MODULE_VERSION));
 
@@ -189,8 +292,6 @@ EXPORT_CDECL(int) initModuleW(HWND parent, HINSTANCE instance, LPCWSTR path) {
   StateBangs::Register(L"n", FindRegisteredWindow);
   BrushBangs::Register(L"n", FindRegisteredWindow);
 
-  // Start the scripting manager
-  Scripting::Initialize();
 
   return 0;
 }
@@ -201,7 +302,6 @@ EXPORT_CDECL(int) initModuleW(HWND parent, HINSTANCE instance, LPCWSTR path) {
 /// </summary>
 /// <param name="instance">Handle to this module's instance.</param>
 EXPORT_CDECL(void) quitModule(HINSTANCE instance) {
-  Scripting::Shutdown();
 
   WindowBangs::UnRegister(L"n");
   StateBangs::UnRegister(L"n");
@@ -215,6 +315,11 @@ EXPORT_CDECL(void) quitModule(HINSTANCE instance) {
   }
 
   TextFunctions::_Unregister();
+
+  if (sHideExplorerTaskbar) {
+    RestoreWorkArea();
+    ShowExplorerTaskbar(true);
+  }
 
   UnregisterClassW(gMsgHandler, instance);
 }
