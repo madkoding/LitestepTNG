@@ -14,6 +14,78 @@
 #include "../Utilities/Math.h"
 #include "../CoreCom/Core.h"
 #include <algorithm>
+#include <unordered_set>
+
+
+// --- Closing on a click outside ------------------------------------------------
+// A menu must go away when the user clicks anywhere else. Waiting for WM_ACTIVATE is
+// not enough: when LiteStep runs on top of Explorer a popup is not always the active
+// window, and then it never hears about the click. So while a root popup is open, a
+// low-level mouse hook watches for button presses that land outside every popup window
+// of this module and asks the root to close. The click itself is not touched.
+
+// Every popup window of this module; a press on any of them is "inside".
+static std::unordered_set<HWND> sPopupWindows;
+// Window of the root popup that is currently open, or nullptr.
+static HWND sOpenRootWindow = nullptr;
+static HHOOK sOutsideClickHook = nullptr;
+// lParam of the WM_ACTIVATE we post for an outside click. A real deactivation carries a
+// window handle (or 0) there, never this value.
+static const LPARAM kOutsideClick = -1;
+
+static LRESULT CALLBACK OutsideClickProc(int code, WPARAM wParam, LPARAM lParam) {
+  if (code == HC_ACTION && sOpenRootWindow != nullptr &&
+      (wParam == WM_LBUTTONDOWN || wParam == WM_RBUTTONDOWN || wParam == WM_MBUTTONDOWN)) {
+    const MSLLHOOKSTRUCT *info = reinterpret_cast<const MSLLHOOKSTRUCT*>(lParam);
+    HWND target = GetAncestor(WindowFromPoint(info->pt), GA_ROOT);
+    if (sPopupWindows.find(target) == sPopupWindows.end()) {
+      // Same path as losing activation, handled on the module's thread, not in the hook.
+      PostMessage(sOpenRootWindow, WM_ACTIVATE, WA_INACTIVE, kOutsideClick);
+    }
+  }
+  return CallNextHookEx(sOutsideClickHook, code, wParam, lParam);
+}
+
+static void WatchOutsideClicks(HWND rootWindow) {
+  sOpenRootWindow = rootWindow;
+  if (sOutsideClickHook == nullptr) {
+    HMODULE module = nullptr;
+    GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+      (LPCWSTR)&OutsideClickProc, &module);
+    sOutsideClickHook = SetWindowsHookExW(WH_MOUSE_LL, OutsideClickProc, module, 0);
+  }
+}
+
+static void StopWatchingOutsideClicks(HWND rootWindow) {
+  if (sOpenRootWindow == rootWindow) {
+    sOpenRootWindow = nullptr;
+    if (sOutsideClickHook != nullptr) {
+      UnhookWindowsHookEx(sOutsideClickHook);
+      sOutsideClickHook = nullptr;
+    }
+  }
+}
+
+
+/// <summary>
+/// Makes the window the foreground window. Windows only grants that to the process that
+/// received the last input; when it refuses (a popup opened by a hotkey or a bang rather
+/// than by a click on one of our windows) we borrow the right from the thread that
+/// currently owns the foreground by attaching to its input queue for a moment.
+/// </summary>
+static void TakeForeground(HWND window) {
+  SetForegroundWindow(window);
+  HWND foreground = GetForegroundWindow();
+  if (foreground == window || foreground == nullptr) {
+    return;
+  }
+  DWORD self = GetCurrentThreadId();
+  DWORD other = GetWindowThreadProcessId(foreground, nullptr);
+  if (other != 0 && other != self && AttachThreadInput(self, other, TRUE)) {
+    SetForegroundWindow(window);
+    AttachThreadInput(self, other, FALSE);
+  }
+}
 
 
 Popup::Popup(LPCTSTR title, LPCTSTR bang, LPCTSTR prefix)
@@ -50,6 +122,7 @@ Popup::Popup(LPCTSTR title, LPCTSTR bang, LPCTSTR prefix)
     mWindow->SetText(title);
 
     SetParent(mWindow->GetWindowHandle(), NULL);
+    sPopupWindows.insert(mWindow->GetWindowHandle());
     SetWindowLongPtr(mWindow->GetWindowHandle(), GWL_EXSTYLE, GetWindowLongPtr(mWindow->GetWindowHandle(), GWL_EXSTYLE) & ~WS_EX_NOACTIVATE);
     this->sized = false;
     this->mouseOver = false;
@@ -59,6 +132,8 @@ Popup::Popup(LPCTSTR title, LPCTSTR bang, LPCTSTR prefix)
 
 Popup::~Popup()
 {
+    StopWatchingOutsideClicks(mWindow->GetWindowHandle());
+    sPopupWindows.erase(mWindow->GetWindowHandle());
     for (PopupItem * item : this->items)
     {
         delete item;
@@ -153,6 +228,7 @@ bool Popup::CheckFocus(HWND newActive, __int8 direction)
 
 void Popup::Close()
 {
+    StopWatchingOutsideClicks(mWindow->GetWindowHandle());
     mWindow->Hide();
     this->expandLeft = mSettings->GetBool(L"ExpandLeft", false);
     CloseChild(true);
@@ -292,6 +368,14 @@ void Popup::Show(LPRECT position, Popup* owner)
 
     mWindow->Show();
     SetWindowPos(mWindow->GetWindowHandle(), HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    // When LiteStep runs on top of Explorer it is not the foreground process, and a popup
+    // that is only active inside our own thread never receives WA_INACTIVE: it would stay
+    // open until an item is clicked. Taking the foreground lets a click elsewhere close it.
+    TakeForeground(mWindow->GetWindowHandle());
+    if (owner == nullptr)
+    {
+        WatchOutsideClicks(mWindow->GetWindowHandle());
+    }
     SetFocus(mWindow->GetWindowHandle());
     SetActiveWindow(mWindow->GetWindowHandle());
 }
@@ -311,7 +395,9 @@ LRESULT Popup::HandleMessage(HWND window, UINT msg, WPARAM wParam, LPARAM lParam
         {
             if (LOWORD(wParam) == WA_INACTIVE && mWindow->IsVisible())
             {
-                if (!CheckFocus((HWND)lParam, 3))
+                // An outside click was already checked against every popup window; a real
+                // deactivation still has to make sure focus did not just move to a submenu.
+                if (lParam == kOutsideClick || !CheckFocus((HWND)lParam, 3))
                 {
                     Close();
                 }

@@ -23,7 +23,9 @@ public:
         RECENT_DOCUMENTS,
         RECYCLE_BIN,
         START_MENU,
-        PROGRAMS
+        PROGRAMS,
+        THEMES,     // Folders in $LiteStepDir$themes\ that contain a theme.rc
+        PINNED      // Applications pinned to the Windows taskbar
     };
 
     explicit ContentPopup(ContentSource source, LPCTSTR title, LPCTSTR bang, LPCTSTR prefix);
@@ -50,6 +52,12 @@ private:
 
     //
     void LoadPath(LPCTSTR path);
+
+    // Lists the installed themes; each item runs !ThemeSwitch <name>.
+    void LoadThemes();
+
+    // Lists the applications pinned to the Windows taskbar.
+    void LoadPinned();
 
     //
     void LoadFromIDList(IShellFolder *targetFolder, PIDLIST_ABSOLUTE idList, bool dontExpandFolders);

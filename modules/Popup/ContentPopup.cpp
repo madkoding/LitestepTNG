@@ -11,7 +11,10 @@
 #include "CommandItem.hpp"
 #include "FolderItem.hpp"
 #include <Shlwapi.h>
+#include <shellapi.h>
 #include <algorithm>
+#include <string>
+#include <vector>
 
 
 ContentPopup::ContentPopup(ContentSource source, LPCTSTR title, LPCTSTR bang, LPCTSTR prefix) : Popup(title, bang, prefix)
@@ -66,7 +69,12 @@ void ContentPopup::PreShow()
     if (!this->loaded)
     {
         LoadContent();
-        std::sort(this->items.begin(), this->items.end(), [] (PopupItem* a, PopupItem* b) { return a->CompareTo(b); });
+        // Themes are already listed alphabetically by folder name; sorting by the
+        // displayed title would move items around depending on the active-theme mark.
+        if (this->source != ContentSource::THEMES)
+        {
+            std::sort(this->items.begin(), this->items.end(), [] (PopupItem* a, PopupItem* b) { return a->CompareTo(b); });
+        }
         this->loaded = true;
     }
 }
@@ -160,7 +168,189 @@ void ContentPopup::LoadContent()
         LoadShellFolder(FOLDERID_Programs);
         LoadShellFolder(FOLDERID_CommonPrograms);
         break;
+
+    case THEMES:
+        LoadThemes();
+        break;
+
+    case PINNED:
+        LoadPinned();
+        break;
     }
+}
+
+
+/// <summary>
+/// Collects the packaged (Store) applications pinned to the taskbar.
+/// Classic programs are pinned as .lnk files, but a packaged app has no shortcut file: it
+/// only appears, as "PackageFamilyName!AppId", inside the binary list Explorer keeps in
+/// the registry. That list has no documented layout, so we just scan it for such ids.
+/// </summary>
+static void ReadPinnedPackagedApps(std::vector<std::wstring> &ids) {
+  static const WCHAR key[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Taskband";
+  DWORD size = 0;
+  if (RegGetValueW(HKEY_CURRENT_USER, key, L"Favorites", RRF_RT_REG_BINARY, nullptr, nullptr, &size) != ERROR_SUCCESS || size < 8) {
+    return;
+  }
+  std::vector<BYTE> data(size);
+  if (RegGetValueW(HKEY_CURRENT_USER, key, L"Favorites", RRF_RT_REG_BINARY, nullptr, data.data(), &size) != ERROR_SUCCESS) {
+    return;
+  }
+
+  auto isIdChar = [] (WCHAR c) {
+    return (c >= L'a' && c <= L'z') || (c >= L'A' && c <= L'Z') || (c >= L'0' && c <= L'9') ||
+      c == L'.' || c == L'_' || c == L'-';
+  };
+
+  // The strings are UTF-16 but may start at an odd byte, so try both alignments.
+  for (DWORD offset = 0; offset < 2; ++offset) {
+    std::wstring text((size - offset) / sizeof(WCHAR), L' ');
+    memcpy(&text[0], data.data() + offset, text.size() * sizeof(WCHAR));
+
+    for (size_t i = 0; i < text.size(); ) {
+      if (!isIdChar(text[i])) {
+        ++i;
+        continue;
+      }
+      size_t start = i, bang = std::wstring::npos;
+      while (i < text.size() && (isIdChar(text[i]) || (text[i] == L'!' && bang == std::wstring::npos))) {
+        if (text[i] == L'!') bang = i;
+        ++i;
+      }
+      // A family name ends in "_<publisher hash>", and something must follow the "!".
+      if (bang == std::wstring::npos || bang + 1 >= i) {
+        continue;
+      }
+      std::wstring id = text.substr(start, i - start);
+      size_t underscore = id.find(L'_');
+      if (underscore == std::wstring::npos || underscore > bang - start) {
+        continue;
+      }
+      if (std::find(ids.begin(), ids.end(), id) == ids.end()) {
+        ids.push_back(id);
+      }
+    }
+  }
+}
+
+
+/// <summary>
+/// Lists what is pinned to the Windows taskbar: the shortcut files in the "User Pinned"
+/// folder plus the packaged apps found in the registry.
+/// </summary>
+void ContentPopup::LoadPinned() {
+  // Classic programs: one .lnk per pin. Only files; the folder also holds bookkeeping
+  // subfolders that are not pins.
+  WCHAR path[MAX_PATH];
+  IShellFolder *desktop = nullptr;
+  if (ExpandEnvironmentStringsW(L"%APPDATA%\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar",
+      path, _countof(path)) && SUCCEEDED(SHGetDesktopFolder(&desktop))) {
+    PIDLIST_ABSOLUTE folderId = nullptr;
+    IShellFolder *folder = nullptr;
+    if (SUCCEEDED(desktop->ParseDisplayName(nullptr, nullptr, path, nullptr, &folderId, nullptr)) &&
+        SUCCEEDED(desktop->BindToObject(folderId, nullptr, IID_IShellFolder, reinterpret_cast<LPVOID*>(&folder)))) {
+      IEnumIDList *enumerator = nullptr;
+      if (folder->EnumObjects(nullptr, SHCONTF_NONFOLDERS, &enumerator) == S_OK) {
+        PITEMID_CHILD child = nullptr;
+        while (enumerator->Next(1, &child, nullptr) == S_OK) {
+          LoadSingleItem(folder, child, true);
+          CoTaskMemFree(child);
+        }
+        enumerator->Release();
+      }
+      folder->Release();
+    }
+    if (folderId != nullptr) {
+      CoTaskMemFree(folderId);
+    }
+    desktop->Release();
+  }
+
+  // Packaged apps: resolve each id through the shell's Applications folder, which gives
+  // us the display name and icon, and launch it the same way.
+  std::vector<std::wstring> ids;
+  ReadPinnedPackagedApps(ids);
+  for (const std::wstring &id : ids) {
+    WCHAR parsingName[512], command[600];
+    StringCchPrintfW(parsingName, _countof(parsingName), L"shell:AppsFolder\\%s", id.c_str());
+
+    PIDLIST_ABSOLUTE app = nullptr;
+    if (FAILED(SHParseDisplayName(parsingName, nullptr, &app, 0, nullptr)) || app == nullptr) {
+      continue; // pinned once, uninstalled since
+    }
+
+    SHFILEINFOW info = { 0 };
+    UINT flags = SHGFI_PIDL | SHGFI_DISPLAYNAME | (this->noIcons ? 0 : (SHGFI_ICON | SHGFI_SMALLICON));
+    if (SHGetFileInfoW(reinterpret_cast<LPCWSTR>(app), 0, &info, sizeof(info), flags) && info.szDisplayName[0] != 0) {
+      StringCchPrintfW(command, _countof(command), L"explorer.exe \"%s\"", parsingName);
+      if (info.hIcon != nullptr) {
+        AddItem(new CommandItem(this, info.szDisplayName, command, info.hIcon));
+        DestroyIcon(info.hIcon);
+      } else {
+        AddItem(new CommandItem(this, info.szDisplayName, command, (LPCTSTR)nullptr));
+      }
+    }
+    CoTaskMemFree(app);
+  }
+}
+
+
+/// <summary>
+/// Builds the text shown for one theme in the !PopupThemes list.
+/// </summary>
+static void FormatThemeTitle(LPWSTR title, size_t cchTitle, LPCWSTR themeName, bool isCurrent)
+{
+    // TODO(human): mark the active theme (isCurrent) in a way that keeps every name
+    // starting at the same column as the other popup items. Until then all themes are
+    // listed by their bare name.
+    UNREFERENCED_PARAMETER(isCurrent);
+    StringCchCopyW(title, cchTitle, themeName);
+}
+
+
+void ContentPopup::LoadThemes()
+{
+    WCHAR lsDir[MAX_PATH], pattern[MAX_PATH], current[MAX_PATH];
+    if (!LiteStep::LSGetLitestepPathW(lsDir, _countof(lsDir)))
+    {
+        return;
+    }
+    PathAddBackslashW(lsDir);
+
+    // The active theme, as set by theme-select.rc.
+    LiteStep::GetRCString(L"ThemeName", current, L"", _countof(current));
+
+    StringCchPrintfW(pattern, _countof(pattern), L"%sthemes\\*", lsDir);
+    WIN32_FIND_DATAW fd;
+    HANDLE find = FindFirstFileW(pattern, &fd);
+    if (find == INVALID_HANDLE_VALUE)
+    {
+        return;
+    }
+
+    do
+    {
+        if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) || fd.cFileName[0] == L'.')
+        {
+            continue;
+        }
+
+        // Only folders that are actually themes.
+        WCHAR themeRc[MAX_PATH];
+        StringCchPrintfW(themeRc, _countof(themeRc), L"%sthemes\\%s\\theme.rc", lsDir, fd.cFileName);
+        if (!PathFileExistsW(themeRc))
+        {
+            continue;
+        }
+
+        WCHAR title[MAX_PATH], command[MAX_LINE_LENGTH];
+        bool isCurrent = _wcsicmp(fd.cFileName, current) == 0;
+        FormatThemeTitle(title, _countof(title), fd.cFileName, isCurrent);
+        StringCchPrintfW(command, _countof(command), L"!ThemeSwitch \"%s\"", fd.cFileName);
+        AddItem(new CommandItem(this, title, command));
+    } while (FindNextFileW(find, &fd));
+
+    FindClose(find);
 }
 
 
