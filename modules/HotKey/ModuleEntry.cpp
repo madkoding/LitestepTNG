@@ -65,9 +65,161 @@ static bool IsModifierPressed(int leftVk, int rightVk);
 static LRESULT CALLBACK LowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
 
 
+// --- Clicks on Explorer's desktop ----------------------------------------------
+// When LiteStep runs on top of Explorer the desktop belongs to Explorer, so the classic
+// "right-click the desktop for the popup" has nothing of ours to click on. With
+//   DesktopRightClick <bang>     DesktopMiddleClick <bang>
+// a low-level mouse hook runs the bang for clicks that land on Explorer's desktop and
+// keeps them from reaching Explorer. Hold SHIFT to get Explorer's own menu instead.
+static const UINT WM_DESKTOPCLICK = WM_APP + 20; // wParam: 0 = right, 1 = middle
+static WCHAR gDesktopCommand[2][MAX_LINE_LENGTH] = { L"", L"" };
+static bool gDesktopDownSwallowed[2] = { false, false };
+static HHOOK gDesktopMouseHook = NULL;
+
+/// <summary>
+/// True if the window is (part of) Explorer's desktop: Progman or a desktop WorkerW,
+/// including the icon view inside it.
+/// </summary>
+static bool IsExplorerDesktop(HWND window) {
+  HWND root = GetAncestor(window, GA_ROOT);
+  if (root == nullptr) {
+    return false;
+  }
+  WCHAR className[32] = L"";
+  GetClassNameW(root, className, _countof(className));
+  if (_wcsicmp(className, L"Progman") != 0 && _wcsicmp(className, L"WorkerW") != 0) {
+    return false;
+  }
+  DWORD process = 0;
+  GetWindowThreadProcessId(root, &process);
+  return process != GetCurrentProcessId();
+}
+
+static LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam) {
+  if (nCode == HC_ACTION) {
+    int button = -1;
+    bool down = false;
+    switch (wParam) {
+    case WM_RBUTTONDOWN: button = 0; down = true; break;
+    case WM_RBUTTONUP:   button = 0; break;
+    case WM_MBUTTONDOWN: button = 1; down = true; break;
+    case WM_MBUTTONUP:   button = 1; break;
+    }
+
+    if (button >= 0 && gDesktopCommand[button][0] != L'\0') {
+      const MSLLHOOKSTRUCT *info = reinterpret_cast<const MSLLHOOKSTRUCT*>(lParam);
+      if (down) {
+        gDesktopDownSwallowed[button] = (GetAsyncKeyState(VK_SHIFT) & 0x8000) == 0 &&
+          IsExplorerDesktop(WindowFromPoint(info->pt));
+        if (gDesktopDownSwallowed[button]) {
+          return 1;
+        }
+      } else if (gDesktopDownSwallowed[button]) {
+        // Only take the release of a press we took, so drags that merely end on the
+        // desktop are left alone. The bang runs on the module's thread, not in the hook.
+        gDesktopDownSwallowed[button] = false;
+        PostMessage(gLSModule.GetMessageWindow(), WM_DESKTOPCLICK, button, 0);
+        return 1;
+      }
+    }
+  }
+  return CallNextHookEx(gDesktopMouseHook, nCode, wParam, lParam);
+}
+
+static void LoadDesktopClicks() {
+  LiteStep::GetRCLine(L"DesktopRightClick", gDesktopCommand[0], _countof(gDesktopCommand[0]), L"");
+  LiteStep::GetRCLine(L"DesktopMiddleClick", gDesktopCommand[1], _countof(gDesktopCommand[1]), L"");
+  gDesktopDownSwallowed[0] = gDesktopDownSwallowed[1] = false;
+  if ((gDesktopCommand[0][0] != L'\0' || gDesktopCommand[1][0] != L'\0') && gDesktopMouseHook == NULL) {
+    gDesktopMouseHook = SetWindowsHookExW(WH_MOUSE_LL, LowLevelMouseProc, gLSModule.GetInstance(), 0);
+  }
+}
+
+static void UnloadDesktopClicks() {
+  if (gDesktopMouseHook != NULL) {
+    UnhookWindowsHookEx(gDesktopMouseHook);
+    gDesktopMouseHook = NULL;
+  }
+}
+
+
 static void Load() {
   LoadVKeyTable();
   LoadHotKeys();
+  LoadDesktopClicks();
+}
+
+
+/// <summary>
+/// Keys that need KEYEVENTF_EXTENDEDKEY so the system sees the "real" key
+/// (arrows/navigation would otherwise be read as numpad keys).
+/// </summary>
+static bool IsExtendedKey(WORD vk) {
+  switch (vk) {
+  case VK_LEFT: case VK_RIGHT: case VK_UP: case VK_DOWN:
+  case VK_HOME: case VK_END: case VK_PRIOR: case VK_NEXT:
+  case VK_INSERT: case VK_DELETE: case VK_LWIN: case VK_RWIN: case VK_APPS:
+  case VK_DIVIDE: case VK_NUMLOCK: case VK_SNAPSHOT:
+    return true;
+  }
+  return vk >= VK_BROWSER_BACK && vk <= VK_LAUNCH_APP2;
+}
+
+
+/// <summary>
+/// Synthesizes a key chord: presses keys in order, releases them in reverse.
+/// </summary>
+static void SendChord(const std::vector<WORD> &keys) {
+  std::vector<INPUT> inputs;
+  inputs.reserve(keys.size() * 2);
+  for (WORD vk : keys) {
+    INPUT in = {};
+    in.type = INPUT_KEYBOARD;
+    in.ki.wVk = vk;
+    in.ki.dwFlags = IsExtendedKey(vk) ? KEYEVENTF_EXTENDEDKEY : 0;
+    inputs.push_back(in);
+  }
+  for (auto it = keys.rbegin(); it != keys.rend(); ++it) {
+    INPUT in = {};
+    in.type = INPUT_KEYBOARD;
+    in.ki.wVk = *it;
+    in.ki.dwFlags = KEYEVENTF_KEYUP | (IsExtendedKey(*it) ? KEYEVENTF_EXTENDEDKEY : 0);
+    inputs.push_back(in);
+  }
+  SendInput(static_cast<UINT>(inputs.size()), inputs.data(), sizeof(INPUT));
+}
+
+
+/// <summary>
+/// !KeyCombo [mods] key  -- e.g. "!KeyCombo WINCTRL RIGHT", "!KeyCombo MEDIA_PLAY".
+/// Same modifier/key syntax as *HotKey.
+/// </summary>
+static void KeyComboBang(HWND, LPCWSTR args) {
+  WCHAR first[128] = L"", second[128] = L"";
+  LPWSTR tokens[] = { first, second };
+  int count = LiteStep::LCTokenizeW(args, tokens, 2, nullptr);
+  if (count < 1) {
+    return;
+  }
+
+  LPCWSTR keyName = count >= 2 ? second : first;
+  UINT key = ParseKey(keyName);
+  if (key == UINT(-1)) {
+    ErrorHandler::Error(ErrorHandler::Level::Warning, L"!KeyCombo: unknown key '%ls'.", keyName);
+    return;
+  }
+
+  std::vector<WORD> chord;
+  if (count >= 2) {
+    _wcslwr_s(first, _countof(first));
+    UINT mods = ParseMods(first);
+    if (mods & MOD_WIN)     chord.push_back(VK_LWIN);
+    if (mods & MOD_CONTROL) chord.push_back(VK_LCONTROL);
+    if (mods & MOD_ALT)     chord.push_back(VK_LMENU);
+    if (mods & MOD_SHIFT)   chord.push_back(VK_LSHIFT);
+  }
+  chord.push_back(static_cast<WORD>(key));
+  SendChord(chord);
 }
 
 
@@ -78,6 +230,7 @@ static void Unload() {
   gHotKeys.clear();
   gVKCodes.clear();
   ReleaseWinHook();
+  UnloadDesktopClicks();
   gId = 0;
 }
 
@@ -98,6 +251,7 @@ EXPORT_CDECL(int) initModuleW(HWND parent, HINSTANCE instance, LPCWSTR /* path *
     return 1;
   }
   Load();
+  LiteStep::AddBangCommand(L"!KeyCombo", KeyComboBang);
   return 0;
 }
 
@@ -107,6 +261,7 @@ EXPORT_CDECL(int) initModuleW(HWND parent, HINSTANCE instance, LPCWSTR /* path *
 /// </summary>
 /// <param name="instance">Handle to this module's instance.</param>
 EXPORT_CDECL(void) quitModule(HINSTANCE /* instance */) {
+  LiteStep::RemoveBangCommand(L"!KeyCombo");
   Unload();
   gLSModule.DeInitalize();
 }
@@ -133,6 +288,12 @@ LRESULT WINAPI LSMessageHandler(HWND window, UINT message, WPARAM wParam, LPARAM
   case LM_REFRESH:
     Unload();
     Load();
+    return 0;
+
+  case WM_DESKTOPCLICK:
+    if (wParam < 2 && gDesktopCommand[wParam][0] != 0) {
+      LiteStep::LSExecute(window, gDesktopCommand[wParam], SW_SHOWNORMAL);
+    }
     return 0;
 
   case WM_HOTKEY:
