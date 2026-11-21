@@ -117,6 +117,7 @@ struct MenuEntry
     Type type{ Type::Command };
     wstring title;
     wstring command;
+    wstring icon;
     ContentPopup::ContentSource contentSource{ ContentPopup::ContentSource::PROGRAMS };
 };
 
@@ -172,6 +173,22 @@ vector<MenuEntry> ParseMenuEntries()
             return;
         }
 
+        // Optional ".icon=<file,index>" as the first token.
+        wstring iconSpec;
+        if (_wcsnicmp(tokens[0], L".icon=", 6) == 0)
+        {
+            iconSpec = StringUtils::TrimQuotesCopy(tokens[0] + 6);
+            for (int i = 1; i < tokenCount; ++i)
+            {
+                tokens[i - 1] = tokens[i];
+            }
+            --tokenCount;
+            if (tokenCount <= 0)
+            {
+                return;
+            }
+        }
+
         wstring title = StringUtils::TrimQuotesCopy(tokens[0]);
         if (title.empty())
         {
@@ -199,6 +216,7 @@ vector<MenuEntry> ParseMenuEntries()
 
         MenuEntry entry;
         entry.title = title;
+        entry.icon = iconSpec;
         if (tokenCount >= 2)
         {
             wstring primaryCommand = tokens[1];
@@ -652,7 +670,6 @@ public:
 
     void Build(const vector<MenuEntry> &entries)
     {
-        mOwnedPopups.clear();
 
         for (const auto &entry : entries)
         {
@@ -662,7 +679,14 @@ public:
                 AddItem(new SeparatorItem(this));
                 break;
             case MenuEntry::Type::Command:
-                AddItem(new CommandItem(this, entry.title.c_str(), entry.command.c_str()));
+                if (entry.icon.empty())
+                {
+                    AddItem(new CommandItem(this, entry.title.c_str(), entry.command.c_str()));
+                }
+                else
+                {
+                    AddItem(new CommandItem(this, entry.title.c_str(), entry.command.c_str(), entry.icon.c_str()));
+                }
                 break;
             case MenuEntry::Type::Content:
             {
@@ -677,8 +701,13 @@ public:
                 {
                     popup = std::make_unique<ContentPopup>(entry.contentSource, entry.title.c_str(), entry.command.c_str(), childPrefix.c_str());
                 }
-                AddItem(new nPopup::FolderItem(this, entry.title.c_str(), popup.get()));
-                mOwnedPopups.emplace_back(std::move(popup));
+                // FolderItem::~FolderItem() hace `delete mPopup`, asi que el item es
+                // el unico dueno. Se suelta el unique_ptr solo cuando el item ya existe
+                // (si `new` lanza, el unique_ptr sigue liberando el popup).
+                auto *item = new nPopup::FolderItem(this, entry.title.c_str(), popup.get(),
+                    entry.icon.empty() ? nullptr : entry.icon.c_str());
+                popup.release();
+                AddItem(item);
                 break;
             }
             }
@@ -690,7 +719,6 @@ protected:
     void PostClose() override {}
 
 private:
-    vector<std::unique_ptr<Popup>> mOwnedPopups;
 };
 
 void WINAPI StartMenuBang(HWND, LPCTSTR, LPCTSTR args)
