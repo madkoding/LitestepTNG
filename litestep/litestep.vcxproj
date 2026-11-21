@@ -69,7 +69,7 @@
       <PreprocessorDefinitions>LSAPI_PRIVATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>advapi32.lib;gdi32.lib;ole32.lib;shell32.lib;shlwapi.lib;userenv.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>advapi32.lib;dwmapi.lib;gdi32.lib;ole32.lib;shell32.lib;shlwapi.lib;userenv.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
@@ -81,7 +81,7 @@
       <PreprocessorDefinitions>LSAPI_PRIVATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>advapi32.lib;gdi32.lib;ole32.lib;shell32.lib;shlwapi.lib;userenv.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>advapi32.lib;dwmapi.lib;gdi32.lib;ole32.lib;shell32.lib;shlwapi.lib;userenv.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
@@ -93,7 +93,7 @@
       <PreprocessorDefinitions>LSAPI_PRIVATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>advapi32.lib;gdi32.lib;ole32.lib;shell32.lib;shlwapi.lib;userenv.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>advapi32.lib;dwmapi.lib;gdi32.lib;ole32.lib;shell32.lib;shlwapi.lib;userenv.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
@@ -105,7 +105,7 @@
       <PreprocessorDefinitions>LSAPI_PRIVATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>advapi32.lib;gdi32.lib;ole32.lib;shell32.lib;shlwapi.lib;userenv.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>advapi32.lib;dwmapi.lib;gdi32.lib;ole32.lib;shell32.lib;shlwapi.lib;userenv.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Manifest>
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
