@@ -10,6 +10,7 @@
 #include "../ModuleKit/LiteStep.h"
 #include "../ModuleKit/LSModule.hpp"
 #include "../ModuleKit/ErrorHandler.h"
+#include "../ModuleKit/WindowBangs.h"
 
 #include "../Utilities/StringUtils.h"
 
@@ -41,6 +42,15 @@ StringKeyedMaps<wstring, Label*>::UnorderedMap gAllLabels;
 /// Creates a new label.
 /// </summary>
 /// <param name="labelName">The RC settings prefix of the label to create.</param>
+/// <summary>
+/// Finds the window of any label (top-level or overlay) by name, for the !nLabel* bangs.
+/// </summary>
+static Window *FindLabelWindow(LPCWSTR name) {
+  auto label = gAllLabels.find(name);
+  return label != gAllLabels.end() ? label->second->GetWindow() : nullptr;
+}
+
+
 void CreateLabel(LPCWSTR labelName) {
   if (gAllLabels.find(labelName) == gAllLabels.end()) {
     gTopLevelLabels.emplace(
@@ -90,6 +100,9 @@ EXPORT_CDECL(int) initModuleW(HWND parent, HINSTANCE instance, LPCWSTR path) {
 
   // Load settings
   LoadSettings();
+
+  // !nLabelMove, !nLabelShow, !nLabelHide, !nLabelSetText, ... <label> [args]
+  WindowBangs::Register(L"nLabel", FindLabelWindow);
 
   return 0;
 }
@@ -148,6 +161,7 @@ LRESULT WINAPI LSMessageHandler(HWND window, UINT message, WPARAM wParam, LPARAM
 /// </summary>
 /// <param name="instance">Handle to this module's instance.</param>
 EXPORT_CDECL(void) quitModule(HINSTANCE /* instance */) {
+  WindowBangs::UnRegister(L"nLabel");
   DestroyLabels();
   gLSModule.DeInitalize();
 }
