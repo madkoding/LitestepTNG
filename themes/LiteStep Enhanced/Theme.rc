@@ -1,0 +1,382 @@
+;=======================================
+;                      .: litestep enhanced
+;Created and Designed by: Norman Kaczmarek
+;e-mail                 : norman.kaczmarek@web.de
+;resolution             : 1024x768
+;=======================================
+
+;================================================
+;   .: metamorphosis General Settings
+;================================================
+
+OTSMajorVersion 2
+OTSMinorVersion 0
+
+ThemeName      "metamorphosis"
+ThemeAuthor    "Norman Kaczmarek"
+
+                  
+LSImageFolder     "$ThemeDir$images\"
+RainlendarPath    "$ThemeDir$modules\" 
+
+ConfigDir	$ThemeDir$Config\            
+
+include	$ConfigDir$themevars.rc
+
+ColorRGB
+
+;[  modules  ]
+
+
+*NetLoadmodule jdesk-0.711
+*NetLoadModule label-1.99
+*NetLoadModule shortcut2-2.0
+*NetLoadModule popup2-2.0
+*NetLoadModule taskbar3-0.305
+*NetLoadModule geekamp-1.9.7
+;*NetLoadModule lsquickbox-1.51  ;uncomment and see if u get any errors. i get a lsapi.dll missing error !!!! -143lsstep
+*NetLoadModule lsslider-1.71
+*NetLoadModule vtray-1.06
+*NetLoadModule lslnkmenu-1.75
+*NetLoadModule textedit-2.4l-13
+*NetLoadmodule ckvwm-1.40
+*NetLoadModule lsxcommand-1.8.4
+
+VtraySettingsCompatibility
+
+LsLnkMenuControlFile $ConfigDir$lslnkmenu.ini
+
+NoteDefWidth 150	;// Default width
+NoteDefHeight 150	;// Default height
+NoteDefX 100		;// Default X (where new notes show up)
+NoteDefY 100		;// Default Y
+NoteDefFontSize 10	;// Default font size
+NoteDefFontFace "Sevenet 7"	;// Default font face
+NoteDefFontColor FFFFFF
+NoteDefBG lsnotes.bmp	;// This bmp can have FF00FF around the borders
+NoteBorderTop 15
+NoteBorderRight 5
+NoteBorderBottom 5
+NoteBorderLeft 5
+NoteScrollTrackBmp lsnotes-track.bmp 			
+NoteScrollUp 10						
+NoteScrollDown 10					
+NoteScrollBmp lsnotes-scroll.bmp			
+NoteCloseButtonBmp lsnotes-close.bmp			
+NoteCloseButtonClickedBmp lsnotes-close-clicked.bmp	
+NoteCloseX -25						
+NoteCloseY 2						
+
+AmpTimeX 446
+AmpTimeY 33
+AmpTimeWidth 60
+AmpTimeHeight 15
+AmpTimeFont "Sevenet 7"
+AmpTimeBGColor 000058
+AmpTimeTextColor ffffff
+AmpTimeTextSize 8
+
+;[  desktop.settings  ]
+
+;SetDesktopArea
+;SDATop 28
+;SDALeft 5
+;DesktopRightClick            !popup
+
+jdeskworkarea "5,28,0,-29"
+
+;[  ls.mail  ]
+
+;[  ls.label  ]
+
+IF ResolutionX=800
+	Labels TimeLabel,DateLabel,WinampLabel
+ELSE
+	Labels TimeLabel,DateLabel,WinampLabel,DeskLabel
+ENDIF
+
+DeskLabelText "[username]'s Desktop"
+DeskLabelHeight 13
+DeskLabelWidth 150
+;DeskLabelX 438
+DeskLabelX -74c
+DeskLabelY 1
+DeskLabelImage desklabel.bmp
+DeskLabelTransparent
+DeskLabelFont "hooge 05_53"
+DeskLabelFontHeight 10
+DeskLabelFontColor 000000
+DeskLabelScroll
+DeskLabelJustify center
+
+WinampLabelText "[winampsong] - [winamptime] / [winamptotaltime] ****"
+WinampLabelHeight 19
+WinampLabelWidth 152
+WinampLabelX -157
+WinampLabelY 0
+WinampLabelImage winamplabel.bmp
+WinampLabelTransparent
+WinampLabelFontShadow
+WinampLabelFontShadowColor 000000
+WinampLabelFont "hooge 05_53"
+WinampLabelFontHeight 10
+WinampLabelFontColor FFFFFF
+WinampLabelScroll
+WinampLabelJustify left
+
+TimeLabelText "[time('ii:nn:ss')]h"
+TimeLabelHeight 18
+TimeLabelWidth 110
+TimeLabelX 20
+TimeLabelY 3
+TimeLabelImage timeback.bmp
+TimeLabelTransparent
+TimeLabelFontShadow
+TimeLabelFontShadowColor 000000
+TimeLabelFont "hooge 05_53"
+TimeLabelFontHeight 20
+TimeLabelFontColor FFFFFF
+TimeLabelOnmouseleave !Execute [!TimeLabelShow][!CommandHide]
+TimeLabelOnmouseenter !Execute [!TimeLabelHide][!FocusCommand]
+
+DateLabelText "[date('dd. mmmm yyyy')]"
+DateLabelHeight 10
+DateLabelWidth 120
+DateLabelX 15
+DateLabelY 22
+DateLabelImage dateback.bmp
+DateLabelFontShadow
+DateLabelFontShadowColor 000000
+DateLabelFont "hooge 05_53"
+DateLabelFontHeight 10
+DateLabelFontColor FFFFFF
+DateLabelOnLeftClick !DateLabelSetText [uptime]
+
+;[  quick.box  ]
+
+QBoxHeight 20
+QBoxWidth  111
+QBoxPosX   177
+QBoxPosY   0
+;QBoxBGColor 000000
+QBoxSkin "quicckbox.bmp"
+QBoxNoBorder
+
+;[  command  ]
+
+CommandHiddenOnStart
+CommandX 6            		;x position on the screen
+CommandY 8			;y position on the screen
+CommandWidth 140		;width in pixels
+CommandHeight 14		;height in pixels
+CommandBorderSize 1		;width in pixels of the border
+CommandTextSize 12		;pixel size of the text
+CommandBGColor 000000		;background color
+CommandTextColor FFFFFF		;text color
+CommandBorderColor FFFFFF	;color of the border
+CommandTextFontFace "Sevenet 7"	;font for the text
+CommandClearOnCommand
+CommandClearOnHide		;clear the text when mod is hidden
+CommandNoCursorChange
+CommandNotMoveable		;if this is set you will not be able to drag it around by the border
+CommandNotAlwaysOnTop		;overides the default of being Always On Top of other windows
+;CommandScrollWinAmpTitle
+
+;[  popup  ]
+
+HotListName "menu"
+
+PopupTitlePix      "popuptop2.bmp"
+PopupEntryPix      "popupnorm.bmp"
+PopupSeparatorPix      "popupnorm.bmp"
+PopupSelEntryPix   "popupselect.bmp"
+PopupBottomPix     "popupbottom.bmp"
+PopupArrowImage    "popuparrow.bmp"
+PopupSelArrowImage "popuparrowselect.bmp"
+
+;PopupWidth 178
+
+PopupTitleAlignment right
+
+PopupTextOffset 10
+PopupIconSpacing 12
+
+PinnedPopupNotOnTop
+
+PopupNoTitleText
+PopupNoMenuBevel
+PopupNoBevel
+PopupFolderIcon
+PopupFolderArrow
+;PinnedPopupNotOnTop
+;PopupTitleBold
+
+PopupTitleColor "000000"
+PopupEntryColor "000000"
+PopupSelEntryColor "FFFFFF"
+PopupSubMenuHeight "18"
+PopupFontFace "hooge 05_53"
+PopupFontHeight "10"
+PopupTextOffset "10"
+PopupMenuDelay "200"
+PopupMinWidth 178
+PopupMaxWidth 300
+
+PopupDateTimeAlign 2
+
+;[  systray  ]
+
+SystrayAutoSize
+SystrayBitmap systrayback.bmp
+SystrayBitmapTiled
+SystrayDirection left
+SystrayIconSize 16
+
+SystrayIconSpacingX 4
+
+;SystrayMinWidth -1
+
+;SystrayMinHeight -1
+;SystrayMaxWidth -1
+;SystrayMaxHeight -1
+SystrayX -84
+SystrayY -53
+.SystraySnapDistance 4
+SystraySpacingX 4
+SystraySpacingY 4
+.SystrayWrapCount -1
+
+;[  tasks.settings  ]
+
+
+TaskBarX 0
+TaskBarY -28
+TaskbarSkin    "Taskbar.bmp"
+TaskbarNormalSkinCenter "Regtaskmain.bmp"
+TaskbarNormalSkinleft "Regtaskleft.bmp"
+TaskbarNormalSkinright "Regtaskleft.bmp"
+TaskbarActiveSkinCenter "RegTaskmainselected.bmp"
+TaskbarActiveSkinLeft "Regtaskleft.bmp"
+TaskbarActiveSkinRight "Regtaskmainselectedright.bmp"
+TaskbarMinimizedSkinCenter "Regtaskmain.bmp"
+TaskbarMinimizedSkinleft "Regtaskleft.bmp"
+TaskbarMinimizedSkinright "Regtaskleft.bmp"
+
+TaskBarBorder 0 0 4 0
+
+TaskbarNormalFontFace "hooge 05_53"
+TaskbarNormalFontHeight 10
+TaskbarNormalFontColor FFFFFF
+TaskbarActiveFontColor FFFFFF
+TaskbarMinimizedFontColor FFFFFF
+
+TaskBarNoTextShift
+TaskbarNoSkinShift
+;TaskButtonFlash
+
+
+
+	
+;[  virtualdesktops.settings  ]
+
+VWMNoAutoSwitch
+VWMDesksX "4"
+VWMDesksY "1"
+VWMNoGathering
+VWMFocusCenter
+VWMVelocity "500"
+VWMSecurityDistance "25"
+VWMForeColor "A8C0D0"
+VWMSelBackColor "FFFFFF"
+VWMBorderColor "A8C0D0"
+vwmBackColor "000000"
+VWMNotAlwaysOnTop
+VWMBackBmp vwm.bmp
+VWMSelBmp  vwm_sel.bmp
+VWMx 154
+VWMy 24
+VWMwidth 80
+VWMheight 14
+
+;[  Popup Entries  ]
+
+PopupIcons
+PopupIconHeight 16
+PopupIconWidth 16
+PopupIconSize 16
+
+;*Popup "" !None
+;*Popup .icon="$ThemeDir$icons\seer program group.ico" Programs "!DynamicFolder:$CommonPrograms$|$Programs$"
+;;*Popup  .icon="$ThemeDir$icons\seer my computer.ico" "Windows-Explorer" explorer /n,/e,/root,,::{20D04FE0-3AEA-1069-A2D8-08002B30309D}
+;*Popup !PopupImage popupseperator.bmp
+;*Popup .icon="$ThemeDir$icons\seer my computer.ico" "Explorer" explorer
+;;*Popup .icon="$ThemeDir$ICONS\seer documents.ico" "Eigene Dateien" explorer D:\Eigene~1 
+;*Popup .icon="$ThemeDir$icons\seer run.ico" "Run..." !Run
+;*Popup .icon="$ThemeDir$icons\seer find.ico" "Find..." !Find
+;*Popup !PopupImage popupseperator.bmp
+;*Popup .icon="$ThemeDir$icons\seer settings.ico" "system" Folder
+;	*Popup .icon="$ThemeDir$icons\seer control panel.ico" "control panel" !PopupControlPanel
+;	*Popup "Network" !PopupNetwork
+;	*Popup "printer" !PopupPrinters
+;	*Popup ~Folder
+;*Popup .icon="$ThemeDir$icons\seer settings.ico" "System" Folder
+;	*Popup .icon="$ThemeDir$icons\seer settings.ico" "le-config" $WinDir$notepad.exe $LiteStepDir$step.rc
+;	;*Popup "Modules.ini ändern" $WinDir$notepad.exe $LiteStepDir$modules.ini
+;	;*Popup "System.ini ändern" "$WinDir$notepad.exe" $WinDir$system.ini
+;       *Popup .icon="$ThemeDir$iconsx\recycle.ico" "mmp-Konfiguration aktualisieren" !Recycle
+*Popup .icon="$ThemeDir$iconsx\information.ico" "le Info" Folder
+            *Popup "" !None
+            *Popup "        litestep enhanced" !None
+            *Popup "       (c) 2001 by " !None
+            *Popup "         Norman Kaczmarek" !None
+            *Popup "" !None
+            *Popup "mail to: norman.kaczmarek@web.de" !None
+            *Popup ~Folder
+;;	*Popup "quit" "!Quit"
+	*Popup ~Folder
+*Popup .icon="$ThemeDir$iconsx\cascade.ico""Window-Manager" Folder
+	*Popup "Tile Horizontal" "!TileWindowsH"
+	*Popup "Tile Vertical" "!TileWindowsV"
+	*Popup "Cascade" "!CascadeWindows"
+	*Popup "Minimize" "!MinimizeWindows"
+	*Popup "Maximize" "!RestoreWindows"
+*Popup ~Folder
+*Popup !PopupImage popupseperator.bmp
+*Popup .icon="$ThemeDir$icons\seer shut down.ico" "quit" !Shutdown
+*Popup !PopupImage popupseperator.bmp
+*Popup "Date: %d . %m . %Y" !DateTime
+*Popup "clock: %H : %M : %S" !DateTime
+*Popup "" !None
+*Popup ~Folder
+
+
+;[  shortcut.settings  ]
+
+*Shortcut "Winamp" -380 0 winamp.bmp .none .none $winamp$
+*Shortcut "Vorheriger Titel" -335 0 prev.bmp .none .none !AMP_PREV
+*Shortcut "Abspielen" -310 0 play.bmp .none .none !AMP_PLAY
+*Shortcut "Pause" -285 0 pause.bmp .none .none !AMP_PAUSE
+*Shortcut "Stop" -260 0 stop.bmp .none .none !AMP_STOP
+*Shortcut "Nächster Titel" -236 0 next.bmp .none .none !AMP_NEXT
+*Shortcut "Eject" -212 0 eject.bmp .none .none !AMP_LOADFILE
+*Shortcut "Playlist" -184 0 playlist.bmp .none .none !AMP_PLAYLIST
+;*Shortcut "Dir" -212 0 dir.bmp .none .none !AMP_LOADDIR
+*Slider "Track" -229 24 1 "slidertrack.bmp" "Slider_Handle.bmp" HI [WINAMP] 0
+*Slider "Volume" -115 24 1 "slidervolume.bmp" "Slider_Handle.bmp" HI [VOLUME] 0
+
+;*Shortcut "Notizblock" 599 4 notizblock.bmp .none .none !NewNote
+;*Shortcut "Kalender" 879 4 kalender.bmp .none .none !RainlendarToggle
+;*Shortcut "Winamp" 542 14 winampsmall.bmp .none .none 
+;*Shortcut "Arbeitsplatz" 20 470 arbeitsplatz1.bmp arbeitsplatz2.bmp .none explorer /root,,::{20D04FE0-3AEA-1069-A2D8-08002B30309D}
+;*Shortcut "Internet" 110 466 internet1.bmp internet2.bmp .none "iexplore.exe"
+;*Shortcut "E-mail" 189 470 e-mail1.bmp e-mail2.bmp .none "D:\Programme\Outlook Express\msimn.exe"
+;*Shortcut "Media Player" 275 466 mplayer.bmp mplayer2.bmp .none "D:\Programme\Winamp\winamp.exe"
+;*Shortcut "Winamp" 353 469 winamp1.bmp winamp2.bmp .none "D:\Programme\Winamp\winamp.exe"
+*Shortcut "Menü" 293 1 menu.bmp menuover.bmp .none !Popup
+;*Shortcut "QuickBox Ordner" 477 4 folder.bmp .none .none explorer "$litestepdir$quickstart"
+
+*Shortcut "" -204 -53 systray.bmp .none .none !None
+
+*Shortcut "" -394 1 "injektion2.bmp" .none .none .none !none
+*Shortcut "" 0 0 "injektion.bmp" .none .none .none !none
+*Shortcut "" 630 0 "injektion3.bmp" .none .none .none !none

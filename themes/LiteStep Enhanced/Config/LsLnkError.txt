@@ -1,0 +1,40 @@
+9/30/2003 11:38:53 PM  Unable to load bitmap - 0Office.bmp
+
+9/30/2003 11:38:53 PM  Unable to load bitmap - 0Grafik.bmp
+
+9/30/2003 11:38:53 PM  Unable to load bitmap - 0Multimedia.bmp
+
+9/30/2003 11:38:53 PM  Unable to load bitmap - 0Internet.bmp
+
+9/30/2003 11:38:53 PM  Unable to load bitmap - 0Tools.bmp
+
+10/01/03 08:04:04  Unable to load bitmap - 0Office.bmp
+
+10/01/03 08:04:04  Unable to load bitmap - 0Grafik.bmp
+
+10/01/03 08:04:04  Unable to load bitmap - 0Multimedia.bmp
+
+10/01/03 08:04:04  Unable to load bitmap - 0Internet.bmp
+
+10/01/03 08:04:04  Unable to load bitmap - 0Tools.bmp
+
+10/1/2003 8:31:44 AM  Unable to load bitmap - 0Office.bmp
+
+10/1/2003 8:31:44 AM  Unable to load bitmap - 0Grafik.bmp
+
+10/1/2003 8:31:44 AM  Unable to load bitmap - 0Multimedia.bmp
+
+10/1/2003 8:31:44 AM  Unable to load bitmap - 0Internet.bmp
+
+10/1/2003 8:31:44 AM  Unable to load bitmap - 0Tools.bmp
+
+10/1/2003 11:12:32 AM  Unable to load bitmap - 0Office.bmp
+
+10/1/2003 11:12:32 AM  Unable to load bitmap - 0Grafik.bmp
+
+10/1/2003 11:12:32 AM  Unable to load bitmap - 0Multimedia.bmp
+
+10/1/2003 11:12:32 AM  Unable to load bitmap - 0Internet.bmp
+
+10/1/2003 11:12:32 AM  Unable to load bitmap - 0Tools.bmp
+

@@ -1,0 +1,24 @@
+;MAKE SURE THAT PATHS POINT TO THE RIGHT DRIVE AND/OR APP !!!
+
+If Win9x or WinME
+WinDir		C:\Windows\
+Else
+WinDir		C:\WINNT\
+EndIf
+
+ProgFilesDir	C:\Progra~1\
+PFDir		C:\Progra~1\
+PFPath		C:\Progra~1\
+
+LSHelp		$LitestepDir$LSDocs\index.html
+Browser2	$PFDir$Intern~1\iexplore.exe
+explorer2	explorer.exe
+notepad		$WinDir$notepad.exe
+
+If Win9x or WinME
+processes	$PFDir$ProcessViewer2000\Pv2k.exe
+Else
+processes	Taskmgr
+EndIf
+
+winamp		$PFDir$Winamp\winamp.exe
