@@ -250,6 +250,38 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   `HKCU\...\Explorer\Taskband\Favorites` for `PackageFamilyName!AppId` at both UTF-16
   alignments. Packaged apps are named/iconed via `shell:AppsFolder\<id>` and launched with
   `explorer.exe "shell:AppsFolder\<id>"`. Reloaded on every open (content popups are dynamic).
+- **Favorites (supersedes the read-only taskbar list above):** `!PopupPinned` now lists
+  `$LiteStepDir$favorites\`, LiteStep's own folder of shortcuts (`namespace Favorites` in
+  `Popup/ContentPopup.cpp`). It is created on first use and seeded with the Windows taskbar
+  pins (copied `.lnk` files, plus a generated shortcut per packaged app via
+  `IShellLink::SetIDList`). Right-clicking a file-backed `CommandItem` shows a system
+  context menu: "add to favorites" (copies the file there) or, for a favorite, "remove"
+  (deletes it). Menu texts: `nPopupPinText` / `nPopupUnpinText`. `Popup::SuspendAutoClose`
+  keeps the popup open while that system menu is up. Windows itself offers no API to pin
+  to its taskbar, hence a separate list.
+- **All applications:** `!PopupApps` (source `APPS`) lists the shell's Applications folder
+  (`FOLDERID_AppsFolder`, 272 entries here), the only place that includes packaged/Store
+  apps; 63 of them (Minecraft, Calculator, Terminal...) have no Start Menu shortcut and are
+  absent from `!PopupPrograms`. Items launch with `explorer.exe "shell:AppsFolder\<name>"`
+  and can be added to the favorites (`Favorites::AddApp` writes a shortcut by IDList).
+  First open costs ~2.5 s of icon extraction; the popup is then kept loaded (47 ms).
+  The Metamorphosis theme has no entry for it: the user had it removed (too long for a
+  popup), so the bang exists but no menu uses it.
+  The theme's JUEGOS submenu is a hand-written list (Steam `steam://rungameid/<id>` and
+  Store apps), so it must be edited when games are installed or removed.
+- **`!PopupFolder:"path"` with spaces:** the rest of the line is the path; the parser used
+  to read a piece of it as the settings prefix, which corrupted the whole root popup.
+- **Content popup caching:** content popups are "dynamic": `PostClose` used to free every item
+  (and so every cached icon) and the next open re-enumerated and re-extracted everything
+  (~300 ms for Programs). `ContentPopup::keepLoaded` now keeps the Programs / Start Menu
+  popups and any path popup under the Programs folders in memory (28 ms on later opens);
+  delete/rename notifications mark them `stale` and they rebuild on the next show.
+  `!PopupRecentDocuments` lists only the newest `MaxRecentItems` (default 20) shortcuts by
+  modification time, newest first, instead of the whole Recent folder (519 here).
+- **Taskbar animation:** `<Taskbar>AnimationDuration` (ms) slides task buttons to their new
+  place when tasks are added/removed (`TaskButton::SetTarget/StepAnimation`, timer in
+  `Taskbar`). The thumbnail's own `ThumbnailAnimate` and the popup `ShowAnimation*` settings
+  are theme-only.
 - **StartMenu `.icon=` parsing:** `StartMenu/ModuleEntry.cpp` now parses a leading
   `.icon="file,idx"` token on menu entries (previously only nPopup did), passing the icon to
   Command/Folder items.
