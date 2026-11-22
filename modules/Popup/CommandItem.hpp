@@ -34,6 +34,10 @@ public:
     int GetDesiredWidth(int maxWidth);
 
 private:
+    // Right-click menu: add the item's file to the favorites, or remove it if it is one.
+    void ShowContextMenu();
+
+private:
     LPCTSTR title;
     LPCTSTR command;
 };

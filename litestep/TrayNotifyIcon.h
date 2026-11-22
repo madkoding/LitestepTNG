@@ -25,46 +25,6 @@
 #include "../utility/core.hpp"
 #include <vector>
 
-#define TRAY_MAX_TIP_LENGTH       128
-#define TRAY_MAX_INFO_LENGTH      256
-#define TRAY_MAX_INFOTITLE_LENGTH 64
-
-//
-// This struct is sent to the systray module(s)
-//
-// NOTE: Currently, the dwState/Mask members are never passed on to the
-// systray modules. dwState/Mask are handled internally to this tray service.
-//
-typedef struct LSNOTIFYICONDATA
-{
-    DWORD cbSize;                                /* arbitrary  &     volatile */
-    HWND hWnd;                                   /* persistent & non volatile */
-    UINT uID;                                    /* persistent & non volatile */
-    UINT uFlags;                                 /* persistent &     volatile */
-    UINT uCallbackMessage;                       /* persistent &     volatile */
-    HICON hIcon;                                 /* persistent &     volatile */
-    WCHAR szTip[TRAY_MAX_TIP_LENGTH];            /* persistent &     volatile */
-
-    // new in 2K:
-    DWORD dwState;                               /* persistent &     volatile */
-    DWORD dwStateMask;                           /* arbitrary  &     volatile */
-    WCHAR szInfo[TRAY_MAX_INFO_LENGTH];          /* arbitrary  &     volatile */
-    union
-    {
-        UINT uTimeout;                           /* arbitrary  &     volatile */
-        UINT uVersion;                           /* arbitrary  &     volatile */
-    } DUMMYUNIONNAME;
-    WCHAR szInfoTitle[TRAY_MAX_INFOTITLE_LENGTH];/* arbitrary  &     volatile */
-    DWORD dwInfoFlags;                           /* arbitrary  &     volatile */
-
-    // new in XP:
-    GUID guidItem;                               /* persistent & non volatile */
-
-    // new in Vista
-    HICON hBalloonIcon;                          /* arbitrary  &     volatile */
-    /**/
-} *PLSNOTIFYICONDATA;
-typedef const LSNOTIFYICONDATA * PCLSNOTIFYICONDATA;
 
 //
 // Sent to legacy modules

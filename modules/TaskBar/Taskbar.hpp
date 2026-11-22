@@ -96,5 +96,11 @@ private:
 
     //
     bool mNoThumbnails;
+
+    // Layout animation ("AnimationDuration", ms; 0 = buttons jump to their place).
+    // When tasks are added or removed the buttons slide to their new positions.
+    int mAnimationDuration = 0;
+    UINT_PTR mAnimationTimer = 0;
+    ULONGLONG mAnimationStart = 0;
 };
 

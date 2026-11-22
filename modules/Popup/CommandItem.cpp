@@ -10,6 +10,8 @@
 #include "CommandItem.hpp"
 #include "../ModuleKit/LSModule.hpp"
 #include "Popup.hpp"
+#include "ContentPopup.hpp"
+#include <Shlwapi.h>
 
 
 CommandItem::CommandItem(LPCTSTR title, LPCTSTR command, Drawable* parent)
@@ -64,9 +66,11 @@ LRESULT CommandItem::HandleMessage(HWND window, UINT msg, WPARAM wParam, LPARAM 
         return 0;
 
     case WM_RBUTTONDOWN:
-        {
+        return 0;
 
-        }
+    case WM_RBUTTONUP:
+        // May close the popup, which can delete this item: nothing may follow it.
+        ShowContextMenu();
         return 0;
 
     case WM_MOUSEMOVE:
@@ -85,3 +89,73 @@ LRESULT CommandItem::HandleMessage(HWND window, UINT msg, WPARAM wParam, LPARAM 
     return DefWindowProc(window, msg, wParam, lParam);
 }
 
+
+
+/// <summary>
+/// Shows the right-click menu of an item that stands for something that can be a
+/// favorite: a file (a shortcut from the Programs tree, a recent document, a favorite)
+/// or an application from the "all applications" list. Items that run a bang have none.
+/// </summary>
+void CommandItem::ShowContextMenu() {
+  // Either a quoted file path, or the command that launches an Applications-folder entry.
+  WCHAR file[MAX_PATH] = L"", app[1024] = L"";
+  size_t prefixLength = wcslen(Favorites::AppCommandPrefix);
+  if (_wcsnicmp(this->command, Favorites::AppCommandPrefix, prefixLength) == 0) {
+    StringCchCopyW(app, _countof(app), this->command + prefixLength);
+    size_t length = wcslen(app);
+    if (length > 0 && app[length - 1] == L'"') {
+      app[length - 1] = 0;
+    }
+    if (app[0] == 0) {
+      return;
+    }
+  } else {
+    if (FAILED(StringCchCopyW(file, _countof(file), this->command))) {
+      return;
+    }
+    PathUnquoteSpacesW(file);
+    if (!PathFileExistsW(file) || PathIsDirectoryW(file)) {
+      return;
+    }
+  }
+
+  const bool isFavorite = file[0] != 0 && Favorites::Contains(file);
+  WCHAR text[128];
+  LiteStep::GetRCString(isFavorite ? L"nPopupUnpinText" : L"nPopupPinText", text,
+    isFavorite ? L"Remove from favorites" : L"Add to favorites", _countof(text));
+
+  HMENU menu = CreatePopupMenu();
+  if (menu == nullptr) {
+    return;
+  }
+  AppendMenuW(menu, MF_STRING, 1, text);
+
+  Popup *popup = (Popup*)mParent;
+  HWND owner = popup->GetWindow()->GetWindowHandle();
+  POINT cursor;
+  GetCursorPos(&cursor);
+
+  // The system menu is not one of our popups: without this, clicking it would count as
+  // a click outside and close the popup under us.
+  Popup::SuspendAutoClose(true);
+  SetForegroundWindow(owner);
+  int choice = TrackPopupMenu(menu, TPM_RETURNCMD | TPM_NONOTIFY | TPM_RIGHTBUTTON,
+    cursor.x, cursor.y, 0, owner, nullptr);
+  Popup::SuspendAutoClose(false);
+  DestroyMenu(menu);
+
+  if (choice != 1) {
+    return;
+  }
+
+  if (isFavorite) {
+    // The list changed, so close it; it is rebuilt the next time it opens.
+    if (Favorites::Remove(file)) {
+      popup->Close();
+    }
+  } else if (app[0] != 0) {
+    Favorites::AddApp(app, this->title);
+  } else {
+    Favorites::Add(file);
+  }
+}

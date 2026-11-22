@@ -43,6 +43,11 @@ public:
 public:
   void Reposition(FLOAT x, FLOAT y, FLOAT width, FLOAT height);
 
+  // Animated layout. SetTarget records where the button should end up; StepAnimation
+  // moves it part of the way there (progress 0..1, already eased by the caller).
+  void SetTarget(FLOAT x, FLOAT y, FLOAT width, FLOAT height, bool animate);
+  void StepAnimation(float progress);
+
   void Activate();
   void Deactivate();
 
@@ -76,6 +81,14 @@ private:
 
   //
   bool mMouseIsOver;
+
+  // x, y, width, height: where the button is now, where the current animation started
+  // and where it is going.
+  FLOAT mCurrentRect[4] = { 0, 0, 0, 0 };
+  FLOAT mFromRect[4] = { 0, 0, 0, 0 };
+  FLOAT mTargetRect[4] = { 0, 0, 0, 0 };
+  // False until the button has been given its first position.
+  bool mPlaced = false;
 
   //
   bool mIsFlashing;

@@ -16,9 +16,49 @@
 #include <functional>
 #include <ShlObj.h>
 
+#include "../../lsapi/lsapi.h"
+
+constexpr DWORD MAGIC_DWORD = 0x4D4B5244;
+
 namespace LiteStep {
-  // Wrap the core API in the LiteStep namespace
-  #include "../../sdk/include/lsapi.h"
+  using BANGCOMMANDPROC = BangCommandW;
+
+  inline BOOL AddBangCommand(LPCWSTR pwzCommand, BANGCOMMANDPROC proc) { return AddBangCommandW(pwzCommand, proc); }
+  inline BOOL RemoveBangCommand(LPCWSTR pwzCommand) { return RemoveBangCommandW(pwzCommand); }
+  inline BOOL GetToken(LPCWSTR pwzString, LPWSTR pwzToken, LPCWSTR* pwzNextToken, BOOL useBrackets) { return GetTokenW(pwzString, pwzToken, pwzNextToken, useBrackets); }
+  inline int CommandTokenize(LPCWSTR pwzString, LPWSTR* lpwzBuffers, DWORD dwNumBuffers, LPWSTR pwzExtraParameters) { return CommandTokenizeW(pwzString, lpwzBuffers, dwNumBuffers, pwzExtraParameters); }
+  inline HINSTANCE LSExecute(HWND owner, LPCWSTR pwzCommand, int nShowCmd) { return LSExecuteW(owner, pwzCommand, nShowCmd); }
+  inline HBITMAP LoadLSImage(LPCWSTR pwzImage, LPCWSTR pwzFile) { return LoadLSImageW(pwzImage, pwzFile); }
+  inline BOOL LSGetLitestepPathW(LPWSTR pwzPath, size_t cchPath) { return ::LSGetLitestepPathW(pwzPath, cchPath); }
+  inline void LSSetVariable(LPCWSTR pwzKeyName, LPCWSTR pwzValue) { LSSetVariableW(pwzKeyName, pwzValue); }
+  inline LPVOID LCOpen(LPCWSTR pwzPath) { return LCOpenW(pwzPath); }
+  inline BOOL LCReadNextConfig(LPVOID pFile, LPCWSTR pwzConfig, LPWSTR pwzValue, size_t cchValue) { return LCReadNextConfigW(pFile, pwzConfig, pwzValue, cchValue); }
+  inline BOOL GetRCBoolDef(LPCWSTR pwzKeyName, BOOL bDefault) { return GetRCBoolDefW(pwzKeyName, bDefault); }
+  inline double GetRCDouble(LPCWSTR pwzKeyName, double dDefault) { return GetRCDoubleW(pwzKeyName, dDefault); }
+  inline float GetRCFloat(LPCWSTR pwzKeyName, float fDefault) { return GetRCFloatW(pwzKeyName, fDefault); }
+  inline int GetRCInt(LPCWSTR pwzKeyName, int nDefault) { return GetRCIntW(pwzKeyName, nDefault); }
+  inline __int64 GetRCInt64(LPCWSTR pwzKeyName, __int64 nDefault) { return GetRCInt64W(pwzKeyName, nDefault); }
+  inline BOOL GetRCLine(LPCWSTR pwzKeyName, LPWSTR pwzValue, UINT maxLen, LPCWSTR pwzDefault) { return GetRCLineW(pwzKeyName, pwzValue, maxLen, pwzDefault); }
+  inline BOOL GetRCString(LPCWSTR pwzKeyName, LPWSTR pwzValue, LPCWSTR pwzDefault, int maxLen) { return GetRCStringW(pwzKeyName, pwzValue, pwzDefault, maxLen); }
+  inline BOOL GetRCBool(LPCWSTR pwzKeyName, BOOL fIfFound) { return GetRCBoolW(pwzKeyName, fIfFound); }
+  inline HWND GetLitestepWnd() { return ::GetLitestepWnd(); }
+  inline BOOL AddBangCommandEx(LPCWSTR pwzCommand, BangCommandExW proc) { return AddBangCommandExW(pwzCommand, proc); }
+  inline HINSTANCE LSExecuteEx(HWND owner, LPCWSTR pwzOperation, LPCWSTR pwzCommand, LPCWSTR pwzArgs, LPCWSTR pwzDirectory, int nShowCmd) { return LSExecuteExW(owner, pwzOperation, pwzCommand, pwzArgs, pwzDirectory, nShowCmd); }
+  inline int LCTokenize(LPCWSTR pwzString, LPWSTR* lpwzBuffers, DWORD dwNumBuffers, LPWSTR pwzExtraParameters) { return LCTokenizeW(pwzString, lpwzBuffers, dwNumBuffers, pwzExtraParameters); }
+  inline HRESULT EnumLSData(UINT uInfo, FARPROC pfnCallback, LPARAM lParam) { return EnumLSDataW(uInfo, pfnCallback, lParam); }
+
+  using ::LCClose;
+  using ::LCOpenW;
+  using ::LCReadNextConfigW;
+  using ::LCTokenizeW;
+  using ::ENUMBANGSPROC;
+  using ::ENUMMODULESPROC;
+  using ::LSNOTIFYICONDATA;
+  using ::PLSNOTIFYICONDATA;
+  using ::PCLSNOTIFYICONDATA;
+  using ::LPLSNOTIFYICONDATA;
+  using ::SYSTRAYINFOEVENT;
+  using ::LPSYSTRAYINFOEVENT;
 
   // Fetching of prefixed data types
   bool GetPrefixedRCBool(LPCTSTR prefix, LPCTSTR keyName, bool defaultValue);

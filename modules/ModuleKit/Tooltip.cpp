@@ -12,6 +12,7 @@
 #include "../ModuleKit/LiteStep.h"
 
 #include <algorithm>
+#include <cmath>
 
 using InitData = StateRender<Tooltip::States>::InitData;
 
@@ -65,14 +66,26 @@ void Tooltip::Show(LPCWSTR text, LPRECT position) {
   mWindow->SetText(text);
   mWindow->SizeToText(mMaxWidth, mMaxHeight);
 
-  // Show it centerd on x, 5 px above, while forcing it to stay on the virtual desktop
-  const MonitorInfo::Monitor &virtualDesktop = nCore::FetchMonitorInfo().GetVirtualDesktop();
+  // Centered above the target, but kept inside the monitor the target is on. Clamping to
+  // the whole virtual desktop is not enough: next to a monitor edge the tooltip would
+  // spill onto the neighbouring monitor instead of growing away from the edge.
+  RECT limits;
+  MONITORINFO monitorInfo = { sizeof(MONITORINFO) };
+  if (GetMonitorInfoW(MonitorFromRect(position, MONITOR_DEFAULTTONEAREST), &monitorInfo)) {
+    limits = monitorInfo.rcMonitor;
+  } else {
+    limits = nCore::FetchMonitorInfo().GetVirtualDesktop().rect;
+  }
 
-  mWindow->Move(
-    std::min<float>(std::max<float>((float)virtualDesktop.rect.left, (float)position->left + ((float)position->right - (float)position->left) / 2.0f - mWindow->GetSize().width / 2),
-    (float)virtualDesktop.rect.right - mWindow->GetSize().width),
-          std::min<float>(std::max<float>((float)virtualDesktop.rect.top, (float)position->top - mWindow->GetSize().height - 5),
-          (float)virtualDesktop.rect.bottom - mWindow->GetSize().height));
+  float width = mWindow->GetSize().width;
+  float height = mWindow->GetSize().height;
+  float x = (float)position->left + ((float)position->right - (float)position->left) / 2.0f - width / 2.0f;
+  float y = (float)position->top - height - 5.0f;
+
+  // Whole pixels, so pixel fonts stay sharp.
+  x = floorf(std::min<float>(std::max<float>((float)limits.left, x), (float)limits.right - width));
+  y = floorf(std::min<float>(std::max<float>((float)limits.top, y), (float)limits.bottom - height));
+  mWindow->Move(x, y);
 
   mWindow->Show();
 }

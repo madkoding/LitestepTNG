@@ -47,6 +47,10 @@ Taskbar::Taskbar(LPCTSTR name) : Drawable(name) {
 /// Destructor
 /// </summary>
 Taskbar::~Taskbar() {
+  if (mAnimationTimer != 0) {
+    mWindow->ClearCallbackTimer(mAnimationTimer);
+    mAnimationTimer = 0;
+  }
   // Remove all buttons
   mButtonList.clear();
 
@@ -68,6 +72,8 @@ void Taskbar::LoadSettings(bool /* isRefresh */) {
   mButtonMaxHeight = buttonSettings->GetDistance(L"MaxHeight", mButtonHeight);
   mMonitor = mSettings->GetMonitor(L"Monitor", 0xFFFFFFFF);
   mNoThumbnails = mSettings->GetBool(L"NoThumbnails", false);
+  mAnimationDuration = mSettings->GetInt(L"AnimationDuration", 0);
+  if (mAnimationDuration < 0) mAnimationDuration = 0;
 
   delete buttonSettings;
 }
@@ -159,6 +165,7 @@ void Taskbar::Relayout() {
   D2D1_SIZE_F const *size = &mWindow->GetSize();
 
   float spacePerLine, lines, buttonSize, x0, y0, xdir, ydir;
+  const bool animate = mAnimationDuration > 0 && mWindow->IsVisible();
 
   if (mButtonMap.size() == 0) {
     return;
@@ -199,6 +206,10 @@ void Taskbar::Relayout() {
     float buttonHeight = mButtonHeight.Evaluate(size->height);
     spacePerLine = size->width - mLayoutSettings.mPadding.left - mLayoutSettings.mPadding.right;
     lines = floorf((size->height + mLayoutSettings.mRowSpacing - mLayoutSettings.mPadding.top - mLayoutSettings.mPadding.bottom) / (mLayoutSettings.mRowSpacing + buttonHeight));
+    // Guard the degenerate case: if the taskbar is shorter than one full button
+    // row, `lines` floors to 0, which makes `buttonSize` negative below and hides
+    // every button. Always keep at least one row.
+    lines = std::max(1.0f, lines);
     // We need to consider that buttons can't be split between multiple lines.
     buttonSize = std::min(mButtonMaxWidth.Evaluate(size->width), std::min(spacePerLine * lines / (float)mButtonMap.size(), spacePerLine / ceil(mButtonMap.size() / lines)) - mLayoutSettings.mColumnSpacing);
     if (ydir == -1) {
@@ -210,7 +221,7 @@ void Taskbar::Relayout() {
 
     float x = x0, y = y0;
     for (TaskButton &button : mButtonList) {
-      button.Reposition(x, y, buttonSize, buttonHeight);
+      button.SetTarget(x, y, buttonSize, buttonHeight, animate);
       x += xdir*(buttonSize + mLayoutSettings.mColumnSpacing);
       if (x < mLayoutSettings.mPadding.left || x > size->width - mLayoutSettings.mPadding.right - buttonSize + 1.0f) {
         x = x0;
@@ -222,6 +233,8 @@ void Taskbar::Relayout() {
     float buttonWidth = mButtonHeight.Evaluate(size->width);
     spacePerLine = size->height - mLayoutSettings.mPadding.top - mLayoutSettings.mPadding.bottom;
     lines = floorf((size->width + mLayoutSettings.mColumnSpacing - mLayoutSettings.mPadding.left - mLayoutSettings.mPadding.right) / (mLayoutSettings.mColumnSpacing + buttonWidth));
+    // Same degenerate-case guard as the horizontal branch: never fewer than one column.
+    lines = std::max(1.0f, lines);
     buttonSize = std::min((float)mButtonMaxHeight.Evaluate(size->height), std::min(spacePerLine * lines / (float)mButtonMap.size(), spacePerLine / ceil(mButtonMap.size() / lines)) - mLayoutSettings.mRowSpacing);
     if (ydir == -1) {
       y0 -= buttonSize;
@@ -232,13 +245,21 @@ void Taskbar::Relayout() {
 
     float x = x0, y = y0;
     for (TaskButton &button : mButtonList) {
-      button.Reposition(x, y, buttonWidth, buttonSize);
+      button.SetTarget(x, y, buttonWidth, buttonSize, animate);
       y += ydir*(buttonSize + mLayoutSettings.mRowSpacing);
       if (y < mLayoutSettings.mPadding.top || y > size->height - mLayoutSettings.mPadding.bottom - buttonSize + 1.0f) {
         y = y0;
         x += xdir*(buttonWidth + mLayoutSettings.mColumnSpacing);
       }
       button.Show();
+    }
+  }
+
+  if (animate) {
+    // (Re)start the clock; buttons already moving continue from where they are.
+    mAnimationStart = GetTickCount64();
+    if (mAnimationTimer == 0) {
+      mAnimationTimer = mWindow->SetCallbackTimer(15, this);
     }
   }
 
@@ -254,6 +275,28 @@ LRESULT WINAPI Taskbar::HandleMessage(HWND window, UINT message, WPARAM wParam, 
   case Window::WM_SIZECHANGE:
     Relayout();
     return 0;
+
+  case WM_TIMER:
+    if (wParam == mAnimationTimer && mAnimationTimer != 0) {
+      float t = mAnimationDuration > 0
+        ? float(GetTickCount64() - mAnimationStart) / float(mAnimationDuration) : 1.0f;
+      if (t > 1.0f) t = 1.0f;
+      // Ease-out cubic: fast at first, settling gently into place.
+      float eased = 1.0f - (1.0f - t) * (1.0f - t) * (1.0f - t);
+      {
+        Window::UpdateLock lock(mWindow);
+        for (TaskButton &button : mButtonList) {
+          button.StepAnimation(t >= 1.0f ? 1.0f : eased);
+        }
+      }
+      if (t >= 1.0f) {
+        mWindow->ClearCallbackTimer(mAnimationTimer);
+        mAnimationTimer = 0;
+      }
+      this->Repaint();
+      return 0;
+    }
+    break;
   }
 
   mEventHandler->HandleMessage(window, message, wParam, lParam);

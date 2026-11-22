@@ -454,7 +454,10 @@ int StartLitestep(HINSTANCE hInst, WORD wStartFlags, LPCTSTR pszAltConfigFile)
         // if hr == S_FALSE the user aborted during startup
         if (hr == S_OK)
         {
-            PromptForShellConfiguration(exePathForShellPrompt);
+            if ((wStartFlags & LSF_OVERLAY_MODE) == 0)
+            {
+                PromptForShellConfiguration(exePathForShellPrompt);
+            }
 
             nReturn = liteStep.Run();
             hr = liteStep.Stop();
@@ -545,7 +548,9 @@ HRESULT CLiteStep::Start(HINSTANCE hInstance, WORD wStartFlags)
     hr = OleInitialize(NULL);
     const bool overlayForcedByArgs = ((wStartFlags & LSF_OVERLAY_MODE) != 0);
     const bool closeExplorerForced = ((wStartFlags & LSF_CLOSE_EXPLORER) != 0);
-    const bool rcOverlayDefault = GetRCBoolW(L"LSOverlayMode", FALSE);
+    // GetRCBoolW(key, x) returns x when the key exists and !x when it does not, so it
+    // cannot express "default FALSE". Use GetRCBoolDefW for real defaults.
+    const bool rcOverlayDefault = GetRCBoolDefW(L"LSOverlayMode", FALSE) != FALSE;
 
     if (rcOverlayDefault && !overlayForcedByArgs && !closeExplorerForced)
     {
@@ -700,7 +705,12 @@ HRESULT CLiteStep::Start(HINSTANCE hInstance, WORD wStartFlags)
     //
     if (SUCCEEDED(hr))
     {
-        hr = _InitServices(!bUnderExplorer && GetRCBoolW(L"LSSetAsShell", TRUE));
+        // Default TRUE: register as the shell window so a bare "explorer.exe" opens a
+        // file window instead of taking over the desktop and taskbar.
+        bool bSetAsShell = !bUnderExplorer && GetRCBoolDefW(L"LSSetAsShell", TRUE) != FALSE;
+        Logger::Log(L"Shell registration: overlay=%d underExplorer=%d setAsShell=%d.",
+            m_bOverlayMode ? 1 : 0, bUnderExplorer ? 1 : 0, bSetAsShell ? 1 : 0);
+        hr = _InitServices(bSetAsShell);
 
         if (SUCCEEDED(hr))
         {
@@ -1499,7 +1509,7 @@ LRESULT CLiteStep::_HandleSessionChange(DWORD dwCode, DWORD /* dwSession */)
     {
         LSPlaySystemSound(L"WindowsLogoff");
     }
-    else if (dwCode == WTS_SESSION_REMOTE_CONNECT || dwCode == WTS_SESSION_REMOTE_DISCONNECT)
+    else if (dwCode == WTS_REMOTE_CONNECT || dwCode == WTS_REMOTE_DISCONNECT)
     {
         Logger::Log(L"Remote session state changed (code=%u).", dwCode);
         _ScheduleUiRecycle(L"remote session change");
@@ -1886,11 +1896,17 @@ BOOL CLiteStep::_SetShellWindow(HWND hWnd) {
 
     if (fnSetShellWindow)
     {
+        HWND hPrevious = GetShellWindow();
+        SetLastError(0);
         bRet = fnSetShellWindow(hWnd);
+        DWORD dwError = GetLastError();
+        Logger::Log(L"SetShellWindow(%p) -> %d (error=%lu, previous=%p, now=%p).",
+            hWnd, bRet, dwError, hPrevious, GetShellWindow());
     }
     else
     {
         TRACE("SetShellWindow() not found");
+        Logger::Log(L"SetShellWindow() not found in user32.dll.");
     }
 
     return bRet;

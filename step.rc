@@ -1,409 +1,429 @@
-; LiteStep self-contained Windows 10/11 theme using the modern nModules suite
-; ------------------------------------------------------------------------------
+; ==============================================================================
+;  LiteStep Enhanced (metamorphosis) - PORT al motor TNG
+;  Original: Norman Kaczmarek, 2001 (OTS 2.0, modulos clasicos *NetLoadModule).
+;  Este port recrea el LOOK usando los modulos modernos de C:\LiteStepTNG.
+;  Solo usa claves/bangs que existen en este build (misma base que step.rc).
+; ==============================================================================
 LiteStepVersion "0.25.0"
 
-; convenience paths for popup shortcuts and helper commands
-SetEnv USERDOCS "$USERPROFILE$\Documents"
-SetEnv USERDL "$USERPROFILE$\Downloads"
-SetEnv USERMUSIC "$USERPROFILE$\Music"
-SetEnv USERPICTURES "$USERPROFILE$\Pictures"
+; ------------------------------------------------------------------------------
+;  PALETA  (identidad metamorphosis: dark + acento azul-acero)
+;  Referencia del Theme.rc original:
+;     fondos  ~ #000000 / #000058      texto ~ #FFFFFF
+;     acento  ~ #A8C0D0 (VWMForeColor / BorderColor, azul acero desaturado)
+;
+;  Valores FIELES al original (negro puro + acento azul-acero A8C0D0).
+;  Formato: #AARRGGBB (AA = alpha; FF opaco).
+; ------------------------------------------------------------------------------
+BarColor        #FF000000
+AccentColor     #FFA8C0D0
+BarHover        #FF14181C
 
-; load core experience modules
+; Derivadas (coherentes con la paleta original metamorphosis)
+BarPressed      #FF1E242A
+TextColor       #FFFFFFFF
+TextDim         #FFA8C0D0
+TextFaint       #FF7788A0
+HitColor        #01000000
+UIFont          "Segoe UI"
+IconFont        "Segoe Fluent Icons"
+ClockFont       "Consolas"
+BarHeight       48
+TopHeight       32
+
+; ------------------------------------------------------------------------------
+;  Modulos (identicos a step.rc: este set es el que existe en el build)
+; ------------------------------------------------------------------------------
 LoadModule $LiteStepDir$Core.dll
 LoadModule $LiteStepDir$Wallpaper.dll
 LoadModule $LiteStepDir$Desk.dll
 LoadModule $LiteStepDir$Popup.dll
 LoadModule $LiteStepDir$HotKey.dll
-LoadModule $LiteStepDir$Tray.dll
-LoadModule $LiteStepDir$Task.dll
-LoadModule $LiteStepDir$TaskSwitch.dll
+LoadModule $LiteStepDir$SysTray.dll
+LoadModule $LiteStepDir$TaskBar.dll
+LoadModule $LiteStepDir$TaskSwitcher.dll
 LoadModule $LiteStepDir$Label.dll
-LoadModule $LiteStepDir$Clock.dll
-LoadModule $LiteStepDir$MediaInfo.dll
 LoadModule $LiteStepDir$StartMenu.dll
-LoadModule $LiteStepDir$VWM.dll
-LoadModule $LiteStepDir$Calendar.dll
-LoadModule $LiteStepDir$Panels.dll
 
-; wallpaper defaults
-OnStartup !SetWallpaper "$LiteStepDir$themes\default\wallpaper\glass-bloom.jpg"
-OnStartup !SetWallpaperStyle 10 ; Fill
-
-; desktop rendering behaviour
+; ------------------------------------------------------------------------------
+;  Escritorio
+; ------------------------------------------------------------------------------
 nDeskTransitionEffect FadeOut
-nDeskTransitionDuration 450
-nDeskTransitionSquareSize 120
+nDeskTransitionDuration 300
 nDeskInvalidateAllOnUpdate true
 nDeskDontRenderWallpaper false
-*nDeskWorkArea primary 0 42 0 54
-OnStartup !nDeskSetWorkArea primary 0 42 0 54
-OnRefresh !nDeskSetWorkArea primary 0 42 0 54
-OnStartup !PanelsRefresh
-OnRefresh !PanelsRefresh
+*nDeskWorkArea primary 0 32 0 48
+OnRefresh !nDeskSetWorkArea primary 0 32 0 48
+
+*nDeskOn RightClickUp None !PopupContext
+*nDeskOn MiddleClickUp None !PopupStartMenu
 
 ; ------------------------------------------------------------------------------
-; keyboard shortcuts
+;  Atajos
 ; ------------------------------------------------------------------------------
-*Hotkey WIN SPACE !Popup
-*Hotkey WIN X !PopupContext
-*Hotkey WIN V !PopupDesktops
-*Hotkey WIN CTRL LEFT !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('#^{LEFT}')"]
-*Hotkey WIN CTRL RIGHT !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('#^{RIGHT}')"]
-*Hotkey WIN TAB !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('#{TAB}')"]
-*Hotkey ALT BACKTICK !TaskSwitch
+*HotKey CTRLALT F12 !PopupStartMenu
+*HotKey WIN X       !PopupContext
+*HotKey CTRLALT R   !Recycle
 
-; ------------------------------------------------------------------------------
-; bottom taskbar, tray, and start affordances
-; ------------------------------------------------------------------------------
-*nTaskbar TaskbarMain
-TaskbarMainMonitor primary
-TaskbarMainX 96
-TaskbarMainY 100%-54
-TaskbarMainWidth 100%-320
-TaskbarMainHeight 54
-TaskbarMainAlwaysOnTop true
-TaskbarMainBlurBehind true
-TaskbarMainColor #DD101820
-TaskbarMainFont "Segoe UI"
-TaskbarMainFontSize 12
-TaskbarMainFontColor #FFFFFFFF
-TaskbarMainTextVerticalAlign Middle
-TaskbarMainPadding 12 6 12 6
-TaskbarMainPrimaryDirection Horizontal
-TaskbarMainStart BottomLeft
-TaskbarMainButtonWidth 178
-TaskbarMainButtonHeight 38
-TaskbarMainButtonMaxWidth 220
-TaskbarMainButtonMaxHeight 38
-TaskbarMainRowSpacing 4
-TaskbarMainOn MiddleClickUp !Recycle
-
-*nTray TrayDock
-TrayDockX 100%-220
-TrayDockY 100%-54
-TrayDockWidth 220
-TrayDockHeight 54
-TrayDockAlwaysOnTop true
-TrayDockColor #DD101820
-TrayDockFont "Segoe UI"
-TrayDockFontSize 11
-TrayDockFontColor #FFFFFFFF
-TrayDockIconSize 22
-TrayDockOverflowAction SizeLeft
-TrayDockOn RightClickUp None !PopupTray
-
-*nLabel ClockLabel
-ClockLabelX 100%-340
-ClockLabelY 100%-54
-ClockLabelWidth 120
-ClockLabelHeight 54
-ClockLabelAlwaysOnTop true
-ClockLabelColor #00101820
-ClockLabelFont "Segoe UI Semibold"
-ClockLabelFontSize 20
-ClockLabelFontColor #FFFFFFFF
-ClockLabelTextVerticalAlign Middle
-ClockLabelTextAlign Center
-ClockLabelText [Time('%a %b %d %H:%M')]
-ClockLabelOn LeftDoubleClick None !Execute [$WINDIR$\System32\control.exe timedate.cpl]
-
+; ==============================================================================
+;  BARRA INFERIOR   [Inicio][ ...... tareas ...... ][ tray ][ reloj ]
+; ==============================================================================
 *nLabel StartButton
-StartButtonX 12
-StartButtonY 100%-54
-StartButtonWidth 72
-StartButtonHeight 54
+StartButtonX 0
+StartButtonY 100%-48
+StartButtonWidth 56
+StartButtonHeight 48
 StartButtonAlwaysOnTop true
-StartButtonRoundedCorners 12
-StartButtonColor #FF1C2A34
-StartButtonFont "Segoe UI Semibold"
-StartButtonFontSize 18
-StartButtonFontColor #FFFFFFFF
-StartButtonTextVerticalAlign Middle
+StartButtonColor $BarColor$
+StartButtonFont $IconFont$
+StartButtonFontSize 20
+StartButtonFontColor $AccentColor$
 StartButtonTextAlign Center
-StartButtonText Start
+StartButtonTextVerticalAlign Middle
+StartButtonText ""
 StartButtonOn LeftClickUp None !PopupStartMenu
 StartButtonOn RightClickUp None !PopupContext
 
-; ------------------------------------------------------------------------------
-; top command bar with media controls, search, and virtual desktops
-; ------------------------------------------------------------------------------
-*nLabel TopBarBackground
-TopBarBackgroundX 0
-TopBarBackgroundY 0
-TopBarBackgroundWidth 100%
-TopBarBackgroundHeight 42
-TopBarBackgroundColor #CC101820
-TopBarBackgroundBlurBehind true
+*nTaskbar TaskbarMain
+TaskbarMainMonitor primary
+TaskbarMainX 56
+TaskbarMainY 100%-48
+TaskbarMainWidth 100%-436
+TaskbarMainHeight 48
+TaskbarMainAlwaysOnTop true
+TaskbarMainColor $BarColor$
+TaskbarMainPaddingLeft 4
+TaskbarMainPaddingTop 4
+TaskbarMainPaddingRight 4
+TaskbarMainPaddingBottom 4
+TaskbarMainPrimaryDirection Horizontal
+TaskbarMainStart TopLeft
+TaskbarMainColumnSpacing 4
+TaskbarMainButtonWidth 220
+TaskbarMainButtonMaxWidth 220
+TaskbarMainButtonHeight 40
+TaskbarMainButtonMaxHeight 40
+TaskbarMainButtonColor #00000000
+TaskbarMainButtonCornerRadiusX 4
+TaskbarMainButtonCornerRadiusY 4
+TaskbarMainButtonFont $UIFont$
+TaskbarMainButtonFontSize 12
+TaskbarMainButtonFontColor $TextDim$
+TaskbarMainButtonTextAlign Left
+TaskbarMainButtonTextVerticalAlign Middle
+TaskbarMainButtonTextOffsetLeft 40
+TaskbarMainButtonTextOffsetRight 8
+TaskbarMainButtonIconSize 24
+TaskbarMainButtonIconX 8
+TaskbarMainButtonIconY 8
+TaskbarMainButtonHoverColor $BarHover$
+TaskbarMainButtonHoverFontColor $TextColor$
+TaskbarMainButtonActiveColor $BarPressed$
+TaskbarMainButtonActiveFontColor $TextColor$
+TaskbarMainButtonActiveHoverColor #FF2E363B
+TaskbarMainButtonMinimizedFontColor $TextFaint$
+TaskbarMainButtonFlashingColor #FFB06A00
+TaskbarMainOn MiddleClickUp None !Recycle
+TaskbarMainThumbnailAnimate true
+TaskbarMainThumbnailAnimationDuration 160
+TaskbarMainThumbnailShowAnimationDuration 160
+TaskbarMainThumbnailSizeToButton false
+TaskbarMainThumbnailMaxWidth 320
+TaskbarMainThumbnailMaxHeight 200
+TaskbarMainThumbnailDistanceFromButton 8
+TaskbarMainThumbnailOffsetLeft 8
+TaskbarMainThumbnailOffsetTop 8
+TaskbarMainThumbnailOffsetRight 8
+TaskbarMainThumbnailOffsetBottom 8
+TaskbarMainThumbnailColor #F2101417
+TaskbarMainThumbnailOutlineColor $AccentColor$
+TaskbarMainThumbnailOutlineWidth 1
+TaskbarMainThumbnailCornerRadiusX 6
+TaskbarMainThumbnailCornerRadiusY 6
+TaskbarMainThumbnailFontColor #00000000
 
+*nTray TrayDock
+TrayDockX 100%-380
+TrayDockY 100%-48
+TrayDockWidth 240
+TrayDockHeight 48
+TrayDockAlwaysOnTop true
+TrayDockColor $BarColor$
+TrayDockPaddingLeft 8
+TrayDockPaddingTop 14
+TrayDockPaddingRight 8
+TrayDockPaddingBottom 14
+TrayDockStart TopRight
+TrayDockPrimaryDirection Horizontal
+TrayDockColumnSpacing 8
+TrayDockRowSpacing 2
+TrayDockOverflowAction SizeLeft
+TrayDockIconSize 20
+TrayDockOn RightClickUp None !PopupTray
+
+*nLabel ClockTime
+ClockTimeX 100%-140
+ClockTimeY 100%-48
+ClockTimeWidth 140
+ClockTimeHeight 26
+ClockTimeAlwaysOnTop true
+ClockTimeColor $BarColor$
+ClockTimeFont $ClockFont$
+ClockTimeFontSize 15
+ClockTimeFontColor $TextColor$
+ClockTimeTextAlign Center
+ClockTimeTextVerticalAlign Bottom
+ClockTimeText "[Time('%H:%M:%S')]h"
+ClockTimeOn LeftClickUp None !Execute [ms-settings:dateandtime]
+
+*nLabel ClockDate
+ClockDateX 100%-140
+ClockDateY 100%-22
+ClockDateWidth 140
+ClockDateHeight 22
+ClockDateAlwaysOnTop true
+ClockDateColor $BarColor$
+ClockDateFont $UIFont$
+ClockDateFontSize 10
+ClockDateFontColor $AccentColor$
+ClockDateTextAlign Center
+ClockDateTextVerticalAlign Top
+ClockDateText "[Time('%d. %B %Y')]"
+ClockDateOn LeftClickUp None !Execute [ms-settings:dateandtime]
+
+; ==============================================================================
+;  BARRA SUPERIOR (metamorphosis): [saludo] ...... [media winamp] [config][power]
+; ==============================================================================
+*nLabel DeskLabel
+DeskLabelX 16
+DeskLabelY 0
+DeskLabelWidth 320
+DeskLabelHeight 32
+DeskLabelAlwaysOnTop true
+DeskLabelColor $BarColor$
+DeskLabelFont $UIFont$
+DeskLabelFontSize 12
+DeskLabelFontColor $AccentColor$
+DeskLabelTextAlign Left
+DeskLabelTextVerticalAlign Middle
+DeskLabelText " .: litestep enhanced"
+DeskLabelOn LeftClickUp None !PopupStartMenu
+DeskLabelOn RightClickUp None !PopupContext
+
+*nLabel TopBar
+TopBarX 336
+TopBarY 0
+TopBarWidth 100%-540
+TopBarHeight 32
+TopBarAlwaysOnTop true
+TopBarColor $BarColor$
+TopBarFont $UIFont$
+TopBarFontSize 12
+TopBarFontColor $TextDim$
+TopBarTextAlign Center
+TopBarTextVerticalAlign Middle
+TopBarText "[Time('%A %d %B')]"
+TopBarOn RightClickUp None !PopupContext
+
+; --- Cluster media estilo winamp (prev / play / next) ---
 *nLabel MediaPrev
-MediaPrevX 20
-MediaPrevY 6
-MediaPrevWidth 36
-MediaPrevHeight 30
-MediaPrevColor #00101820
-MediaPrevFont "Segoe UI"
-MediaPrevFontSize 11
-MediaPrevFontColor #FFE1E8F0
-MediaPrevText <<
-MediaPrevTextVerticalAlign Middle
+MediaPrevX 100%-204
+MediaPrevY 0
+MediaPrevWidth 44
+MediaPrevHeight 32
+MediaPrevAlwaysOnTop true
+MediaPrevColor $BarColor$
+MediaPrevFont $IconFont$
+MediaPrevFontSize 12
+MediaPrevFontColor $TextDim$
 MediaPrevTextAlign Center
-MediaPrevOn LeftClickUp None !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('{MEDIA_PREV_TRACK}')"]
+MediaPrevTextVerticalAlign Middle
+MediaPrevText ""
+MediaPrevOn LeftClickUp None !KeyCombo MEDIA_PREV
 
-*nLabel MediaPlayPause
-MediaPlayPauseX 60
-MediaPlayPauseY 6
-MediaPlayPauseWidth 36
-MediaPlayPauseHeight 30
-MediaPlayPauseColor #00101820
-MediaPlayPauseFont "Segoe UI"
-MediaPlayPauseFontSize 11
-MediaPlayPauseFontColor #FFE1E8F0
-MediaPlayPauseText ||
-MediaPlayPauseTextVerticalAlign Middle
-MediaPlayPauseTextAlign Center
-MediaPlayPauseOn LeftClickUp None !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('{MEDIA_PLAY_PAUSE}')"]
+*nLabel MediaPlay
+MediaPlayX 100%-160
+MediaPlayY 0
+MediaPlayWidth 36
+MediaPlayHeight 32
+MediaPlayAlwaysOnTop true
+MediaPlayColor $BarColor$
+MediaPlayFont $IconFont$
+MediaPlayFontSize 12
+MediaPlayFontColor $AccentColor$
+MediaPlayTextAlign Center
+MediaPlayTextVerticalAlign Middle
+MediaPlayText ""
+MediaPlayOn LeftClickUp None !KeyCombo MEDIA_PLAY
 
 *nLabel MediaNext
-MediaNextX 100
-MediaNextY 6
+MediaNextX 100%-124
+MediaNextY 0
 MediaNextWidth 36
-MediaNextHeight 30
-MediaNextColor #00101820
-MediaNextFont "Segoe UI"
-MediaNextFontSize 11
-MediaNextFontColor #FFE1E8F0
-MediaNextText >>
-MediaNextTextVerticalAlign Middle
+MediaNextHeight 32
+MediaNextAlwaysOnTop true
+MediaNextColor $BarColor$
+MediaNextFont $IconFont$
+MediaNextFontSize 12
+MediaNextFontColor $TextDim$
 MediaNextTextAlign Center
-MediaNextOn LeftClickUp None !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('{MEDIA_NEXT_TRACK}')"]
+MediaNextTextVerticalAlign Middle
+MediaNextText ""
+MediaNextOn LeftClickUp None !KeyCombo MEDIA_NEXT
 
-*nLabel MediaTitle
-MediaTitleX 148
-MediaTitleY 0
-MediaTitleWidth 420
-MediaTitleHeight 42
-MediaTitleColor #00101820
-MediaTitleFont "Segoe UI"
-MediaTitleFontSize 14
-MediaTitleFontColor #FFEDF6FF
-MediaTitleTextVerticalAlign Middle
-MediaTitleTextEllipsis true
-MediaTitleText [MusicTrackArtist] - [MusicTrackTitle]
-MediaTitleOn LeftClickUp None !Execute [explorer.exe shell:AppsFolder\SpotifyAB.SpotifyMusic_zpdnekdrzrea0!App]
+*nLabel TopSettings
+TopSettingsX 100%-88
+TopSettingsY 0
+TopSettingsWidth 40
+TopSettingsHeight 32
+TopSettingsAlwaysOnTop true
+TopSettingsColor $BarColor$
+TopSettingsFont $IconFont$
+TopSettingsFontSize 13
+TopSettingsFontColor $TextDim$
+TopSettingsTextAlign Center
+TopSettingsTextVerticalAlign Middle
+TopSettingsText ""
+TopSettingsOn LeftClickUp None !Execute [ms-settings:]
 
-*nLabel SearchLauncher
-SearchLauncherX 580
-SearchLauncherY 0
-SearchLauncherWidth 160
-SearchLauncherHeight 42
-SearchLauncherColor #33101820
-SearchLauncherFont "Segoe UI"
-SearchLauncherFontSize 13
-SearchLauncherFontColor #FFD0DAE3
-SearchLauncherTextVerticalAlign Middle
-SearchLauncherTextAlign Center
-SearchLauncherText Search the web and apps
-SearchLauncherOn LeftClickUp None !Execute [explorer.exe "search-ms:"]
+*nLabel TopPower
+TopPowerX 100%-48
+TopPowerY 0
+TopPowerWidth 48
+TopPowerHeight 32
+TopPowerAlwaysOnTop true
+TopPowerColor $BarColor$
+TopPowerFont $IconFont$
+TopPowerFontSize 13
+TopPowerFontColor $TextDim$
+TopPowerTextAlign Center
+TopPowerTextVerticalAlign Middle
+TopPowerText ""
+TopPowerOn LeftClickUp None !PopupPower
 
-*nLabel DesktopPrev
-DesktopPrevX 760
-DesktopPrevY 6
-DesktopPrevWidth 32
-DesktopPrevHeight 30
-DesktopPrevColor #00101820
-DesktopPrevFont "Segoe UI"
-DesktopPrevFontSize 12
-DesktopPrevFontColor #FFE1E8F0
-DesktopPrevText <
-DesktopPrevTextVerticalAlign Middle
-DesktopPrevTextAlign Center
-DesktopPrevOn LeftClickUp None !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('#^{LEFT}')"]
+; ==============================================================================
+;  ESTILO DE MENUS (metamorphosis dark + borde acento)
+; ==============================================================================
+MenuStyleColor #F2101417
+MenuStyleCornerRadiusX 6
+MenuStyleCornerRadiusY 6
+MenuStylePaddingLeft 6
+MenuStylePaddingTop 6
+MenuStylePaddingRight 6
+MenuStylePaddingBottom 6
+MenuStyleItemSpacing 2
+MenuStyleWidth 260
+MenuStyleMaxWidth 420
+MenuStyleConfineToMonitor true
+MenuStyleConfineToWorkArea true
+MenuStyleFontColor #00000000
 
-*nLabel DesktopIndicator
-DesktopIndicatorX 796
-DesktopIndicatorY 0
-DesktopIndicatorWidth 120
-DesktopIndicatorHeight 42
-DesktopIndicatorColor #00101820
-DesktopIndicatorFont "Segoe UI Semibold"
-DesktopIndicatorFontSize 14
-DesktopIndicatorFontColor #FFEDF6FF
-DesktopIndicatorTextVerticalAlign Middle
-DesktopIndicatorTextAlign Center
-DesktopIndicatorText Desk: [VWMCurrentDesk]
-DesktopIndicatorOn LeftClickUp None !PopupDesktops
+MenuStyleItemHeight 30
+MenuStyleItemColor #00000000
+MenuStyleItemCornerRadiusX 3
+MenuStyleItemCornerRadiusY 3
+MenuStyleItemFont $UIFont$
+MenuStyleItemFontSize 12
+MenuStyleItemFontColor $TextColor$
+MenuStyleItemTextOffsetLeft 14
+MenuStyleItemTextOffsetRight 8
+MenuStyleItemTextVerticalAlign Middle
+MenuStyleItemIconSize 16
+MenuStyleItemIconX 10
+MenuStyleItemIconY 7
+MenuStyleItemHoverColor #FF2A3338
+MenuStyleItemHoverFontColor $TextColor$
 
-*nLabel DesktopNext
-DesktopNextX 916
-DesktopNextY 6
-DesktopNextWidth 32
-DesktopNextHeight 30
-DesktopNextColor #00101820
-DesktopNextFont "Segoe UI"
-DesktopNextFontSize 12
-DesktopNextFontColor #FFE1E8F0
-DesktopNextText >
-DesktopNextTextVerticalAlign Middle
-DesktopNextTextAlign Center
-DesktopNextOn LeftClickUp None !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('#^{RIGHT}')"]
+MenuStyleFolderItemHeight 30
+MenuStyleFolderItemColor #00000000
+MenuStyleFolderItemCornerRadiusX 3
+MenuStyleFolderItemCornerRadiusY 3
+MenuStyleFolderItemFont $UIFont$
+MenuStyleFolderItemFontSize 12
+MenuStyleFolderItemFontColor $TextColor$
+MenuStyleFolderItemTextOffsetLeft 14
+MenuStyleFolderItemTextVerticalAlign Middle
+MenuStyleFolderItemIconSize 16
+MenuStyleFolderItemIconX 10
+MenuStyleFolderItemIconY 7
+MenuStyleFolderItemHoverColor #FF2A3338
+MenuStyleFolderItemOpenColor #FF222A2E
 
-*nLabel NotificationCenter
-NotificationCenterX 960
-NotificationCenterY 0
-NotificationCenterWidth 130
-NotificationCenterHeight 42
-NotificationCenterColor #00101820
-NotificationCenterFont "Segoe UI"
-NotificationCenterFontSize 13
-NotificationCenterFontColor #FFD0DAE3
-NotificationCenterTextVerticalAlign Middle
-NotificationCenterTextAlign Center
-NotificationCenterText Notifications
-NotificationCenterOn LeftClickUp None !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('#a')"]
-NotificationCenterOn RightClickUp None !PopupContext
+MenuStyleInfoItemHeight 28
+MenuStyleInfoItemColor #00000000
+MenuStyleInfoItemFont "Segoe UI Semibold"
+MenuStyleInfoItemFontSize 11
+MenuStyleInfoItemFontColor $AccentColor$
+MenuStyleInfoItemTextOffsetLeft 12
+
+MenuStyleSeparatorItemHeight 1
+MenuStyleSeparatorItemColor $BarPressed$
+
+MenuStyleShowAnimationDuration 160
+MenuStyleShowAnimationOffset 10
+
+MenuDownGroup MenuStyle
+MenuDownShowAnimationOffset -10
+
+MenuIconsGroup MenuStyle
+MenuIconsItemTextOffsetLeft 36
+MenuIconsFolderItemTextOffsetLeft 36
+
+nPopupGroup MenuStyle
+PopupStartMenuGroup MenuStyle
+PopupStartMenuProgramasGroup MenuIcons
+PopupStartMenuRecientesGroup MenuIcons
+PopupStartMenuEquipoGroup MenuIcons
 
 ; ------------------------------------------------------------------------------
-; start menu entries and styling
+;  Menu Inicio
 ; ------------------------------------------------------------------------------
-PopupStartMenuWidth 280
-PopupStartMenuMaxWidth 340
-PopupStartMenuPadding 18 14 18 18
-PopupStartMenuItemSpacing 6
-PopupStartMenuAlwaysOnTop true
-PopupStartMenuBlurBehind true
-PopupStartMenuConfineToMonitor true
-PopupStartMenuShadowPreset Win11
-PopupStartMenuItemFont "Segoe UI"
-PopupStartMenuItemFontSize 14
-PopupStartMenuItemFontColor #FFE8F0FA
-PopupStartMenuItemTextOffsetLeft 20
-PopupStartMenuItemTextVerticalAlign Middle
-PopupStartMenuItemColor #22101820
-PopupStartMenuItemCornerRadius 14
-PopupStartMenuItemHoverColor #55327FFE
-PopupStartMenuItemHoverFontColor #FFFFFFFF
-PopupStartMenuItemHoverCornerRadius 14
-PopupStartMenuItemHoverTextOffsetLeft 20
-PopupStartMenuItemHoverTextVerticalAlign Middle
+*PopupStartMenu "Programas" !PopupPrograms
+*PopupStartMenu "Recientes" !PopupRecentDocuments
+*PopupStartMenu "Equipo" !PopupMyComputer
+*PopupStartMenu !Separator
+*PopupStartMenu "Explorador de archivos" !Execute [explorer.exe]
+*PopupStartMenu "Terminal" !Execute [wt.exe]
+*PopupStartMenu "Configuración" !Execute [ms-settings:]
+*PopupStartMenu "Ejecutar..." !Run
+*PopupStartMenu !Separator
+*PopupStartMenu "Bloquear" !Execute [rundll32.exe user32.dll,LockWorkStation]
+*PopupStartMenu "Cerrar sesión" !Logoff
+*PopupStartMenu "Reiniciar" !Execute [shutdown.exe /r /t 0]
+*PopupStartMenu "Apagar" !Execute [shutdown.exe /s /t 0]
 
-*PopupStartMenu "Programs" !PopupPrograms
-*PopupStartMenu "Recent" !PopupRecentDocuments
-*PopupStartMenu "Settings" !Execute [ms-settings:]
-*PopupStartMenu "Network" !PopupNetwork
-*PopupStartMenu "Command Prompt" !Execute [$WINDIR$\System32\cmd.exe]
-*PopupStartMenu "Run" !PopupRun
-*PopupStartMenu "Shutdown" !PopupPower
-*PopupStartMenu "Recycle" !PopupRecycleBin
-
-; desktop and context popups
 ; ------------------------------------------------------------------------------
-HotlistName "Glassboard"
-*nDeskOn RIGHTUP NONE !PopupContext
-PopupIcons
-PopupAdaptiveWidth
-PopupMinWidth 200
-PopupMaxWidth 360
-PopupNoBevel
-
-*PopupContext "File Explorer" !Execute [$WINDIR$\explorer.exe]
-*PopupContext "Terminal" !Execute [wt.exe]
-*PopupContext "Settings" !Execute [ms-settings:]
-*PopupContext !Separator
-*PopupContext "Task Manager" !Execute [$WINDIR$\System32\Taskmgr.exe]
-*PopupContext "Run..." !PopupRun
-*PopupContext !Separator
-*PopupContext "Restart LiteStep" !Recycle
-
-*PopupTray "Notifications" !Execute [ms-actioncenter:]
-*PopupTray "Network & Internet" !Execute [ms-settings:network]
-*PopupTray "Task Manager" !Execute [$WINDIR$\System32\Taskmgr.exe]
-
-*PopupDesktops "Desktop 1" !VWMGoToDesktop 1
-*PopupDesktops "Desktop 2" !VWMGoToDesktop 2
-*PopupDesktops "Desktop 3" !VWMGoToDesktop 3
-*PopupDesktops !Separator
-*PopupDesktops "New Desktop" !VWMCreateDesktop
-*PopupDesktops "Close Desktop" !VWMDestroyDesktop
-
-; retain a lightweight master popup
-*Popup "Start" !Popup
-*Popup "Desktops" !PopupDesktops
-*Popup "Context" !PopupContext
+;  Menus nPopup
+; ------------------------------------------------------------------------------
+*Popup !New !PopupContext
+*Popup !Info "litestep enhanced"
+*Popup "Explorador de archivos" !Execute [explorer.exe]
+*Popup "Terminal" !Execute [wt.exe]
+*Popup "Administrador de tareas" !Execute [taskmgr.exe]
+*Popup "Configuración" !Execute [ms-settings:]
 *Popup !Separator
-*Popup "Recycle LiteStep" !Recycle
+*Popup "Programas" !PopupPrograms MenuIcons
+*Popup "Personalizar fondo" !Execute [ms-settings:personalization-background]
+*Popup "Pantalla" !Execute [ms-settings:display]
+*Popup !Separator
+*Popup "Recargar LiteStep" !Recycle
+*Popup "Editar step.rc" !Execute [notepad.exe "$LiteStepDir$step.rc"]
+*Popup ~New
 
+*Popup !New !PopupTray
+*Popup !Separator
+*Popup "Red e Internet" !Execute [ms-settings:network]
+*Popup "Sonido" !Execute [ms-settings:sound]
+*Popup "Bluetooth" !Execute [ms-settings:bluetooth]
+*Popup !Separator
+*Popup "Administrador de tareas" !Execute [taskmgr.exe]
+*Popup ~New
 
-; ------------------------------------------------------------------------------
-; layout containers
-; ------------------------------------------------------------------------------
-*PanelsGridPanel BottomBar StartButton TaskbarMain ClockLabel TrayDock
-PanelsBottomBarX 0
-PanelsBottomBarY 100%-54
-PanelsBottomBarWidth 100%
-PanelsBottomBarHeight 54
-PanelsBottomBarPadding 16 8 16 8
-PanelsBottomBarColumnSpacing 8
-PanelsBottomBarGridUnit 4
-PanelsBottomBarColumns 96,*,120,220
-PanelsBottomBarChildStartButtonColumn 0
-PanelsBottomBarChildStartButtonRow 0
-PanelsBottomBarChildStartButtonHAlign Center
-PanelsBottomBarChildStartButtonVAlign Stretch
-PanelsBottomBarChildTaskbarMainColumn 1
-PanelsBottomBarChildTaskbarMainRow 0
-PanelsBottomBarChildTaskbarMainMargin 8,0,8,0
-PanelsBottomBarChildTaskbarMainHAlign Stretch
-PanelsBottomBarChildTaskbarMainVAlign Stretch
-PanelsBottomBarChildClockLabelColumn 2
-PanelsBottomBarChildClockLabelRow 0
-PanelsBottomBarChildClockLabelHAlign Center
-PanelsBottomBarChildClockLabelVAlign Stretch
-PanelsBottomBarChildTrayDockColumn 3
-PanelsBottomBarChildTrayDockRow 0
-PanelsBottomBarChildTrayDockHAlign Stretch
-PanelsBottomBarChildTrayDockVAlign Stretch
-
-*PanelsGridPanel TopBar TopBarBackground MediaPrev MediaPlayPause MediaNext MediaTitle SearchLauncher DesktopPrev DesktopIndicator DesktopNext NotificationCenter
-PanelsTopBarX 0
-PanelsTopBarY 0
-PanelsTopBarWidth 100%
-PanelsTopBarHeight 42
-PanelsTopBarPadding 16 4 16 4
-PanelsTopBarColumnSpacing 8
-PanelsTopBarGridUnit 4
-PanelsTopBarColumns 36,36,36,*,160,32,120,32,130
-PanelsTopBarChildTopBarBackgroundColumn 0
-PanelsTopBarChildTopBarBackgroundRow 0
-PanelsTopBarChildTopBarBackgroundColumnSpan 9
-PanelsTopBarChildTopBarBackgroundHAlign Stretch
-PanelsTopBarChildTopBarBackgroundVAlign Stretch
-PanelsTopBarChildMediaPrevColumn 0
-PanelsTopBarChildMediaPrevHAlign Stretch
-PanelsTopBarChildMediaPrevVAlign Stretch
-PanelsTopBarChildMediaPlayPauseColumn 1
-PanelsTopBarChildMediaPlayPauseHAlign Stretch
-PanelsTopBarChildMediaPlayPauseVAlign Stretch
-PanelsTopBarChildMediaNextColumn 2
-PanelsTopBarChildMediaNextHAlign Stretch
-PanelsTopBarChildMediaNextVAlign Stretch
-PanelsTopBarChildMediaTitleColumn 3
-PanelsTopBarChildMediaTitleHAlign Stretch
-PanelsTopBarChildMediaTitleVAlign Stretch
-PanelsTopBarChildSearchLauncherColumn 4
-PanelsTopBarChildSearchLauncherHAlign Stretch
-PanelsTopBarChildSearchLauncherVAlign Stretch
-PanelsTopBarChildDesktopPrevColumn 5
-PanelsTopBarChildDesktopPrevHAlign Stretch
-PanelsTopBarChildDesktopPrevVAlign Stretch
-PanelsTopBarChildDesktopIndicatorColumn 6
-PanelsTopBarChildDesktopIndicatorHAlign Stretch
-PanelsTopBarChildDesktopIndicatorVAlign Stretch
-PanelsTopBarChildDesktopNextColumn 7
-PanelsTopBarChildDesktopNextHAlign Stretch
-PanelsTopBarChildDesktopNextVAlign Stretch
-PanelsTopBarChildNotificationCenterColumn 8
-PanelsTopBarChildNotificationCenterHAlign Stretch
-PanelsTopBarChildNotificationCenterVAlign Stretch
-; End of self-contained theme
-
-
+*Popup !New !PopupPower MenuDown
+*Popup "Bloquear" !Execute [rundll32.exe user32.dll,LockWorkStation]
+*Popup "Suspender" !Execute [rundll32.exe powrprof.dll,SetSuspendState 0,1,0]
+*Popup "Cerrar sesión" !Logoff
+*Popup !Separator
+*Popup "Reiniciar" !Execute [shutdown.exe /r /t 0]
+*Popup "Apagar" !Execute [shutdown.exe /s /t 0]
+*Popup ~New

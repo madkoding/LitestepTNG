@@ -44,6 +44,11 @@ public:
     // Called by items, children, or the owner.
     virtual void Close();
 
+    // While suspended, popups ignore losing the focus and clicks outside them. Used while
+    // an item shows a system context menu, which would otherwise count as "outside" and
+    // close (and free) the popup that is showing it.
+    static void SuspendAutoClose(bool suspend);
+
     //
     LPCTSTR GetBang();
 

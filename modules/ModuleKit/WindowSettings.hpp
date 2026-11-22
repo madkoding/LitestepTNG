@@ -45,11 +45,23 @@ public:
     // True to register this drawable with the core. Not read from RC files. Default: false
     bool registerWithCore;
 
+    // Entry animation for top-level windows: fade-in duration in ms. Default: 0 (disabled)
+    int showAnimationDuration;
+
+    // Pixels the window slides vertically while fading in. Positive = rises from below,
+    // negative = drops from above. Default: 0
+    int showAnimationOffset;
+
     // The text to display. Default: "" (blank)
     TCHAR text[MAX_LINE_LENGTH];
 
     // How to anti-alias the text.
     D2D1_TEXT_ANTIALIAS_MODE textAntiAliasMode;
+
+    // True to render all text in upper case. Read from "TextUppercase", with a
+    // global "TextUppercase" fallback so one line applies to every drawable.
+    // Default: false
+    bool textUppercase;
 
     // The width of the window. Default: 100dip
     Distance width;

@@ -41,7 +41,10 @@ WindowSettings::WindowSettings()
     , height(100)
     , hidden(false)
     , registerWithCore(false)
+    , showAnimationDuration(0)
+    , showAnimationOffset(0)
     , textAntiAliasMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE)
+    , textUppercase(false)
     , width(100)
     , x(0)
     , y(0)
@@ -83,10 +86,16 @@ void WindowSettings::Load(const Settings *settings, const WindowSettings *defaul
   this->height = settings->GetDistance(L"Height", defaults->height);
   this->hidden = settings->GetBool(L"Hidden", defaults->hidden);
   this->registerWithCore = defaults->registerWithCore;
+  this->showAnimationDuration = settings->GetInt(L"ShowAnimationDuration", defaults->showAnimationDuration);
+  this->showAnimationOffset = settings->GetInt(L"ShowAnimationOffset", defaults->showAnimationOffset);
   settings->GetString(L"Text", buf, _countof(buf), defaults->text);
   StringCchCopy(this->text, _countof(this->text), buf);
   settings->GetString(L"TextAntiAliasMode", buf, _countof(buf), textAntiAliasModeMap.GetByA(defaults->textAntiAliasMode, L"ClearType"));
   this->textAntiAliasMode = ParseAntiAliasMode(buf);
+  // Per-element "TextUppercase" with a global fallback: setting the bare
+  // "TextUppercase" key once makes every drawable render upper case.
+  this->textUppercase = settings->GetBool(L"TextUppercase",
+    defaults->textUppercase || (GetRCBoolDefW(L"TextUppercase", FALSE) != FALSE));
   this->width = settings->GetDistance(L"Width", defaults->width);
   this->x = settings->GetDistance(L"X", defaults->x);
   this->y = settings->GetDistance(L"Y", defaults->y);

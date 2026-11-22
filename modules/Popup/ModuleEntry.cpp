@@ -23,6 +23,8 @@
 #include "../Utilities/AlgorithmExtension.h"
 #include "../Utilities/StringUtils.h"
 
+#include <Shlwapi.h>
+
 #include <map>
 #include <strsafe.h>
 #include <unordered_map>
@@ -125,6 +127,7 @@ EXPORT_CDECL(void) quitModule(HINSTANCE instance)
         delete popup.second;
     }
     LiteStep::RemoveBangCommand(L"!PopupDynamicFolder");
+    LiteStep::RemoveBangCommand(L"!ThemeSwitch");
     gLSModule.DeInitalize();
 }
 
@@ -156,6 +159,7 @@ LRESULT WINAPI LSMessageHandler(HWND window, UINT message, WPARAM wParam, LPARAM
         }
         gRootPopups.clear();
         LiteStep::RemoveBangCommand(L"!PopupDynamicFolder");
+        LiteStep::RemoveBangCommand(L"!ThemeSwitch");
         LoadPopups();
         return 0;
     }
@@ -177,6 +181,52 @@ void __cdecl HandlePopupBang(HWND /* owner */, LPCTSTR bang, LPCTSTR args) {
       popup->Show();
     }
   }
+}
+
+
+/// <summary>
+/// !ThemeSwitch <name> -- selects $LiteStepDir$themes\<name>\theme.rc and recycles.
+/// Writes $LiteStepDir$theme-select.rc, which step.rc includes before the theme.
+/// </summary>
+static void ThemeSwitchBang(HWND, LPCTSTR args)
+{
+    WCHAR name[MAX_PATH] = L"", lsDir[MAX_PATH], themeRc[MAX_PATH], selectFile[MAX_PATH];
+    if (!LiteStep::GetToken(args, name, nullptr, FALSE) || name[0] == L'\0' ||
+        wcspbrk(name, L"\\/:*?\"<>|") != nullptr)
+    {
+        return;
+    }
+    if (!LiteStep::LSGetLitestepPathW(lsDir, _countof(lsDir)))
+    {
+        return;
+    }
+    PathAddBackslashW(lsDir);
+
+    StringCchPrintfW(themeRc, _countof(themeRc), L"%sthemes\\%s\\theme.rc", lsDir, name);
+    if (!PathFileExistsW(themeRc))
+    {
+        TRACEW(L"!ThemeSwitch: %ls not found", themeRc);
+        return;
+    }
+
+    // UTF-8 without BOM, same as the rest of the .rc files.
+    char line[MAX_PATH * 3];
+    char utf8Name[MAX_PATH * 3];
+    WideCharToMultiByte(CP_UTF8, 0, name, -1, utf8Name, sizeof(utf8Name), nullptr, nullptr);
+    StringCchPrintfA(line, _countof(line), "ThemeName \"%s\"\r\n", utf8Name);
+
+    StringCchPrintfW(selectFile, _countof(selectFile), L"%stheme-select.rc", lsDir);
+    HANDLE file = CreateFileW(selectFile, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (file == INVALID_HANDLE_VALUE)
+    {
+        return;
+    }
+    DWORD written = 0;
+    WriteFile(file, line, (DWORD)strlen(line), &written, nullptr);
+    CloseHandle(file);
+
+    // Posts LM_RECYCLE, so it is safe even though this module is about to be unloaded.
+    LiteStep::LSExecute(nullptr, L"!Recycle", SW_SHOWNORMAL);
 }
 
 
@@ -208,6 +258,10 @@ void LoadPopups()
     AddPopup(new ContentPopup(ContentPopup::ContentSource::RECENT_DOCUMENTS, L"Recent Documents", L"!PopupRecentDocuments", L"nPopup"));
     AddPopup(new ContentPopup(ContentPopup::ContentSource::RECYCLE_BIN, L"Recycle Bin", L"!PopupRecycleBin", L"nPopup"));
     AddPopup(new ContentPopup(ContentPopup::ContentSource::START_MENU, L"Start Menu", L"!PopupStartMenu", L"nPopup"));
+    AddPopup(new ContentPopup(ContentPopup::ContentSource::THEMES, L"Temas", L"!PopupThemes", L"nPopup"));
+    AddPopup(new ContentPopup(ContentPopup::ContentSource::PINNED, L"Pinned", L"!PopupPinned", L"nPopup"));
+    AddPopup(new ContentPopup(ContentPopup::ContentSource::APPS, L"Apps", L"!PopupApps", L"nPopup"));
+    LiteStep::AddBangCommand(L"!ThemeSwitch", ThemeSwitchBang);
 
     // Load .rc popups
     while (LoadPopup(f, PopupLevel::Root, popup, L"nPopup"))
@@ -533,6 +587,21 @@ PopupLineType ProcessPopupLine(LPCTSTR line, ContentPopup::ContentSource & sourc
                 source = ContentPopup::ContentSource::START_MENU;
                 type = PopupLineType::Content;
             }
+            else if (_wcsicmp(token, L"!PopupThemes") == 0)
+            {
+                source = ContentPopup::ContentSource::THEMES;
+                type = PopupLineType::Content;
+            }
+            else if (_wcsicmp(token, L"!PopupPinned") == 0)
+            {
+                source = ContentPopup::ContentSource::PINNED;
+                type = PopupLineType::Content;
+            }
+            else if (_wcsicmp(token, L"!PopupApps") == 0)
+            {
+                source = ContentPopup::ContentSource::APPS;
+                type = PopupLineType::Content;
+            }
             else if (_wcsnicmp(token, L"!PopupFolder:", _countof("!PopupFolder:") - 1) == 0)
             {
                 source = ContentPopup::ContentSource::PATH;
@@ -554,7 +623,13 @@ PopupLineType ProcessPopupLine(LPCTSTR line, ContentPopup::ContentSource & sourc
             }
 
             // Everything, save commands, may be followed by a prefix.
-            if (type != PopupLineType::Command)
+            if (type == PopupLineType::ContentPath || type == PopupLineType::ContentPathDynamic)
+            {
+                // The path took the rest of the line (it may contain spaces), so there is no
+                // prefix token after it; reading one used to return a piece of the path.
+                prefix[0] = L'\0';
+            }
+            else if (type != PopupLineType::Command)
             {
                 if (LiteStep::GetToken(linePointer, token, &linePointer, FALSE) != FALSE)
                 {

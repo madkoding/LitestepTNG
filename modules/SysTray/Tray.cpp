@@ -10,6 +10,8 @@
 
 #include "../ModuleKit/LiteStep.h"
 #include "../ModuleKit/LSModule.hpp"
+#include "../ModuleKit/MonitorInfo.hpp"
+#include "../CoreCom/Core.h"
 
 #include "../Utilities/GUID.h"
 #include "../Utilities/Math.h"
@@ -98,15 +100,21 @@ void Tray::LoadSettings() {
 
   WindowSettings *drawingSettings = mWindow->GetDrawingSettings();
 
-  // TODO::FIX ME!
+  // Evaluate relative distances ("100%-380") against the same reference Window::SetPosition
+  // uses for top-level windows: the primary monitor. Evaluating against 0 turned "100%-380"
+  // into -380, so an overflowing tray (OverflowAction Size*) jumped off-screen.
+  const MonitorInfo::Monitor &primary = nCore::FetchMonitorInfo().GetMonitor(0);
+  const float refWidth = (float)primary.width;
+  const float refHeight = (float)primary.height;
+
   mTargetSize = D2D1::SizeF(
-    drawingSettings->width.Evaluate(0),
-    drawingSettings->height.Evaluate(0)
+    drawingSettings->width.Evaluate(refWidth),
+    drawingSettings->height.Evaluate(refHeight)
   );
 
   mTargetPosition = D2D1::Point2F(
-    drawingSettings->x.Evaluate(0),
-    drawingSettings->y.Evaluate(0)
+    drawingSettings->x.Evaluate(refWidth),
+    drawingSettings->y.Evaluate(refHeight)
   );
 
   mOverflowAction = mSettings->GetEnum<OverflowAction>(L"OverflowAction", {

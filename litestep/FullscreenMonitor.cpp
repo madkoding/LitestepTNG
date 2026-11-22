@@ -23,6 +23,9 @@
 #include "../lsapi/lsapi.h"
 #include "../utility/debug.hpp"
 #include <functional>
+#include <dwmapi.h>
+
+#pragma comment(lib, "dwmapi.lib")
 
 
 //
@@ -49,6 +52,30 @@ FullscreenMonitor::~FullscreenMonitor()
 HMONITOR FullscreenMonitor::_FullScreenGetMonitorHelper(HWND hWnd)
 {
     if (!IsWindow(hWnd) || !IsWindowVisible(hWnd) || IsIconic(hWnd))
+    {
+        return nullptr;
+    }
+
+    // Cloaked windows are not on screen even though they are "visible" and often
+    // monitor-sized: suspended UWP views, the Start menu and Search hosts.
+    DWORD dwCloaked = 0;
+    if (SUCCEEDED(DwmGetWindowAttribute(hWnd, DWMWA_CLOAKED, &dwCloaked, sizeof(dwCloaked))) &&
+        dwCloaked != 0)
+    {
+        return nullptr;
+    }
+
+    // The shell's own desktop is not a fullscreen application. This matters when
+    // LiteStep runs on top of Explorer: without it, clicking the desktop counts as
+    // "fullscreen activated" and every module drops behind the desktop.
+    if (hWnd == GetShellWindow())
+    {
+        return nullptr;
+    }
+
+    wchar_t wzClass[64] = { 0 };
+    GetClassNameW(hWnd, wzClass, _countof(wzClass));
+    if (_wcsicmp(wzClass, L"Progman") == 0 || _wcsicmp(wzClass, L"WorkerW") == 0)
     {
         return nullptr;
     }

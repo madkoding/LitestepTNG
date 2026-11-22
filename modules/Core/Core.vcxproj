@@ -111,37 +111,41 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Link>
       <AdditionalLibraryDirectories>$(ProjectDir)..\External\v8\bin\$(Configuration)_$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>v8.lib;Ws2_32.lib;Winmm.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;Winmm.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
       <AdditionalLibraryDirectories>$(ProjectDir)..\External\v8\bin\$(Configuration)_$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>v8.lib;Ws2_32.lib;Winmm.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;Winmm.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Link>
       <AdditionalLibraryDirectories>$(ProjectDir)..\External\v8\bin\$(Configuration)_$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>v8.lib;Ws2_32.lib;Winmm.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;Winmm.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX|Win32'">
     <Link>
       <AdditionalLibraryDirectories>$(ProjectDir)..\External\v8\bin\$(Configuration)_$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>v8.lib;Ws2_32.lib;Winmm.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;Winmm.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <PreprocessorDefinitions>_ENFORCE_MATCHING_ALLOCATORS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(ProjectDir)..\External\v8\bin\$(Configuration)_$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>v8.lib;Ws2_32.lib;Winmm.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;Winmm.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_AVX|x64'">
     <Link>
       <AdditionalLibraryDirectories>$(ProjectDir)..\External\v8\bin\$(Configuration)_$(Platform);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>v8.lib;Ws2_32.lib;Winmm.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;Winmm.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -164,10 +168,6 @@
     <ClCompile Include="MessageManager.cpp" />
     <ClCompile Include="ModuleEntry.cpp" />
     <ClCompile Include="ParsedText.cpp" />
-    <ClCompile Include="Scripting.cpp" />
-    <ClCompile Include="ScriptingEvents.cpp" />
-    <ClCompile Include="ScriptingLSCore.cpp" />
-    <ClCompile Include="ScriptingNCore.cpp" />
     <ClCompile Include="TextFunctions.cpp" />
     <ClCompile Include="WindowRegistrar.cpp" />
   </ItemGroup>
@@ -176,9 +176,6 @@
     <ResourceCompile Include="Core.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\External\v8\v8.vcxproj">
-      <Project>{3c70e163-9964-4164-8e26-f2c850905d0f}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\CoreCom\CoreCom.vcxproj">
       <Project>{66f96ff8-fec5-455a-beac-3975db89a772}</Project>
     </ProjectReference>
