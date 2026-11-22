@@ -12,6 +12,7 @@
 #include "Taskbar.hpp"
 #include "TaskButton.hpp"
 #include <shellapi.h>
+#include <cmath>
 
 extern BOOL gActiveWindowTracking;
 
@@ -118,7 +119,48 @@ void TaskButton::SetProgressValue(USHORT /* progress */) {}
 /// Moves and resizes the taaskbutton.
 /// </summary>
 void TaskButton::Reposition(FLOAT x, FLOAT y, FLOAT width, FLOAT height) {
+  mCurrentRect[0] = x; mCurrentRect[1] = y; mCurrentRect[2] = width; mCurrentRect[3] = height;
   mWindow->SetPosition(x, y, width, height);
+}
+
+
+/// <summary>
+/// Sets where the button belongs. Without animation it jumps there. With animation an
+/// existing button starts from wherever it is now (so a layout change in the middle of
+/// an animation continues smoothly) and a new button grows out of its final position.
+/// </summary>
+void TaskButton::SetTarget(FLOAT x, FLOAT y, FLOAT width, FLOAT height, bool animate) {
+  mTargetRect[0] = x; mTargetRect[1] = y; mTargetRect[2] = width; mTargetRect[3] = height;
+
+  if (!animate) {
+    mPlaced = true;
+    Reposition(x, y, width, height);
+    return;
+  }
+
+  if (!mPlaced) {
+    mPlaced = true;
+    Reposition(x, y, 1.0f, height);
+  }
+  for (int i = 0; i < 4; ++i) {
+    mFromRect[i] = mCurrentRect[i];
+  }
+}
+
+
+/// <summary>
+/// Moves the button to the given point of its animation. Whole pixels, so the skin and
+/// the pixel font stay sharp while it moves.
+/// </summary>
+void TaskButton::StepAnimation(float progress) {
+  FLOAT rect[4];
+  for (int i = 0; i < 4; ++i) {
+    rect[i] = floorf(mFromRect[i] + (mTargetRect[i] - mFromRect[i]) * progress + 0.5f);
+  }
+  if (progress >= 1.0f) {
+    for (int i = 0; i < 4; ++i) rect[i] = mTargetRect[i];
+  }
+  Reposition(rect[0], rect[1], rect[2], rect[3]);
 }
 
 
