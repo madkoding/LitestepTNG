@@ -260,6 +260,7 @@ void LoadPopups()
     AddPopup(new ContentPopup(ContentPopup::ContentSource::START_MENU, L"Start Menu", L"!PopupStartMenu", L"nPopup"));
     AddPopup(new ContentPopup(ContentPopup::ContentSource::THEMES, L"Temas", L"!PopupThemes", L"nPopup"));
     AddPopup(new ContentPopup(ContentPopup::ContentSource::PINNED, L"Pinned", L"!PopupPinned", L"nPopup"));
+    AddPopup(new ContentPopup(ContentPopup::ContentSource::APPS, L"Apps", L"!PopupApps", L"nPopup"));
     LiteStep::AddBangCommand(L"!ThemeSwitch", ThemeSwitchBang);
 
     // Load .rc popups
@@ -596,6 +597,11 @@ PopupLineType ProcessPopupLine(LPCTSTR line, ContentPopup::ContentSource & sourc
                 source = ContentPopup::ContentSource::PINNED;
                 type = PopupLineType::Content;
             }
+            else if (_wcsicmp(token, L"!PopupApps") == 0)
+            {
+                source = ContentPopup::ContentSource::APPS;
+                type = PopupLineType::Content;
+            }
             else if (_wcsnicmp(token, L"!PopupFolder:", _countof("!PopupFolder:") - 1) == 0)
             {
                 source = ContentPopup::ContentSource::PATH;
@@ -617,7 +623,13 @@ PopupLineType ProcessPopupLine(LPCTSTR line, ContentPopup::ContentSource & sourc
             }
 
             // Everything, save commands, may be followed by a prefix.
-            if (type != PopupLineType::Command)
+            if (type == PopupLineType::ContentPath || type == PopupLineType::ContentPathDynamic)
+            {
+                // The path took the rest of the line (it may contain spaces), so there is no
+                // prefix token after it; reading one used to return a piece of the path.
+                prefix[0] = L'\0';
+            }
+            else if (type != PopupLineType::Command)
             {
                 if (LiteStep::GetToken(linePointer, token, &linePointer, FALSE) != FALSE)
                 {

@@ -32,9 +32,15 @@ static HHOOK sOutsideClickHook = nullptr;
 // lParam of the WM_ACTIVATE we post for an outside click. A real deactivation carries a
 // window handle (or 0) there, never this value.
 static const LPARAM kOutsideClick = -1;
+// See Popup::SuspendAutoClose.
+static bool sAutoCloseSuspended = false;
+
+void Popup::SuspendAutoClose(bool suspend) {
+  sAutoCloseSuspended = suspend;
+}
 
 static LRESULT CALLBACK OutsideClickProc(int code, WPARAM wParam, LPARAM lParam) {
-  if (code == HC_ACTION && sOpenRootWindow != nullptr &&
+  if (code == HC_ACTION && sOpenRootWindow != nullptr && !sAutoCloseSuspended &&
       (wParam == WM_LBUTTONDOWN || wParam == WM_RBUTTONDOWN || wParam == WM_MBUTTONDOWN)) {
     const MSLLHOOKSTRUCT *info = reinterpret_cast<const MSLLHOOKSTRUCT*>(lParam);
     HWND target = GetAncestor(WindowFromPoint(info->pt), GA_ROOT);
@@ -393,7 +399,7 @@ LRESULT Popup::HandleMessage(HWND window, UINT msg, WPARAM wParam, LPARAM lParam
 
     case WM_ACTIVATE:
         {
-            if (LOWORD(wParam) == WA_INACTIVE && mWindow->IsVisible())
+            if (LOWORD(wParam) == WA_INACTIVE && mWindow->IsVisible() && !sAutoCloseSuspended)
             {
                 // An outside click was already checked against every popup window; a real
                 // deactivation still has to make sure focus did not just move to a submenu.
