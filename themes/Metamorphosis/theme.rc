@@ -224,7 +224,7 @@ MNowPlayingFontColor $MMInk$
 MNowPlayingTextAlign Left
 MNowPlayingTextVerticalAlign Middle
 MNowPlayingText "[NowPlaying]"
-MNowPlayingOn LeftClickUp None !Execute [spotify:]
+MNowPlayingOn LeftClickUp None !Execute ["C:\Users\jlgon\AppData\Local\TIDAL\TIDAL.exe"]
 
 ; Zonas de clic = rectangulos de los botones dibujados en injektion2.png
 ; (prev 59, play 84, pause 109, stop 134, next 158; 20 px de ancho, y 0..17).
@@ -235,7 +235,7 @@ MHitWinampY 0
 MHitWinampWidth 22
 MHitWinampHeight 18
 MHitWinampColor #01000000
-MHitWinampOn LeftClickUp None !Execute [spotify:]
+MHitWinampOn LeftClickUp None !Execute ["C:\Users\jlgon\AppData\Local\TIDAL\TIDAL.exe"]
 
 MHitPrevX 59
 MHitPrevY 0
@@ -366,6 +366,8 @@ MTasksPaddingBottom 2
 MTasksPrimaryDirection Horizontal
 MTasksStart TopLeft
 MTasksColumnSpacing 2
+; Al abrir o cerrar una ventana los botones se deslizan a su sitio (ms; 0 = sin animacion)
+MTasksAnimationDuration 180
 MTasksButtonWidth 200
 MTasksButtonMaxWidth 200
 MTasksButtonHeight 24
@@ -394,6 +396,16 @@ MTasksButtonActiveFontColor $MMInk$
 MTasksButtonMinimizedFontColor $MMDim$
 MTasksButtonFlashingColor #FFB06A00
 MTasksOn MiddleClickUp None !Recycle
+
+; Vista previa de la ventana al pasar por un boton. Animada: crece desde el borde del
+; boton hasta su tamano (Animate) y aparece con fundido (ShowAnimation). Colores del tema.
+MTasksThumbnailAnimate true
+MTasksThumbnailAnimationDuration 180
+MTasksThumbnailShowAnimationDuration 150
+MTasksThumbnailColor #F034414A
+MTasksThumbnailOutlineColor #FF000000
+MTasksThumbnailOutlineWidth 1
+MTasksThumbnailDistanceFromButton 4
 
 *nTray MTray
 MTrayX 100%-204
@@ -526,7 +538,9 @@ MMMenuWidth 178
 MMMenuMaxWidth 320
 MMMenuConfineToMonitor true
 MMMenuConfineToWorkArea true
-MMMenuShowAnimationDuration 120
+; Apertura animada de todos los menus y submenus: fundido + caida de 10 px (ms / px)
+MMMenuShowAnimationDuration 200
+MMMenuShowAnimationOffset -10
 
 MMMenuItemHeight 18
 MMMenuItemBrushType Image
@@ -687,7 +701,26 @@ PopupStartMenuEquipoGroup MMMenuIcons
 *Popup .icon="C:\Windows\System32\taskmgr.exe,0" "ADMINISTRADOR DE TAREAS" !Execute [taskmgr.exe]
 *Popup !Separator
 ; Con explorer como shell la app Configuracion (ms-settings:) vuelve a abrir; se mantienen ademas los paneles clasicos Win32.
-*Popup .icon="C:\Windows\System32\shell32.dll,43" "ANCLADAS EN LA BARRA" !PopupPinned
+; FAVORITOS: lista propia de litestep (carpeta favorites\ junto a litestep.exe).
+; Clic derecho sobre un programa o documento -> anadir; sobre un favorito -> quitar.
+nPopupPinText "Anadir a favoritos"
+nPopupUnpinText "Quitar de favoritos"
+*Popup .icon="C:\Windows\System32\shell32.dll,43" "FAVORITOS" !PopupPinned
+; JUEGOS: lista fija. Steam lanza por su protocolo; Minecraft son apps de la Store.
+*Popup .icon="C:\Program Files (x86)\Steam\steam.exe,0" "JUEGOS" Folder
+*Popup "MINECRAFT LAUNCHER" !Execute [explorer.exe shell:AppsFolder\Microsoft.4297127D64EC6_8wekyb3d8bbwe!Minecraft]
+*Popup "MINECRAFT JAVA EDITION" !Execute [explorer.exe shell:AppsFolder\Microsoft.MinecraftJavaEdition_8wekyb3d8bbwe!Game]
+*Popup "MINECRAFT FOR WINDOWS" !Execute [explorer.exe shell:AppsFolder\Microsoft.MinecraftUWP_8wekyb3d8bbwe!Game]
+*Popup !Separator
+*Popup "EVE ONLINE" !Execute [steam://rungameid/8500]
+*Popup "VRCHAT" !Execute [steam://rungameid/438100]
+*Popup "STEAMVR" !Execute [steam://rungameid/250820]
+*Popup "WARUDO" !Execute [steam://rungameid/2079120]
+*Popup "XSOVERLAY" !Execute [steam://rungameid/1173510]
+*Popup !Separator
+*Popup .icon="C:\Program Files (x86)\Steam\steam.exe,0" "STEAM" !Execute ["C:\Program Files (x86)\Steam\steam.exe"]
+*Popup "XBOX" !Execute [explorer.exe shell:AppsFolder\Microsoft.GamingApp_8wekyb3d8bbwe!Microsoft.Xbox.App]
+*Popup ~Folder
 *Popup .icon="C:\Windows\System32\shell32.dll,316" "CONFIGURACION DE WINDOWS" Folder
 *Popup "CONFIGURACION (APP DE WINDOWS)" !Execute [ms-settings:]
 *Popup "PANTALLA" !Execute [ms-settings:display]
