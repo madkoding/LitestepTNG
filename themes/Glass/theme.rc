@@ -25,7 +25,6 @@ TopHeight       32
 ; ------------------------------------------------------------------------------
 LoadModule $LiteStepDir$Core.dll
 LoadModule $LiteStepDir$Wallpaper.dll
-LoadModule $LiteStepDir$Desk.dll
 LoadModule $LiteStepDir$Popup.dll
 LoadModule $LiteStepDir$HotKey.dll
 LoadModule $LiteStepDir$SysTray.dll
@@ -35,20 +34,20 @@ LoadModule $LiteStepDir$Label.dll
 LoadModule $LiteStepDir$StartMenu.dll
 
 ; ------------------------------------------------------------------------------
-;  Escritorio  (Desk usa lineas *nDeskXxx CON asterisco)
+;  Escritorio
 ; ------------------------------------------------------------------------------
-; El fondo es el de Windows (Configuracion > Personalizacion). Copia local: wallpaper.jpg
+; LiteStep corre sobre Explorer (litestep -overlay): el escritorio y el fondo son los de
+; Windows (Configuracion > Personalizacion). El tema no trae fondo propio: se respeta el
+; que elijas en Windows (con ThemeWallpaper "<archivo>" se le puede dar uno). nDesk no
+; se carga: se apropia de la vista de escritorio de Explorer (ver AGENTS.md).
+; nCore oculta la barra de tareas de Windows y reserva el sitio de las barras del tema:
+; la superior (32) y la inferior (48).
+ReserveScreenTop 32
+ReserveScreenBottom 48
 
-nDeskTransitionEffect FadeOut
-nDeskTransitionDuration 300
-nDeskInvalidateAllOnUpdate true
-nDeskDontRenderWallpaper false
-; izq arriba der abajo: deja libres las dos barras
-*nDeskWorkArea primary 0 32 0 48
-OnRefresh !nDeskSetWorkArea primary 0 32 0 48
-
-*nDeskOn RightClickUp None !PopupContext
-*nDeskOn MiddleClickUp None !PopupStartMenu
+; Clics sobre el escritorio de Windows (los intercepta nHotKey; con MAYUS pasan a Windows).
+DesktopRightClick !PopupContext
+DesktopMiddleClick !PopupStartMenu
 
 ; ------------------------------------------------------------------------------
 ;  Atajos  (Win+Tab, Win+Ctrl+Flechas y Alt+Tab ya los manejan Windows/TaskSwitcher)

@@ -8,7 +8,7 @@
 ;  popup2                    ->  nPopup / StartMenu (con popup1-4.png)
 ;  Rainmeter (cpu/mem/net)   ->  nLabel + [CPU] [Memory] [Time] (nuevos en Core)
 ;  ckvwm (4 escritorios)     ->  lanzador de 4 accesos (mismo panel vwm.png)
-;  desktop2 / dynamp         ->  nDesk / !KeyCombo MEDIA_*
+;  desktop2 / dynamp         ->  escritorio de Windows / !KeyCombo MEDIA_*
 ; ==============================================================================
 LiteStepVersion "0.25.0"
 
@@ -20,7 +20,6 @@ PXInkSoft #FF202429
 
 LoadModule $LiteStepDir$Core.dll
 LoadModule $LiteStepDir$Wallpaper.dll
-LoadModule $LiteStepDir$Desk.dll
 LoadModule $LiteStepDir$Popup.dll
 LoadModule $LiteStepDir$HotKey.dll
 LoadModule $LiteStepDir$SysTray.dll
@@ -32,11 +31,18 @@ LoadModule $LiteStepDir$StartMenu.dll
 ; ------------------------------------------------------------------------------
 ;  Escritorio: columna izquierda (44 px) y barra superior (26 px) reservadas
 ; ------------------------------------------------------------------------------
-nDeskDontRenderWallpaper false
-*nDeskWorkArea primary 44 26 0 0
-OnRefresh !nDeskSetWorkArea primary 44 26 0 0
-*nDeskOn RightClickUp None !PopupContext
-*nDeskOn MiddleClickUp None !PopupStartMenu
+; LiteStep corre sobre Explorer (litestep -overlay): el escritorio es el de Windows. nDesk
+; no se carga: se apropia de la vista de escritorio de Explorer (ver AGENTS.md).
+; El tema trae su fondo; al pasar a un tema sin fondo propio vuelve el que tenias tu.
+ThemeWallpaper "$PXDir$wallpaper.jpg"
+ThemeWallpaperStyle Fill
+; nCore oculta la barra de tareas de Windows y reserva el sitio de las barras del tema.
+ReserveScreenLeft 44
+ReserveScreenTop 26
+
+; Clics sobre el escritorio de Windows (los intercepta nHotKey; con MAYUS pasan a Windows).
+DesktopRightClick !PopupContext
+DesktopMiddleClick !PopupStartMenu
 
 *HotKey CTRLALT F12 !PopupStartMenu
 *HotKey WIN X       !PopupContext
