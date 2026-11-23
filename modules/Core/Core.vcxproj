@@ -162,6 +162,7 @@
     <ClInclude Include="ScriptingNCore.h" />
     <ClInclude Include="TextFunctions.h" />
     <ClInclude Include="GpuMeter.h" />
+    <ClInclude Include="MediaControl.h" />
     <ClInclude Include="Version.h" />
   </ItemGroup>
   <ItemGroup>
@@ -171,6 +172,7 @@
     <ClCompile Include="ParsedText.cpp" />
     <ClCompile Include="TextFunctions.cpp" />
     <ClCompile Include="GpuMeter.cpp" />
+    <ClCompile Include="MediaControl.cpp" />
     <ClCompile Include="WindowRegistrar.cpp" />
   </ItemGroup>
   <ItemGroup>

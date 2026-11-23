@@ -6,6 +6,7 @@
 //-------------------------------------------------------------------------------------------------
 #include "CoreMessages.h"
 #include "ParsedText.hpp"
+#include "MediaControl.h"
 #include "TextFunctions.h"
 #include "Version.h"
 
@@ -174,7 +175,7 @@ static LRESULT WINAPI MainProc(HWND window, UINT message, WPARAM wParam, LPARAM 
     return 0;
 
   case LM_REFRESH:
-    TextFunctions::_Refresh();
+    MediaControl::Refresh();
     return 0;
 
   case WM_SETTINGCHANGE:
@@ -199,7 +200,7 @@ static LRESULT WINAPI MainProc(HWND window, UINT message, WPARAM wParam, LPARAM 
       DynamicTextChangeNotification(L"CPU", 0);
       DynamicTextChangeNotification(L"Memory", 0);
       DynamicTextChangeNotification(L"MemoryUsedGB", 0);
-      DynamicTextChangeNotification(L"NowPlaying", 0);
+      MediaControl::Tick();
       DynamicTextChangeNotification(L"GPU", 0);
       DynamicTextChangeNotification(L"VRAM", 0);
       DynamicTextChangeNotification(L"VRAMUsedGB", 0);
@@ -278,6 +279,7 @@ EXPORT_CDECL(int) initModuleW(HWND parent, HINSTANCE instance, LPCWSTR path) {
   }
 
   TextFunctions::_Register();
+  MediaControl::Register();
   timeTimer = SetTimer(ghWndMsgHandler, 1, 1000, nullptr);
 
   sHideExplorerTaskbar = GetRCBoolDefW(L"HideExplorerTaskbar", FALSE) != FALSE;
@@ -318,6 +320,7 @@ EXPORT_CDECL(void) quitModule(HINSTANCE instance) {
     DestroyWindow(ghWndMsgHandler);
   }
 
+  MediaControl::Unregister();
   TextFunctions::_Unregister();
 
   if (sHideExplorerTaskbar) {
