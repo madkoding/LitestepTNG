@@ -39,25 +39,29 @@ modules/           the nModules module DLLs (see list below)
   Utilities/       headers shared by modules (WindowActivation.h: forcing the foreground)
 utility/           logger etc.
 bin/Release_x64/   build output (DLLs + litestep.exe)
-step.rc            the loader: includes theme-select.rc, then themes\<ThemeName>\theme.rc
+step.rc            the loader: includes theme-select.rc, the optional personal.rc, then
+                   themes\<ThemeName>\theme.rc
 theme-select.rc    ThemeName "<folder in themes\>"
+personal.rc.example  template for personal.rc (see "Personal content" in §2)
 themes/<Name>/     one folder per theme, each with a theme.rc (source of truth; deployed to
-                   C:\LiteStepRun by tools\deploy.ps1 — see §3)
-tools/             deploy.ps1, smoke-test.ps1, switch-theme.ps1
+                   the run folder by tools\deploy.ps1 — see §2)
+tools/             deploy.ps1, smoke-test.ps1, switch-theme.ps1 (common.ps1 finds the run folder)
 ```
 
 ---
 
 ## 2. Build & deploy
 
-**This repo builds here (`C:\LiteStepTNG`) but RUNS from `C:\LiteStepRun`.** They are two
-separate locations. Building does not update the running shell — you must copy DLLs over.
+**The repo is built in place, but the shell runs from a separate "run folder".** Building
+does not update the running shell — the build has to be deployed there. The repo does not
+know where that folder is: the scripts in `tools\` take `-LiteStepDir`, else the
+`LITESTEP_DIR` environment variable, else the folder of the litestep.exe that is running.
 
-### Build (PowerShell)
+### Build (PowerShell, from the repo root)
 ```powershell
-$msb = "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
-& $msb "C:\LiteStepTNG\litestep.sln" /p:Configuration=Release /p:Platform=x64 /m /verbosity:minimal /nologo
-# Output lands in C:\LiteStepTNG\bin\Release_x64\
+# MSBuild.exe of Visual Studio 2022 (or its Build Tools); use its full path if it is not on PATH
+msbuild litestep.sln /p:Configuration=Release /p:Platform=x64 /m /verbosity:minimal /nologo
+# Output lands in bin\Release_x64\
 ```
 - A change in **`ModuleKit`** (static lib) requires rebuilding **every** module that links
   it — build the whole solution, don't just build one module.
@@ -75,11 +79,25 @@ one): `Windows-nModules` and `Windows11-Dark` were written for litestep as the W
 load `Desk.dll`, and must not be offered in the overlay install.
 
 **The repo is the source of the themes.** Edit `themes\<Name>\theme.rc` here and deploy;
-do not edit the copy in `C:\LiteStepRun` (older sessions did, and then copied it back).
+do not edit the deployed copy in the run folder (older sessions did, and then copied it back).
+
+### Personal content stays out of the repo
+Nothing that belongs to one person or one computer goes into tracked files: no user names,
+no absolute paths of an install, no lists of someone's programs. Such things live in the
+run folder, which the deploy script never overwrites:
+- `personal.rc` — plain settings that override the theme. `step.rc` includes it before the
+  theme and the first definition of a key wins (`SettingsManager::_FindLine`); a missing
+  file is skipped silently. `*` lines (menus, hotkeys) add to the theme's, they do not
+  replace them, so a personal menu cannot be done this way.
+- `games\` — shortcuts shown under JUEGOS (`!PopupFolder:"$LiteStepDir$games"`).
+- `favorites\` — shortcuts shown under FAVORITOS, managed from the menu.
+
+In a theme, use `$LiteStepDir$`, `$ThemeName$`, `$USERNAME$` and `%LOCALAPPDATA%`-style
+paths instead of literal ones.
 
 ### Test
 There are no unit tests. `.\tools\smoke-test.ps1` drives the running shell through its
-bangs and inspects the resulting windows (modules loaded, notifications, window frames,
+bangs and inspects the resulting windows (modules loaded, notifications — only test boxes: `!NotifyClear test` — window frames,
 sending a window to another desktop); `-IncludeDesktopSwitch` also switches desktops and
 back, which moves the user's windows away for a couple of seconds. Exit code = failed checks.
 
@@ -90,16 +108,16 @@ back, which moves the user's windows away for a couple of seconds. Exit code = f
 **Explorer is the Windows shell; litestep runs on top of it in overlay mode.**
 ```
 HKCU\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Shell   (no value; the HKLM default explorer.exe applies)
-HKCU\Software\Microsoft\Windows\CurrentVersion\Run\LiteStep = "C:\LiteStepRun\litestep.exe" -overlay
+HKCU\Software\Microsoft\Windows\CurrentVersion\Run\LiteStep = "<run folder>\litestep.exe" -overlay
 ```
 The earlier setup (litestep as the Winlogon shell, explorer not running) was abandoned
 because too much of Windows depends on Explorer's immersive shell: UWP apps (Settings,
 Calculator), `ms-settings:` links, media-key routing, native virtual desktops. See §8 for
-what was tried. The old value is saved in `C:\LiteStepRun\winlogon-shell-backup.txt`.
+what was tried. The old value is saved in `winlogon-shell-backup.txt` in the run folder.
 
 Consequences:
 - **Restart litestep with:** `Stop-Process -Name litestep -Force`, then
-  `Start-Process C:\LiteStepRun\litestep.exe -ArgumentList '-overlay'`. Nothing respawns
+  `Start-Process <run folder>\litestep.exe -ArgumentList '-overlay'`. Nothing respawns
   it any more. **Always pass `-overlay`**: without it litestep sees Explorer's taskbar and
   shows a blocking Yes/No/Cancel prompt.
 - `litestep.exe !Bang args` (via `Start-Process ... -ArgumentList '!Bang args'`, so the
@@ -131,7 +149,7 @@ Consequences:
 ### Verification workflow (no human in the loop)
 There is no on-screen console; verify visually with screenshots. Pattern used throughout:
 ```powershell
-# full-screen grab of the primary monitor (3440x1440 here)
+# full-screen grab of the primary monitor
 Add-Type -AssemblyName System.Windows.Forms,System.Drawing
 $pb=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds
 $bmp=New-Object System.Drawing.Bitmap $pb.Width,$pb.Height
@@ -152,7 +170,7 @@ scaffolding after** — see the taskbar fix in §6 for the method that worked.
 ## 4. The active theme: "LiteStep Enhanced" (port of the classic theme of that name)
 
 Goal of the ongoing work: port Norman Kaczmarek's 2002 "LiteStep Enhanced" theme to this
-build, matching the reference image **`D:\Downloads\preview-6-223.jpg`**.
+build, matching the original theme's preview screenshot (1024×768; not part of the repo).
 
 - **The theme is called "LiteStep Enhanced"; do not use any other name for it** (the user
   asked twice). Earlier sessions called the port by the original's internal `ThemeName`;
@@ -163,8 +181,8 @@ build, matching the reference image **`D:\Downloads\preview-6-223.jpg`**.
   shares `themes\LiteStep Enhanced\` with the 2002 original's files, whose `Theme.rc` is kept
   under `original-2002\` (its `Theme.rc`, Config, icons and the 69 .bmp images); an earlier,
   image-less port attempt is kept as `drafts\first-port.rc`. Neither is deployed.
-- Runtime theme files: **`C:\LiteStepRun\themes\LiteStep Enhanced\`** (`theme.rc`, `images\`).
-- Selected via `C:\LiteStepRun\theme-select.rc` → `ThemeName "LiteStep Enhanced"`, included by
+- Deployed theme files: **`<run folder>\themes\LiteStep Enhanced\`** (`theme.rc`, `images\`, `sounds\`).
+- Selected via `theme-select.rc` in the run folder → `ThemeName "LiteStep Enhanced"`, included by
   `step.rc`. Other themes (Glass, Prototype-X) remain switchable the same way.
 - Loader chain: `step.rc` → `theme-select.rc` (`ThemeName "X"`) → `themes\X\theme.rc`.
 
@@ -259,7 +277,7 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   `[VRAMUsedGB]`, next to the existing `[CPU]` / `[Memory]`. A thread reads the PDH
   counters Task Manager uses (`\GPU Engine(*)\Utilization Percentage`, busiest engine;
   `\GPU Adapter Memory(*)\Dedicated Usage`) for the adapter with the most dedicated
-  memory (DXGI; here the RTX 3060, not the Radeon 740M). The theme shows CPU/GPU/RAM/VRAM
+  memory (DXGI; with integrated plus discrete graphics, that is the discrete card). The theme shows CPU/GPU/RAM/VRAM
   as `MMeter*` overlay labels in the dark box of `injektion.png` (x 180..287, y 1..18)
   that the original used for a quick launch.
 - **Media control (Core):** `Core/MediaControl.cpp` — the GSMTC thread also runs queued
@@ -279,9 +297,9 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   icon (`player_winamp|spotify|tidal.png`, 21x17, drawn on the panel's own background).
   `!MediaPlayerLaunch` opens it; pressing play with the player closed opens it too. The
   choice is stored in `HKCU\Software\LiteStepTNG\MediaPlayer`. The start-up command runs on
-  Core's first timer tick, because the labels do not exist while Core loads. Only TIDAL is
-  installed on the dev machine: the rotation was verified with stand-in paths, the Winamp
-  and Spotify control paths were not run against the real programs.
+  Core's first timer tick, because the labels do not exist while Core loads. The rotation
+  was verified with stand-in paths and the controls against one real player (TIDAL); the
+  Winamp and Spotify control paths were not run against the real programs.
 - **Slider labels (Label):** `<Prefix>Slider Volume|Track` + `<Prefix>SliderHandle <label>`
   turn an nLabel into a slider; the handle is normally an overlay child with
   `ClickThrough true`. It polls Core every 500 ms, click/drag sets the value (track seek
@@ -324,15 +342,16 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   keeps the popup open while that system menu is up. Windows itself offers no API to pin
   to its taskbar, hence a separate list.
 - **All applications:** `!PopupApps` (source `APPS`) lists the shell's Applications folder
-  (`FOLDERID_AppsFolder`, 272 entries here), the only place that includes packaged/Store
-  apps; 63 of them (Minecraft, Calculator, Terminal...) have no Start Menu shortcut and are
+  (`FOLDERID_AppsFolder`), the only place that includes packaged/Store apps; a good part
+  of those (Calculator, Terminal...) have no Start Menu shortcut and are
   absent from `!PopupPrograms`. Items launch with `explorer.exe "shell:AppsFolder\<name>"`
   and can be added to the favorites (`Favorites::AddApp` writes a shortcut by IDList).
   First open costs ~2.5 s of icon extraction; the popup is then kept loaded (47 ms).
   The theme has no entry for it: the user had it removed (too long for a
   popup), so the bang exists but no menu uses it.
-  The theme's JUEGOS submenu is a hand-written list (Steam `steam://rungameid/<id>` and
-  Store apps), so it must be edited when games are installed or removed.
+  The theme's JUEGOS submenu is the `games\` folder of the run folder (shortcuts: `.url` with
+  `steam://rungameid/<id>` for Steam, `.lnk` to `shell:AppsFolder\<id>` for Store apps, which
+  then show the app's own icon), so games are added or removed there, not in the theme.
 - **`!PopupFolder:"path"` with spaces:** the rest of the line is the path; the parser used
   to read a piece of it as the settings prefix, which corrupted the whole root popup.
 - **Content popup caching:** content popups are "dynamic": `PostClose` used to free every item
@@ -341,7 +360,7 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   popups and any path popup under the Programs folders in memory (28 ms on later opens);
   delete/rename notifications mark them `stale` and they rebuild on the next show.
   `!PopupRecentDocuments` lists only the newest `MaxRecentItems` (default 20) shortcuts by
-  modification time, newest first, instead of the whole Recent folder (519 here).
+  modification time, newest first, instead of the whole Recent folder (hundreds of entries on a used system).
 - **Notifications (new module `modules/Notify`, `Notify.dll`):** shows the Windows toast
   notifications as boxes stacked top-down on the right edge of the work area.
   `Listener.cpp` polls `UserNotificationListener` (WinRT, works unpackaged here; its
@@ -355,10 +374,10 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   (`AppActivation.cpp`: finds a window by AppUserModelID, else launches
   `shell:AppsFolder\<id>`; a toast's own action cannot be invoked from outside) and, with
   `NotifyClickDismisses true`, closes it. `NotifySound` is a .wav played on arrival
-  (`themes\LiteStep Enhanced\sounds\notify.wav`, generated). The user runs Windows in
-  "Do not disturb": no Windows banner or sound, but toasts still reach the listener.
-  PowerShell's own toasts are disabled on this machine, so test toasts must be raised
-  under another AppUserModelID (e.g. Terminal's). Private messages must stay clear of the `LM_`
+  (`themes\LiteStep Enhanced\sounds\notify.wav`, generated). With Windows in
+  "Do not disturb" there is no Windows banner or sound, but toasts still reach the listener,
+  so the boxes can replace the banners. To raise a test toast from a script, use the
+  AppUserModelID of an app whose notifications are enabled in Windows (e.g. Terminal's). Private messages must stay clear of the `LM_`
   range, which starts at `WM_APP` (32768). Needs `stdcpp17` like Core.
 - **Window frames (new module `modules/Frames`, `Frames.dll`, experimental):** covers the
   native title bar of other programs' windows with a skinned one (prefix `Frame`, parts
@@ -407,8 +426,8 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
 
 - **Read the source before writing a feature.** The popup date/time box needed no code — the
   Popup module already evaluated `[Time]` in InfoItems. Grep first.
-- **Aspect ratio differs from the preview.** The reference is 1024×768 (4:3); the dev machine
-  is 3440×1440 (21:9). Element positions use `100%`-relative coordinates, so judge the match
+- **Aspect ratio differs from the preview.** The reference is 1024×768 (4:3); development
+  was done on an ultrawide (21:9) monitor. Element positions use `100%`-relative coordinates, so judge the match
   by relative placement (edges/corners) and styling, not by pixel-identical coordinates.
 - **Build logs** (`build*.log`) and `step.rc.bak-*` in the working tree are throwaway; don't
   commit them.
@@ -441,7 +460,7 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   `/name Microsoft.NetworkAndSharingCenter`, `/name Microsoft.UserAccounts`, `sndvol.exe`,
   `rundll32 sysdm.cpl,EditEnvironmentVariables`, and the `explorer.exe shell:::{GUID}`
   folders for Devices and Printers / Desktop Background. All verified to open a real
-  window on this machine. `desk.cpl` redirects to the Settings app and `bthprops.cpl`
+  window on Windows 11. `desk.cpl` redirects to the Settings app and `bthprops.cpl`
   errors, so Display, Bluetooth and Windows Update have no working entry.
   `litestep.exe !Bang` from a command line does not reach the running instance here
   (its `FindWindow` for the main window fails), so it cannot be used to test bangs.
@@ -461,5 +480,5 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   the structural match is complete (all elements present, placed, and styled). Residual
   differences are PNG-skin micro-details, not layout or function.
 - `modules/TaskBar/Taskbar.cpp` (the `lines` clamp) is the only code change ready to commit
-  on its own merits; the rest are theme assets/config under `C:\LiteStepRun\themes\LiteStep Enhanced\`
+  on its own merits; the rest are theme assets/config under `themes\LiteStep Enhanced\`
   plus the feature source above.
