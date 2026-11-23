@@ -265,7 +265,20 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   its entry points. It now parks the windows of other desktops 20000 px to the right and
   tags them with the window property `LSVWMDesk`; it gathers everything on load and on
   unload so a recycle never strands a window. Bangs `!VWMDesk <n>`, `!VWMNext`,
-  `!VWMPrev`, `!VWMGather`; RC `VWMDesktops`, `VWMDesk<N>Command`. Activating a parked
+  `!VWMPrev`, `!VWMGather`, `!VWMSend <n> [hwnd]` (sends the active window, or the given
+  handle, to desktop n without following it; the theme binds it to right-click on the
+  1-4 buttons and Win+Shift+1..4, which reach nHotKey through its keyboard-hook fallback
+  because Explorer owns those combinations); `VWM/Transition.cpp` is the switch effect
+  (`VWMTransition`, `VWMTransitionDuration`, `VWMTransitionDistance`): a screen capture of
+  each monitor's work area shown in a topmost click-through layered window, which slides
+  and fades after the switch — other programs' windows are never animated. Capturing
+  costs about 40 ms per monitor before the switch starts. Parking stores the window's
+  original x in the `LSVWMHomeX` property and un-parking restores that absolute position:
+  the moves are asynchronous, and "current position minus the offset" stranded slow
+  (Electron) windows 20000 px off screen, untagged, when two switches came back to back —
+  they then showed up on the wrong desktop still tagged as parked, and clicking them
+  switched back. `Gather` (on load and `!VWMGather`) also rescues untagged windows found a
+  whole number of offsets away; RC `VWMDesktops`, `VWMDesk<N>Command`. Activating a parked
   window (taskbar, Alt+Tab) switches to its desktop. Windows' own virtual desktops need
   explorer.exe and are not available.
 - **Pinned apps popup:** `!PopupPinned` (content source `PINNED` in `Popup/ContentPopup.cpp`)
