@@ -1,0 +1,428 @@
+; ==============================================================================
+;  LiteStep NG - theme oscuro estilo Windows 11
+;  Solo usa claves/bangs que existen en los modulos de C:\LiteStepTNG.
+;  Backup del theme anterior: step.rc.bak-20261121
+; ==============================================================================
+LiteStepVersion "0.25.0"
+
+; ------------------------------------------------------------------------------
+;  Paleta (usar como $Var$)
+; ------------------------------------------------------------------------------
+BarColor        #F01C1C1C
+BarHover        #FF2D2D2D
+BarPressed      #FF383838
+AccentColor     #FF4CC2FF
+TextColor       #FFFFFFFF
+TextDim         #FFC8C8C8
+HitColor        #01000000
+UIFont          "Segoe UI"
+IconFont        "Segoe Fluent Icons"
+BarHeight       48
+TopHeight       32
+
+; ------------------------------------------------------------------------------
+;  Modulos  (VWM.dll es un stub vacio y Panels no se usa: no se cargan)
+; ------------------------------------------------------------------------------
+LoadModule $LiteStepDir$Core.dll
+LoadModule $LiteStepDir$Wallpaper.dll
+LoadModule $LiteStepDir$Desk.dll
+LoadModule $LiteStepDir$Popup.dll
+LoadModule $LiteStepDir$HotKey.dll
+LoadModule $LiteStepDir$SysTray.dll
+LoadModule $LiteStepDir$TaskBar.dll
+LoadModule $LiteStepDir$TaskSwitcher.dll
+LoadModule $LiteStepDir$Label.dll
+LoadModule $LiteStepDir$StartMenu.dll
+
+; ------------------------------------------------------------------------------
+;  Escritorio  (Desk usa lineas *nDeskXxx CON asterisco)
+; ------------------------------------------------------------------------------
+; El fondo es el de Windows (Configuracion > Personalizacion). Copia local: wallpaper.jpg
+
+nDeskTransitionEffect FadeOut
+nDeskTransitionDuration 300
+nDeskInvalidateAllOnUpdate true
+nDeskDontRenderWallpaper false
+; izq arriba der abajo: deja libres las dos barras
+*nDeskWorkArea primary 0 32 0 48
+OnRefresh !nDeskSetWorkArea primary 0 32 0 48
+
+*nDeskOn RightClickUp None !PopupContext
+*nDeskOn MiddleClickUp None !PopupStartMenu
+
+; ------------------------------------------------------------------------------
+;  Atajos  (Win+Tab, Win+Ctrl+Flechas y Alt+Tab ya los manejan Windows/TaskSwitcher)
+; ------------------------------------------------------------------------------
+*HotKey CTRLALT F12 !PopupStartMenu
+*HotKey WIN X       !PopupContext
+*HotKey CTRLALT R   !Recycle
+
+; ==============================================================================
+;  BARRA INFERIOR   [Inicio][ ....... tareas ....... ][ tray ][ reloj ]
+;  Piezas contiguas con el mismo color -> se ven como una sola barra.
+; ==============================================================================
+*nLabel StartButton
+StartButtonX 0
+StartButtonY 100%-48
+StartButtonWidth 56
+StartButtonHeight 48
+StartButtonAlwaysOnTop true
+StartButtonColor $BarColor$
+StartButtonFont $IconFont$
+StartButtonFontSize 20
+StartButtonFontColor $AccentColor$
+StartButtonTextAlign Center
+StartButtonTextVerticalAlign Middle
+StartButtonText ""
+StartButtonOn LeftClickUp None !PopupStartMenu
+StartButtonOn RightClickUp None !PopupContext
+
+*nTaskbar TaskbarMain
+TaskbarMainMonitor primary
+TaskbarMainX 56
+TaskbarMainY 100%-48
+TaskbarMainWidth 100%-516
+TaskbarMainHeight 48
+TaskbarMainAlwaysOnTop true
+TaskbarMainColor $BarColor$
+TaskbarMainPaddingLeft 4
+TaskbarMainPaddingTop 4
+TaskbarMainPaddingRight 4
+TaskbarMainPaddingBottom 4
+TaskbarMainPrimaryDirection Horizontal
+TaskbarMainStart TopLeft
+TaskbarMainColumnSpacing 4
+TaskbarMainButtonWidth 220
+TaskbarMainButtonMaxWidth 220
+TaskbarMainButtonHeight 40
+TaskbarMainButtonMaxHeight 40
+TaskbarMainButtonColor #00000000
+TaskbarMainButtonCornerRadiusX 6
+TaskbarMainButtonCornerRadiusY 6
+TaskbarMainButtonFont $UIFont$
+TaskbarMainButtonFontSize 12
+TaskbarMainButtonFontColor $TextDim$
+TaskbarMainButtonTextAlign Left
+TaskbarMainButtonTextVerticalAlign Middle
+TaskbarMainButtonTextOffsetLeft 40
+TaskbarMainButtonTextOffsetRight 8
+TaskbarMainButtonIconSize 24
+TaskbarMainButtonIconX 8
+TaskbarMainButtonIconY 8
+TaskbarMainButtonHoverColor $BarHover$
+TaskbarMainButtonHoverFontColor $TextColor$
+TaskbarMainButtonActiveColor $BarPressed$
+TaskbarMainButtonActiveFontColor $TextColor$
+TaskbarMainButtonActiveHoverColor #FF424242
+TaskbarMainButtonMinimizedFontColor #FF9A9A9A
+TaskbarMainButtonFlashingColor #FFB06A00
+TaskbarMainOn MiddleClickUp None !Recycle
+; Vistas previas (miniaturas DWM) al pasar sobre una tarea
+TaskbarMainThumbnailAnimate true
+TaskbarMainThumbnailAnimationDuration 160
+TaskbarMainThumbnailShowAnimationDuration 160
+TaskbarMainThumbnailSizeToButton false
+TaskbarMainThumbnailMaxWidth 320
+TaskbarMainThumbnailMaxHeight 200
+TaskbarMainThumbnailDistanceFromButton 8
+TaskbarMainThumbnailOffsetLeft 8
+TaskbarMainThumbnailOffsetTop 8
+TaskbarMainThumbnailOffsetRight 8
+TaskbarMainThumbnailOffsetBottom 8
+TaskbarMainThumbnailColor #F22B2B2B
+TaskbarMainThumbnailOutlineColor #FF3C3C3C
+TaskbarMainThumbnailOutlineWidth 1
+TaskbarMainThumbnailCornerRadiusX 8
+TaskbarMainThumbnailCornerRadiusY 8
+TaskbarMainThumbnailFontColor #00000000
+
+*nTray TrayDock
+TrayDockX 100%-460
+TrayDockY 100%-48
+TrayDockWidth 320
+TrayDockHeight 48
+TrayDockAlwaysOnTop true
+TrayDockColor $BarColor$
+TrayDockPaddingLeft 8
+TrayDockPaddingTop 14
+TrayDockPaddingRight 8
+TrayDockPaddingBottom 14
+TrayDockStart TopRight
+TrayDockPrimaryDirection Horizontal
+TrayDockColumnSpacing 8
+TrayDockRowSpacing 2
+TrayDockOverflowAction SizeLeft
+TrayDockIconSize 20
+TrayDockOn RightClickUp None !PopupTray
+
+*nLabel ClockTime
+ClockTimeX 100%-140
+ClockTimeY 100%-48
+ClockTimeWidth 140
+ClockTimeHeight 24
+ClockTimeAlwaysOnTop true
+ClockTimeColor $BarColor$
+ClockTimeFont $UIFont$
+ClockTimeFontSize 13
+ClockTimeFontColor $TextColor$
+ClockTimeTextAlign Center
+ClockTimeTextVerticalAlign Bottom
+ClockTimeText "[Time('%H:%M')]"
+ClockTimeOn LeftClickUp None !Execute [ms-settings:dateandtime]
+
+*nLabel ClockDate
+ClockDateX 100%-140
+ClockDateY 100%-24
+ClockDateWidth 140
+ClockDateHeight 24
+ClockDateAlwaysOnTop true
+ClockDateColor $BarColor$
+ClockDateFont $UIFont$
+ClockDateFontSize 11
+ClockDateFontColor $TextDim$
+ClockDateTextAlign Center
+ClockDateTextVerticalAlign Top
+ClockDateText "[Time('%d/%m/%Y')]"
+ClockDateOn LeftClickUp None !Execute [ms-settings:dateandtime]
+
+; ==============================================================================
+;  BARRA SUPERIOR   [<< > >>] ....... fecha/hora ....... [buscar][vistas][< >][campana]
+; ==============================================================================
+*nLabel TopBar
+TopBarX 116
+TopBarY 0
+TopBarWidth 100%-240
+TopBarHeight 32
+TopBarAlwaysOnTop true
+TopBarColor $BarColor$
+TopBarFont $UIFont$
+TopBarFontSize 12
+TopBarFontColor $TextDim$
+TopBarTextAlign Center
+TopBarTextVerticalAlign Middle
+TopBarText "[Time('%A %d %B   %H:%M')]"
+TopBarOn RightClickUp None !PopupContext
+
+*nLabel MediaPrev
+MediaPrevX 0
+MediaPrevY 0
+MediaPrevWidth 44
+MediaPrevHeight 32
+MediaPrevAlwaysOnTop true
+MediaPrevColor $BarColor$
+MediaPrevFont $IconFont$
+MediaPrevFontSize 12
+MediaPrevFontColor $TextDim$
+MediaPrevTextAlign Center
+MediaPrevTextVerticalAlign Middle
+MediaPrevText ""
+MediaPrevOn LeftClickUp None !KeyCombo MEDIA_PREV
+
+*nLabel MediaPlay
+MediaPlayX 44
+MediaPlayY 0
+MediaPlayWidth 36
+MediaPlayHeight 32
+MediaPlayAlwaysOnTop true
+MediaPlayColor $BarColor$
+MediaPlayFont $IconFont$
+MediaPlayFontSize 12
+MediaPlayFontColor $TextColor$
+MediaPlayTextAlign Center
+MediaPlayTextVerticalAlign Middle
+MediaPlayText ""
+MediaPlayOn LeftClickUp None !KeyCombo MEDIA_PLAY
+
+*nLabel MediaNext
+MediaNextX 80
+MediaNextY 0
+MediaNextWidth 36
+MediaNextHeight 32
+MediaNextAlwaysOnTop true
+MediaNextColor $BarColor$
+MediaNextFont $IconFont$
+MediaNextFontSize 12
+MediaNextFontColor $TextDim$
+MediaNextTextAlign Center
+MediaNextTextVerticalAlign Middle
+MediaNextText ""
+MediaNextOn LeftClickUp None !KeyCombo MEDIA_NEXT
+
+; Botones derechos (no dependen de explorer.exe)
+*nLabel TopRun
+TopRunX 100%-124
+TopRunY 0
+TopRunWidth 36
+TopRunHeight 32
+TopRunAlwaysOnTop true
+TopRunColor $BarColor$
+TopRunFont $IconFont$
+TopRunFontSize 13
+TopRunFontColor $TextDim$
+TopRunTextAlign Center
+TopRunTextVerticalAlign Middle
+TopRunText ""
+TopRunOn LeftClickUp None !Run
+
+*nLabel TopSettings
+TopSettingsX 100%-88
+TopSettingsY 0
+TopSettingsWidth 40
+TopSettingsHeight 32
+TopSettingsAlwaysOnTop true
+TopSettingsColor $BarColor$
+TopSettingsFont $IconFont$
+TopSettingsFontSize 13
+TopSettingsFontColor $TextDim$
+TopSettingsTextAlign Center
+TopSettingsTextVerticalAlign Middle
+TopSettingsText ""
+TopSettingsOn LeftClickUp None !Execute [ms-settings:]
+
+*nLabel TopPower
+TopPowerX 100%-48
+TopPowerY 0
+TopPowerWidth 48
+TopPowerHeight 32
+TopPowerAlwaysOnTop true
+TopPowerColor $BarColor$
+TopPowerFont $IconFont$
+TopPowerFontSize 13
+TopPowerFontColor $TextDim$
+TopPowerTextAlign Center
+TopPowerTextVerticalAlign Middle
+TopPowerText ""
+TopPowerOn LeftClickUp None !PopupPower
+
+; ==============================================================================
+;  ESTILO DE MENUS  (compartido: <Prefijo>Group MenuStyle)
+; ==============================================================================
+MenuStyleColor #F22B2B2B
+MenuStyleCornerRadiusX 8
+MenuStyleCornerRadiusY 8
+MenuStylePaddingLeft 6
+MenuStylePaddingTop 6
+MenuStylePaddingRight 6
+MenuStylePaddingBottom 6
+MenuStyleItemSpacing 2
+MenuStyleWidth 260
+MenuStyleMaxWidth 420
+MenuStyleConfineToMonitor true
+MenuStyleConfineToWorkArea true
+; el popup pinta su titulo como texto de la ventana: se oculta
+MenuStyleFontColor #00000000
+
+MenuStyleItemHeight 32
+MenuStyleItemColor #00000000
+MenuStyleItemCornerRadiusX 4
+MenuStyleItemCornerRadiusY 4
+MenuStyleItemFont $UIFont$
+MenuStyleItemFontSize 12
+MenuStyleItemFontColor $TextColor$
+MenuStyleItemTextOffsetLeft 14
+MenuStyleItemTextOffsetRight 8
+MenuStyleItemTextVerticalAlign Middle
+MenuStyleItemIconSize 16
+MenuStyleItemIconX 10
+MenuStyleItemIconY 8
+MenuStyleItemHoverColor #FF3A3A3A
+MenuStyleItemHoverFontColor $TextColor$
+
+MenuStyleFolderItemHeight 32
+MenuStyleFolderItemColor #00000000
+MenuStyleFolderItemCornerRadiusX 4
+MenuStyleFolderItemCornerRadiusY 4
+MenuStyleFolderItemFont $UIFont$
+MenuStyleFolderItemFontSize 12
+MenuStyleFolderItemFontColor $TextColor$
+MenuStyleFolderItemTextOffsetLeft 14
+MenuStyleFolderItemTextVerticalAlign Middle
+MenuStyleFolderItemIconSize 16
+MenuStyleFolderItemIconX 10
+MenuStyleFolderItemIconY 8
+MenuStyleFolderItemHoverColor #FF3A3A3A
+MenuStyleFolderItemOpenColor #FF333333
+
+MenuStyleInfoItemHeight 28
+MenuStyleInfoItemColor #00000000
+MenuStyleInfoItemFont "Segoe UI Semibold"
+MenuStyleInfoItemFontSize 11
+MenuStyleInfoItemFontColor $AccentColor$
+MenuStyleInfoItemTextOffsetLeft 12
+
+MenuStyleSeparatorItemHeight 1
+MenuStyleSeparatorItemColor #FF454545
+
+; Animacion de entrada (fade + deslizamiento, ms / px)
+MenuStyleShowAnimationDuration 160
+MenuStyleShowAnimationOffset 10
+
+; Menus que se abren hacia abajo desde la barra superior
+MenuDownGroup MenuStyle
+MenuDownShowAnimationOffset -10
+
+; Menus con iconos de archivos/carpetas: mismo estilo + hueco para el icono
+MenuIconsGroup MenuStyle
+MenuIconsItemTextOffsetLeft 36
+MenuIconsFolderItemTextOffsetLeft 36
+
+nPopupGroup MenuStyle
+PopupStartMenuGroup MenuStyle
+PopupStartMenuProgramasGroup MenuIcons
+PopupStartMenuRecientesGroup MenuIcons
+PopupStartMenuEquipoGroup MenuIcons
+
+; ------------------------------------------------------------------------------
+;  Menu Inicio (modulo StartMenu, lineas *PopupStartMenu)
+; ------------------------------------------------------------------------------
+*PopupStartMenu "Programas" !PopupPrograms
+*PopupStartMenu "Recientes" !PopupRecentDocuments
+*PopupStartMenu "Equipo" !PopupMyComputer
+*PopupStartMenu !Separator
+*PopupStartMenu "Explorador de archivos" !Execute [explorer.exe shell:MyComputerFolder]
+*PopupStartMenu "Terminal" !Execute [wt.exe]
+*PopupStartMenu "Configuración" !Execute [ms-settings:]
+*PopupStartMenu "Ejecutar..." !Run
+*PopupStartMenu !Separator
+*PopupStartMenu "Bloquear" !Execute [rundll32.exe user32.dll,LockWorkStation]
+*PopupStartMenu "Cerrar sesión" !Logoff
+*PopupStartMenu "Reiniciar" !Execute [shutdown.exe /r /t 0]
+*PopupStartMenu "Apagar" !Execute [shutdown.exe /s /t 0]
+
+; ------------------------------------------------------------------------------
+;  Menus nPopup  (sintaxis:  *Popup !New !Bang ... *Popup ~New)
+; ------------------------------------------------------------------------------
+*Popup !New !PopupContext
+*Popup !Info "LiteStep"
+*Popup "Explorador de archivos" !Execute [explorer.exe shell:MyComputerFolder]
+*Popup "Terminal" !Execute [wt.exe]
+*Popup "Administrador de tareas" !Execute [taskmgr.exe]
+*Popup "Configuración" !Execute [ms-settings:]
+*Popup !Separator
+*Popup "Programas" !PopupPrograms MenuIcons
+*Popup "Personalizar fondo" !Execute [ms-settings:personalization-background]
+*Popup "Pantalla" !Execute [ms-settings:display]
+*Popup !Separator
+*Popup "Recargar LiteStep" !Recycle
+*Popup "Editar tema" !Execute [notepad.exe "$LiteStepDir$themes\Glass\theme.rc"]
+*Popup "Temas" !PopupThemes
+*Popup ~New
+
+*Popup !New !PopupTray
+*Popup !Separator
+*Popup "Red e Internet" !Execute [ms-settings:network]
+*Popup "Sonido" !Execute [ms-settings:sound]
+*Popup "Bluetooth" !Execute [ms-settings:bluetooth]
+*Popup !Separator
+*Popup "Administrador de tareas" !Execute [taskmgr.exe]
+*Popup ~New
+
+
+*Popup !New !PopupPower MenuDown
+*Popup "Bloquear" !Execute [rundll32.exe user32.dll,LockWorkStation]
+*Popup "Suspender" !Execute [rundll32.exe powrprof.dll,SetSuspendState 0,1,0]
+*Popup "Cerrar sesión" !Logoff
+*Popup !Separator
+*Popup "Reiniciar" !Execute [shutdown.exe /r /t 0]
+*Popup "Apagar" !Execute [shutdown.exe /s /t 0]
+*Popup ~New

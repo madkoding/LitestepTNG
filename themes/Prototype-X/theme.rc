@@ -1,0 +1,479 @@
+; ==============================================================================
+;  Prototype-X  -  por Shadowplayed (LiteStep 0.24, ~2003)
+;  Port a nModules x64 para LiteStep NG. Las imagenes son las originales.
+;
+;  Original                 ->  Port
+;  LsBox "tasks" + traytasks ->  nTaskbar + nTray en la barra superior
+;  vtray                     ->  nTray
+;  popup2                    ->  nPopup / StartMenu (con popup1-4.png)
+;  Rainmeter (cpu/mem/net)   ->  nLabel + [CPU] [Memory] [Time] (nuevos en Core)
+;  ckvwm (4 escritorios)     ->  lanzador de 4 accesos (mismo panel vwm.png)
+;  desktop2 / dynamp         ->  nDesk / !KeyCombo MEDIA_*
+; ==============================================================================
+LiteStepVersion "0.25.0"
+
+PXDir     "$LiteStepDir$themes\Prototype-X\"
+PXImg     "$LiteStepDir$themes\Prototype-X\images\"
+PXFont    "Exo 2"
+PXInk     #FF000000
+PXInkSoft #FF202429
+
+LoadModule $LiteStepDir$Core.dll
+LoadModule $LiteStepDir$Wallpaper.dll
+LoadModule $LiteStepDir$Desk.dll
+LoadModule $LiteStepDir$Popup.dll
+LoadModule $LiteStepDir$HotKey.dll
+LoadModule $LiteStepDir$SysTray.dll
+LoadModule $LiteStepDir$TaskBar.dll
+LoadModule $LiteStepDir$TaskSwitcher.dll
+LoadModule $LiteStepDir$Label.dll
+LoadModule $LiteStepDir$StartMenu.dll
+
+; ------------------------------------------------------------------------------
+;  Escritorio: columna izquierda (44 px) y barra superior (26 px) reservadas
+; ------------------------------------------------------------------------------
+nDeskDontRenderWallpaper false
+*nDeskWorkArea primary 44 26 0 0
+OnRefresh !nDeskSetWorkArea primary 44 26 0 0
+*nDeskOn RightClickUp None !PopupContext
+*nDeskOn MiddleClickUp None !PopupStartMenu
+
+*HotKey CTRLALT F12 !PopupStartMenu
+*HotKey WIN X       !PopupContext
+*HotKey CTRLALT R   !Recycle
+
+; ==============================================================================
+;  COLUMNA IZQUIERDA ARRIBA - medidores (rain.png, antes Rainmeter)
+; ==============================================================================
+*nLabel PXRain
+PXRainX 0
+PXRainY 0
+PXRainWidth 44
+PXRainHeight 176
+PXRainAlwaysOnTop true
+PXRainBrushType Image
+PXRainImage "$PXImg$rain.png"
+PXRainImageScalingMode Stretch
+*PXRainOverlayLabel PXCpuCap PXCpuVal PXMemCap PXMemVal PXClkCap PXClkVal
+
+; textos chicos sobre cada caja (como el "cpu:3%" original)
+PXCpuCapX 3
+PXCpuCapY 14
+PXCpuCapWidth 40
+PXCpuCapHeight 14
+PXCpuCapColor #00000000
+PXCpuCapFont $PXFont$
+PXCpuCapFontSize 9
+PXCpuCapFontColor $PXInk$
+PXCpuCapText "cpu"
+
+PXMemCapX 3
+PXMemCapY 63
+PXMemCapWidth 40
+PXMemCapHeight 14
+PXMemCapColor #00000000
+PXMemCapFont $PXFont$
+PXMemCapFontSize 9
+PXMemCapFontColor $PXInk$
+PXMemCapText "mem"
+
+PXClkCapX 3
+PXClkCapY 113
+PXClkCapWidth 40
+PXClkCapHeight 14
+PXClkCapColor #00000000
+PXClkCapFont $PXFont$
+PXClkCapFontSize 9
+PXClkCapFontColor $PXInk$
+PXClkCapText "time"
+
+; valores dentro de las cajas celestes
+PXCpuValX 3
+PXCpuValY 26
+PXCpuValWidth 38
+PXCpuValHeight 30
+PXCpuValColor #00000000
+PXCpuValFont $PXFont$
+PXCpuValFontSize 13
+PXCpuValFontWeight Medium
+PXCpuValFontColor $PXInk$
+PXCpuValTextAlign Center
+PXCpuValTextVerticalAlign Middle
+PXCpuValText "[CPU]%"
+
+PXMemValX 3
+PXMemValY 75
+PXMemValWidth 38
+PXMemValHeight 30
+PXMemValColor #00000000
+PXMemValFont $PXFont$
+PXMemValFontSize 13
+PXMemValFontWeight Medium
+PXMemValFontColor $PXInk$
+PXMemValTextAlign Center
+PXMemValTextVerticalAlign Middle
+PXMemValText "[Memory]%"
+
+PXClkValX 3
+PXClkValY 125
+PXClkValWidth 38
+PXClkValHeight 30
+PXClkValColor #00000000
+PXClkValFont $PXFont$
+PXClkValFontSize 13
+PXClkValFontWeight Medium
+PXClkValFontColor $PXInk$
+PXClkValTextAlign Center
+PXClkValTextVerticalAlign Middle
+PXClkValText "[Time('%H:%M')]"
+PXClkValOn LeftClickUp None !Execute [ms-settings:dateandtime]
+
+; ==============================================================================
+;  COLUMNA IZQUIERDA ABAJO - lanzador (vwm.png, antes ckVWM)
+; ==============================================================================
+*nLabel PXDock
+PXDockX 0
+PXDockY 100%-176
+PXDockWidth 44
+PXDockHeight 176
+PXDockAlwaysOnTop true
+PXDockBrushType Image
+PXDockImage "$PXImg$vwm.png"
+PXDockImageScalingMode Stretch
+*PXDockOverlayLabel PXL1 PXL2 PXL3 PXL4
+
+PXL1X 0
+PXL1Y 0
+PXL1Width 44
+PXL1Height 44
+PXL1Color #01FFFFFF
+PXL1Font "Segoe Fluent Icons"
+PXL1FontSize 16
+PXL1FontColor $PXInkSoft$
+PXL1TextAlign Center
+PXL1TextVerticalAlign Middle
+PXL1HoverBrushType Image
+PXL1HoverImage "$PXImg$vwm2.png"
+PXL1HoverImageScalingMode Stretch
+PXL1Text ""
+PXL1On LeftClickUp None !Execute [wt.exe]
+
+PXL2X 0
+PXL2Y 44
+PXL2Width 44
+PXL2Height 44
+PXL2Color #01FFFFFF
+PXL2Font "Segoe Fluent Icons"
+PXL2FontSize 16
+PXL2FontColor $PXInkSoft$
+PXL2TextAlign Center
+PXL2TextVerticalAlign Middle
+PXL2HoverBrushType Image
+PXL2HoverImage "$PXImg$vwm2.png"
+PXL2HoverImageScalingMode Stretch
+PXL2Text ""
+PXL2On LeftClickUp None !Execute [explorer.exe shell:MyComputerFolder]
+
+PXL3X 0
+PXL3Y 88
+PXL3Width 44
+PXL3Height 44
+PXL3Color #01FFFFFF
+PXL3Font "Segoe Fluent Icons"
+PXL3FontSize 16
+PXL3FontColor $PXInkSoft$
+PXL3TextAlign Center
+PXL3TextVerticalAlign Middle
+PXL3HoverBrushType Image
+PXL3HoverImage "$PXImg$vwm2.png"
+PXL3HoverImageScalingMode Stretch
+PXL3Text ""
+PXL3On LeftClickUp None !Execute [https://www.google.com]
+
+PXL4X 0
+PXL4Y 132
+PXL4Width 44
+PXL4Height 44
+PXL4Color #01FFFFFF
+PXL4Font "Segoe Fluent Icons"
+PXL4FontSize 16
+PXL4FontColor $PXInkSoft$
+PXL4TextAlign Center
+PXL4TextVerticalAlign Middle
+PXL4HoverBrushType Image
+PXL4HoverImage "$PXImg$vwm2.png"
+PXL4HoverImageScalingMode Stretch
+PXL4Text ""
+PXL4On LeftClickUp None !Execute [ms-settings:]
+
+; ==============================================================================
+;  BARRA SUPERIOR (taskbg.png en 3 piezas)  [PrototypeX][ tareas ][ tray ][hora]
+; ==============================================================================
+*nLabel PXHot
+PXHotX 44
+PXHotY 0
+PXHotWidth 130
+PXHotHeight 26
+PXHotAlwaysOnTop true
+PXHotBrushType Image
+PXHotImage "$PXImg$bar_left.png"
+PXHotImageScalingMode Edges
+PXHotImageEdgesLeft 12
+PXHotImageEdgesTop 0
+PXHotImageEdgesRight 0
+PXHotImageEdgesBottom 0
+PXHotFont $PXFont$
+PXHotFontSize 13
+PXHotFontWeight Medium
+PXHotFontColor $PXInk$
+PXHotTextAlign Center
+PXHotTextVerticalAlign Middle
+PXHotText "PrototypeX"
+PXHotHoverFontColor #FF3A7CA5
+PXHotOn LeftClickUp None !PopupStartMenu
+PXHotOn RightClickUp None !PopupContext
+
+*nTaskbar PXTasks
+PXTasksMonitor primary
+PXTasksX 174
+PXTasksY 0
+PXTasksWidth 100%-474
+PXTasksHeight 26
+PXTasksAlwaysOnTop true
+PXTasksBrushType Image
+PXTasksImage "$PXImg$bar_mid.png"
+PXTasksImageScalingMode Tile
+PXTasksPaddingLeft 2
+PXTasksPaddingTop 1
+PXTasksPaddingRight 2
+PXTasksPaddingBottom 1
+PXTasksPrimaryDirection Horizontal
+PXTasksStart TopLeft
+PXTasksColumnSpacing 2
+PXTasksButtonWidth 170
+PXTasksButtonMaxWidth 170
+PXTasksButtonHeight 24
+PXTasksButtonMaxHeight 24
+PXTasksButtonColor #00000000
+PXTasksButtonFont $PXFont$
+PXTasksButtonFontSize 11
+PXTasksButtonFontColor $PXInk$
+PXTasksButtonTextAlign Left
+PXTasksButtonTextVerticalAlign Middle
+PXTasksButtonTextOffsetLeft 26
+PXTasksButtonTextOffsetRight 4
+PXTasksButtonIconSize 14
+PXTasksButtonIconX 7
+PXTasksButtonIconY 5
+PXTasksButtonHoverColor #33B5D2E4
+PXTasksButtonActiveBrushType Image
+PXTasksButtonActiveImage "$PXImg$popup3.png"
+PXTasksButtonActiveImageScalingMode Edges
+PXTasksButtonActiveImageEdgesLeft 4
+PXTasksButtonActiveImageEdgesTop 3
+PXTasksButtonActiveImageEdgesRight 4
+PXTasksButtonActiveImageEdgesBottom 3
+PXTasksButtonMinimizedFontColor #FF707070
+PXTasksButtonFlashingColor #FFFFD27A
+PXTasksOn MiddleClickUp None !Recycle
+
+; vistas previas: hoja blanca con borde gris, se abren hacia abajo
+PXTasksThumbnailPosition Bottom
+PXTasksThumbnailAnimate true
+PXTasksThumbnailAnimationDuration 140
+PXTasksThumbnailShowAnimationDuration 140
+PXTasksThumbnailSizeToButton false
+PXTasksThumbnailMaxWidth 300
+PXTasksThumbnailMaxHeight 200
+PXTasksThumbnailDistanceFromButton 4
+PXTasksThumbnailOffsetLeft 6
+PXTasksThumbnailOffsetTop 6
+PXTasksThumbnailOffsetRight 6
+PXTasksThumbnailOffsetBottom 6
+PXTasksThumbnailColor #FFFFFFFF
+PXTasksThumbnailOutlineColor #FF9A9A9A
+PXTasksThumbnailOutlineWidth 1
+PXTasksThumbnailFontColor #00000000
+
+*nTray PXTray
+PXTrayX 100%-300
+PXTrayY 0
+PXTrayWidth 300
+PXTrayHeight 26
+PXTrayAlwaysOnTop true
+PXTrayBrushType Image
+PXTrayImage "$PXImg$bar_right.png"
+PXTrayImageScalingMode Edges
+PXTrayImageEdgesLeft 0
+PXTrayImageEdgesTop 0
+PXTrayImageEdgesRight 12
+PXTrayImageEdgesBottom 0
+PXTrayPaddingLeft 4
+PXTrayPaddingTop 5
+PXTrayPaddingRight 14
+PXTrayPaddingBottom 5
+PXTrayStart TopRight
+PXTrayPrimaryDirection Horizontal
+PXTrayColumnSpacing 6
+PXTrayOverflowAction SizeLeft
+PXTrayIconSize 16
+; fondo gris tras cada icono: los iconos blancos no se pierden en el papel
+PXTrayIconColor #66707A84
+PXTrayIconCornerRadiusX 3
+PXTrayIconCornerRadiusY 3
+PXTrayOn RightClickUp None !PopupTray
+
+
+; ==============================================================================
+;  MENUS (popup1 = titulo, popup2 = item, popup3 = seleccionado)
+; ==============================================================================
+PXMenuColor #FFFFFFFF
+PXMenuOutlineColor #FF9A9A9A
+PXMenuOutlineWidth 1
+PXMenuFontColor #00000000
+PXMenuPaddingLeft 1
+PXMenuPaddingTop 1
+PXMenuPaddingRight 1
+PXMenuPaddingBottom 6
+PXMenuItemSpacing 0
+PXMenuWidth 170
+PXMenuMaxWidth 320
+PXMenuConfineToMonitor true
+PXMenuConfineToWorkArea true
+PXMenuShowAnimationDuration 120
+
+PXMenuItemHeight 18
+PXMenuItemBrushType Image
+PXMenuItemImage "$PXImg$popup2.png"
+PXMenuItemImageScalingMode Edges
+PXMenuItemImageEdgesLeft 2
+PXMenuItemImageEdgesTop 0
+PXMenuItemImageEdgesRight 2
+PXMenuItemImageEdgesBottom 0
+PXMenuItemFont $PXFont$
+PXMenuItemFontSize 11
+PXMenuItemFontColor $PXInkSoft$
+PXMenuItemTextOffsetLeft 10
+PXMenuItemTextOffsetRight 6
+PXMenuItemTextVerticalAlign Middle
+PXMenuItemIconSize 14
+PXMenuItemIconX 4
+PXMenuItemIconY 2
+PXMenuItemHoverBrushType Image
+PXMenuItemHoverImage "$PXImg$popup3.png"
+PXMenuItemHoverImageScalingMode Edges
+PXMenuItemHoverImageEdgesLeft 4
+PXMenuItemHoverImageEdgesTop 3
+PXMenuItemHoverImageEdgesRight 4
+PXMenuItemHoverImageEdgesBottom 3
+PXMenuItemHoverFontColor $PXInk$
+
+PXMenuFolderItemHeight 18
+PXMenuFolderItemBrushType Image
+PXMenuFolderItemImage "$PXImg$popup2.png"
+PXMenuFolderItemImageScalingMode Edges
+PXMenuFolderItemImageEdgesLeft 2
+PXMenuFolderItemImageEdgesTop 0
+PXMenuFolderItemImageEdgesRight 2
+PXMenuFolderItemImageEdgesBottom 0
+PXMenuFolderItemFont $PXFont$
+PXMenuFolderItemFontSize 11
+PXMenuFolderItemFontColor $PXInkSoft$
+PXMenuFolderItemTextOffsetLeft 10
+PXMenuFolderItemTextVerticalAlign Middle
+PXMenuFolderItemIconSize 14
+PXMenuFolderItemIconX 4
+PXMenuFolderItemIconY 2
+PXMenuFolderItemHoverBrushType Image
+PXMenuFolderItemHoverImage "$PXImg$popup3.png"
+PXMenuFolderItemHoverImageScalingMode Edges
+PXMenuFolderItemHoverImageEdgesLeft 4
+PXMenuFolderItemHoverImageEdgesTop 3
+PXMenuFolderItemHoverImageEdgesRight 4
+PXMenuFolderItemHoverImageEdgesBottom 3
+PXMenuFolderItemOpenBrushType Image
+PXMenuFolderItemOpenImage "$PXImg$popup3.png"
+PXMenuFolderItemOpenImageScalingMode Edges
+PXMenuFolderItemOpenImageEdgesLeft 4
+PXMenuFolderItemOpenImageEdgesTop 3
+PXMenuFolderItemOpenImageEdgesRight 4
+PXMenuFolderItemOpenImageEdgesBottom 3
+
+; titulo (el "PrototypeX" con la esquina doblada)
+PXMenuInfoItemHeight 18
+PXMenuInfoItemBrushType Image
+PXMenuInfoItemImage "$PXImg$popup1.png"
+PXMenuInfoItemImageScalingMode Edges
+PXMenuInfoItemImageEdgesLeft 10
+PXMenuInfoItemImageEdgesTop 0
+PXMenuInfoItemImageEdgesRight 2
+PXMenuInfoItemImageEdgesBottom 0
+PXMenuInfoItemFont $PXFont$
+PXMenuInfoItemFontSize 11
+PXMenuInfoItemFontWeight Bold
+PXMenuInfoItemFontColor $PXInk$
+PXMenuInfoItemTextAlign Center
+PXMenuInfoItemTextVerticalAlign Middle
+
+PXMenuSeparatorItemHeight 3
+PXMenuSeparatorItemColor #FF9A9A9A
+
+; menus con iconos de archivos: hueco para el icono
+PXMenuIconsGroup PXMenu
+PXMenuIconsItemTextOffsetLeft 24
+PXMenuIconsFolderItemTextOffsetLeft 24
+
+nPopupGroup PXMenu
+PopupStartMenuGroup PXMenu
+PopupStartMenuProgramasGroup PXMenuIcons
+PopupStartMenuRecientesGroup PXMenuIcons
+PopupStartMenuEquipoGroup PXMenuIcons
+
+; ------------------------------------------------------------------------------
+*PopupStartMenu "Programas" !PopupPrograms
+*PopupStartMenu "Recientes" !PopupRecentDocuments
+*PopupStartMenu "Equipo" !PopupMyComputer
+*PopupStartMenu !Separator
+*PopupStartMenu "Terminal" !Execute [wt.exe]
+*PopupStartMenu "Explorador" !Execute [explorer.exe shell:MyComputerFolder]
+*PopupStartMenu "Configuración" !Execute [ms-settings:]
+*PopupStartMenu "Ejecutar..." !Run
+*PopupStartMenu !Separator
+*PopupStartMenu "Bloquear" !Execute [rundll32.exe user32.dll,LockWorkStation]
+*PopupStartMenu "Reiniciar" !Execute [shutdown.exe /r /t 0]
+*PopupStartMenu "Apagar" !Execute [shutdown.exe /s /t 0]
+
+*Popup !New !PopupContext
+*Popup !Info "PrototypeX"
+*Popup "Programas" !PopupPrograms PXMenuIcons
+*Popup "Recientes" !PopupRecentDocuments PXMenuIcons
+*Popup !Separator
+*Popup "Terminal" !Execute [wt.exe]
+*Popup "Explorador" !Execute [explorer.exe shell:MyComputerFolder]
+*Popup "Administrador de tareas" !Execute [taskmgr.exe]
+*Popup "Configuración" !Execute [ms-settings:]
+*Popup !Separator
+*Popup "Multimedia" Folder
+*Popup "Anterior" !KeyCombo MEDIA_PREV
+*Popup "Play / Pausa" !KeyCombo MEDIA_PLAY
+*Popup "Siguiente" !KeyCombo MEDIA_NEXT
+*Popup ~Folder
+*Popup "Shell" Folder
+*Popup "Recargar LiteStep" !Recycle
+*Popup "Carpeta de LiteStep" !Execute [explorer.exe "$LiteStepDir$"]
+*Popup "Editar tema" !Execute [notepad.exe "$PXDir$theme.rc"]
+*Popup "Temas" !PopupThemes
+*Popup ~Folder
+*Popup !Separator
+*Popup "Bloquear" !Execute [rundll32.exe user32.dll,LockWorkStation]
+*Popup "Apagar" !Execute [shutdown.exe /s /t 0]
+*Popup ~New
+
+*Popup !New !PopupTray
+*Popup !Info "Bandeja"
+*Popup "Red e Internet" !Execute [ms-settings:network]
+*Popup "Sonido" !Execute [ms-settings:sound]
+*Popup "Bluetooth" !Execute [ms-settings:bluetooth]
+*Popup !Separator
+*Popup "Administrador de tareas" !Execute [taskmgr.exe]
+*Popup ~New
