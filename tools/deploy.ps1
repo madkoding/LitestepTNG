@@ -1,8 +1,10 @@
 # ==============================================================================
 #  deploy.ps1  -  Copies a build and the themes to the folder LiteStep runs from
 #
-#  The repo builds into bin\Release_x64 but the shell runs from another folder
-#  (C:\LiteStepRun). Building does not update the running shell; this does.
+#  The repo builds into bin\Release_x64 but the shell runs from another folder.
+#  Building does not update the running shell; this does. The target is
+#  -LiteStepDir, else the LITESTEP_DIR environment variable, else the folder of
+#  the litestep.exe that is running.
 #
 #     .\tools\deploy.ps1                      # binaries + themes, then restart
 #     .\tools\deploy.ps1 -Modules Core,VWM    # only those module DLLs
@@ -12,13 +14,13 @@
 #
 #  LiteStep is stopped first (its DLLs are locked while it runs) and started again
 #  with -overlay. theme-select.rc is only written if the target has none, so the
-#  theme selected there is kept. By default only the themes already installed in the
+#  theme selected there is kept; personal.rc, games\ and favorites\ are never touched. By default only the themes already installed in the
 #  target are updated: some themes in the repo were written for LiteStep as the
 #  Windows shell (they load Desk.dll) and must not appear in an overlay install
 #  just because they exist here.
 # ==============================================================================
 param(
-    [string]$LiteStepDir = 'C:\LiteStepRun',
+    [string]$LiteStepDir,
     [string]$Configuration = 'Release_x64',
     [string[]]$Modules,
     [string[]]$Themes,
@@ -27,10 +29,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'common.ps1')
+$LiteStepDir = Resolve-LiteStepDir $LiteStepDir
 $Root = Split-Path $PSScriptRoot -Parent
 $Bin  = Join-Path $Root "bin\$Configuration"
-
-if (-not (Test-Path $LiteStepDir)) { throw "Target folder not found: $LiteStepDir" }
 
 $wasRunning = [bool](Get-Process litestep -ErrorAction SilentlyContinue)
 if (-not $NoRestart -and $wasRunning) {

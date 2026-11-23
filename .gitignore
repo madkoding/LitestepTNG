@@ -16,3 +16,6 @@ build*.log
 *.bak-*
 *.png.bak
 *.png.notched
+
+# Personal overrides (see personal.rc.example)
+personal.rc

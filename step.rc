@@ -4,4 +4,7 @@
 ;  Temas: Glass, Prototype-X, LiteStep Enhanced
 ; ==============================================================================
 include "$LiteStepDir$theme-select.rc"
+; Opcional y fuera del repo: ajustes personales. Va ANTES del tema porque la primera
+; definicion de una clave es la que vale (ver personal.rc.example).
+include "$LiteStepDir$personal.rc"
 include "$LiteStepDir$themes\$ThemeName$\theme.rc"

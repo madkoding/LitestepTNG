@@ -1,6 +1,6 @@
 ; ==============================================================================
 ;  LiteStep NG - theme oscuro estilo Windows 11
-;  Solo usa claves/bangs que existen en los modulos de C:\LiteStepTNG.
+;  Solo usa claves/bangs que existen en los modulos de este build.
 ;  Backup del theme anterior: step.rc.bak-20261121
 ; ==============================================================================
 LiteStepVersion "0.25.0"

@@ -12,11 +12,13 @@
 #  Exit code: number of failed checks.
 # ==============================================================================
 param(
-    [string]$LiteStepDir = 'C:\LiteStepRun',
+    [string]$LiteStepDir,
     [switch]$IncludeDesktopSwitch
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'common.ps1')
+$LiteStepDir = Resolve-LiteStepDir $LiteStepDir
 
 Add-Type @'
 using System; using System.Text; using System.Runtime.InteropServices; using System.Collections.Generic;
@@ -87,11 +89,19 @@ $loaded = $litestep.Modules | ForEach-Object { $_.ModuleName }
 foreach ($module in $wanted) { Check "module loaded: $module" ($loaded -contains $module) }
 
 # --- notifications ---------------------------------------------------------------
+# Only the test box is cleared: a plain !NotifyClear would also dismiss the user's real
+# notifications, in Windows too. A real one may arrive meanwhile, so the counts are
+# compared loosely and given a few seconds.
+function Wait-Until([scriptblock]$condition) {
+    foreach ($try in 1..10) { if (& $condition) { return $true }; Start-Sleep -Milliseconds 500 }
+    return $false
+}
 $boxes = [Smoke]::Windows('LSNotifyDrawable', 'NotifyBox').Count
 Bang '!NotifyTest "Smoke test" "Title" "Body"'
-Check '!NotifyTest shows a box' ([Smoke]::Windows('LSNotifyDrawable', 'NotifyBox').Count -eq $boxes + 1)
-Bang '!NotifyClear'
-Check '!NotifyClear removes the boxes' ([Smoke]::Windows('LSNotifyDrawable', 'NotifyBox').Count -eq 0)
+Check '!NotifyTest shows a box' (Wait-Until { [Smoke]::Windows('LSNotifyDrawable', 'NotifyBox').Count -gt $boxes })
+$shown = [Smoke]::Windows('LSNotifyDrawable', 'NotifyBox').Count
+Bang '!NotifyClear test'
+Check '!NotifyClear test removes the test box' (Wait-Until { [Smoke]::Windows('LSNotifyDrawable', 'NotifyBox').Count -lt $shown })
 
 # --- window frames and sending a window to another desktop --------------------------
 $test = Start-Process charmap.exe -PassThru

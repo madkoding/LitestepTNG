@@ -19,7 +19,7 @@
 //                              oldest box from the desktop, Wait keeps new ones hidden
 //                              until there is room
 //
-// Bangs: !NotifyTest ["app" ["title" ["text"]]], !NotifyClear
+// Bangs: !NotifyTest ["app" ["title" ["text"]]], !NotifyClear [test]
 //-------------------------------------------------------------------------------------------------
 #include "../ModuleKit/LiteStep.h"
 #include "../ModuleKit/LSModule.hpp"
@@ -175,11 +175,25 @@ static void TestBang(HWND, LPCWSTR args) {
 
 /// <summary>
 /// !NotifyClear -- closes every box, as if each X had been clicked.
+/// !NotifyClear test -- closes only the boxes made by !NotifyTest, leaving the real
+/// notifications (which a full clear also removes from Windows) alone.
 /// </summary>
-static void ClearBang(HWND, LPCWSTR) {
-  while (!sBoxes.empty()) {
-    RemoveBox(sBoxes.back()->GetData().id, true);
+static void ClearBang(HWND, LPCWSTR args) {
+  WCHAR what[32] = L"";
+  LiteStep::GetToken(args, what, nullptr, FALSE);
+  bool onlyTests = _wcsicmp(what, L"test") == 0;
+
+  std::vector<UINT32> ids;
+  for (auto &box : sBoxes) {
+    UINT32 id = box->GetData().id;
+    if (!onlyTests || (id & TEST_ID_FLAG) != 0) {
+      ids.push_back(id);
+    }
   }
+  for (UINT32 id : ids) {
+    RemoveBox(id, true);
+  }
+  Relayout();
 }
 
 

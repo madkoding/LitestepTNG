@@ -11,11 +11,13 @@
 # ==============================================================================
 param(
     [string]$Theme,
-    [string]$LiteStepDir = 'C:\LiteStepRun',
+    [string]$LiteStepDir,
     [switch]$NoRestart
 )
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'common.ps1')
+$LiteStepDir = Resolve-LiteStepDir $LiteStepDir
 $themesDir = Join-Path $LiteStepDir 'themes'
 $select    = Join-Path $LiteStepDir 'theme-select.rc'
 

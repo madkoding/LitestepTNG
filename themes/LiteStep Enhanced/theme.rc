@@ -435,7 +435,7 @@ MUserFontSize 8
 MUserFontColor $MMUser$
 MUserTextAlign Center
 MUserTextVerticalAlign Middle
-MUserText "MADKODING DESKTOP"
+MUserText "$USERNAME$'S DESKTOP"
 MUserOn RightClickUp None !PopupContext
 
 ; ==============================================================================
@@ -801,21 +801,9 @@ PopupStartMenuEquipoGroup MMMenuIcons
 nPopupPinText "Anadir a favoritos"
 nPopupUnpinText "Quitar de favoritos"
 *Popup .icon="C:\Windows\System32\shell32.dll,43" "FAVORITOS" !PopupPinned
-; JUEGOS: lista fija. Steam lanza por su protocolo; Minecraft son apps de la Store.
-*Popup .icon="C:\Program Files (x86)\Steam\steam.exe,0" "JUEGOS" Folder
-*Popup "MINECRAFT LAUNCHER" !Execute [explorer.exe shell:AppsFolder\Microsoft.4297127D64EC6_8wekyb3d8bbwe!Minecraft]
-*Popup "MINECRAFT JAVA EDITION" !Execute [explorer.exe shell:AppsFolder\Microsoft.MinecraftJavaEdition_8wekyb3d8bbwe!Game]
-*Popup "MINECRAFT FOR WINDOWS" !Execute [explorer.exe shell:AppsFolder\Microsoft.MinecraftUWP_8wekyb3d8bbwe!Game]
-*Popup !Separator
-*Popup "EVE ONLINE" !Execute [steam://rungameid/8500]
-*Popup "VRCHAT" !Execute [steam://rungameid/438100]
-*Popup "STEAMVR" !Execute [steam://rungameid/250820]
-*Popup "WARUDO" !Execute [steam://rungameid/2079120]
-*Popup "XSOVERLAY" !Execute [steam://rungameid/1173510]
-*Popup !Separator
-*Popup .icon="C:\Program Files (x86)\Steam\steam.exe,0" "STEAM" !Execute ["C:\Program Files (x86)\Steam\steam.exe"]
-*Popup "XBOX" !Execute [explorer.exe shell:AppsFolder\Microsoft.GamingApp_8wekyb3d8bbwe!Microsoft.Xbox.App]
-*Popup ~Folder
+; JUEGOS: los accesos directos (.lnk, .url) de la carpeta games\ junto a step.rc. Es
+; contenido personal, no del tema: se anaden o quitan archivos ahi, sin tocar este fichero.
+*Popup .icon="C:\Windows\System32\joy.cpl,0" "JUEGOS" !PopupFolder:"$LiteStepDir$games"
 *Popup .icon="C:\Windows\System32\shell32.dll,316" "CONFIGURACION DE WINDOWS" Folder
 *Popup "CONFIGURACION (APP DE WINDOWS)" !Execute [ms-settings:]
 *Popup "PANTALLA" !Execute [ms-settings:display]
