@@ -278,6 +278,24 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   delete/rename notifications mark them `stale` and they rebuild on the next show.
   `!PopupRecentDocuments` lists only the newest `MaxRecentItems` (default 20) shortcuts by
   modification time, newest first, instead of the whole Recent folder (519 here).
+- **Notifications (new module `modules/Notify`, `Notify.dll`):** shows the Windows toast
+  notifications as boxes stacked top-down on the right edge of the work area.
+  `Listener.cpp` polls `UserNotificationListener` (WinRT, works unpackaged here; its
+  `NotificationChanged` event does not, hence the polling) on an MTA thread and posts
+  added/removed ids to the module window. Each `NotificationBox` is a top-level Drawable
+  (prefix `NotifyBox`) with child parts `Title` (app), `Text`, `Time`, `Close`; the X posts
+  `WM_NOTIFY_DISMISS` and, with `NotifyDismissFromSystem true`, also removes the toast from
+  the Windows notification centre. Layout/overflow is in `ModuleEntry.cpp`
+  (`Relayout`, `PickOverflowVictim`). Bangs `!NotifyTest ["app" ["title" ["text"]]]` and
+  `!NotifyClear` test it without the mouse. Clicking a box goes to its app
+  (`AppActivation.cpp`: finds a window by AppUserModelID, else launches
+  `shell:AppsFolder\<id>`; a toast's own action cannot be invoked from outside) and, with
+  `NotifyClickDismisses true`, closes it. `NotifySound` is a .wav played on arrival
+  (`themes\Metamorphosis\sounds\notify.wav`, generated). The user runs Windows in
+  "Do not disturb": no Windows banner or sound, but toasts still reach the listener.
+  PowerShell's own toasts are disabled on this machine, so test toasts must be raised
+  under another AppUserModelID (e.g. Terminal's). Private messages must stay clear of the `LM_`
+  range, which starts at `WM_APP` (32768). Needs `stdcpp17` like Core.
 - **Taskbar animation:** `<Taskbar>AnimationDuration` (ms) slides task buttons to their new
   place when tasks are added/removed (`TaskButton::SetTarget/StepAnimation`, timer in
   `Taskbar`). The thumbnail's own `ThumbnailAnimate` and the popup `ShowAnimation*` settings
