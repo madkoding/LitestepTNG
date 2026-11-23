@@ -808,9 +808,7 @@ void TileGroup::DeleteSelectedFiles() {
 void TileGroup::OpenSelectedFiles() {
   for (Tile *tile : mTiles) {
     if (tile->IsSelected()) {
-      WCHAR command[MAX_LINE_LENGTH];
-      tile->GetDisplayName(SHGDN_FORPARSING, command, MAX_LINE_LENGTH);
-      ShellExecuteW(nullptr, nullptr, command, nullptr, nullptr, SW_SHOW);
+      tile->Open();
     }
   }
 }

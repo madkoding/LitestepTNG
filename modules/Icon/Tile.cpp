@@ -90,9 +90,7 @@ LRESULT WINAPI Tile::HandleMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lPa
     return 0;
 
   case WM_LBUTTONDBLCLK:
-    WCHAR command[MAX_LINE_LENGTH];
-    GetDisplayName(SHGDN_FORPARSING, command, MAX_LINE_LENGTH);
-    ShellExecuteW(nullptr, nullptr, command, nullptr, nullptr, SW_SHOW);
+    Open();
     return 0;
 
   case WM_LBUTTONDOWN:
@@ -235,6 +233,40 @@ void Tile::SetThumbnail(LoadThumbnailResponse &thumbnail) {
     ASSERT(false);
   }
   mWindow->Repaint();
+}
+
+
+/// <summary>
+/// Opens the item, the way a double click in Explorer does.
+/// </summary>
+/// <remarks>
+/// The item is handed over as an ID list, not as a path. A path with no extension is
+/// completed by ShellExecute the way a command line is: for a folder "Game" next to
+/// "Game.exe" it runs the program. An ID list names exactly one item.
+/// </remarks>
+void Tile::Open() {
+  PIDLIST_ABSOLUTE folder = nullptr;
+  if (SUCCEEDED(SHGetIDListFromObject(mShellFolder, &folder))) {
+    PIDLIST_ABSOLUTE item = ILCombine(folder, mItem);
+    CoTaskMemFree(folder);
+    if (item != nullptr) {
+      SHELLEXECUTEINFOW info = { sizeof(info) };
+      info.fMask = SEE_MASK_IDLIST | SEE_MASK_FLAG_NO_UI;
+      info.lpIDList = item;
+      info.nShow = SW_SHOW;
+      BOOL opened = ShellExecuteExW(&info);
+      CoTaskMemFree(item);
+      if (opened) {
+        return;
+      }
+    }
+  }
+
+  // Items the shell cannot open by ID list: the old way, by parsing name.
+  WCHAR command[MAX_LINE_LENGTH];
+  if (SUCCEEDED(GetDisplayName(SHGDN_FORPARSING, command, MAX_LINE_LENGTH))) {
+    ShellExecuteW(nullptr, nullptr, command, nullptr, nullptr, SW_SHOW);
+  }
 }
 
 

@@ -40,6 +40,7 @@ public:
   void SetPosition(int id, int x, int y);
   LRESULT WINAPI HandleMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam, LPVOID);
   HRESULT GetDisplayName(SHGDNF flags, LPWSTR buf, UINT cchBuf);
+  void Open();
 
   //
   PCITEMID_CHILD GetItem();
