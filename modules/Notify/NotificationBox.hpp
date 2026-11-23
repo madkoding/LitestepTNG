@@ -33,7 +33,7 @@ public:
 
   /// <summary>
   /// A piece of the box. Its settings prefix is the box's prefix plus its name, e.g.
-  /// NotifyBoxTitle, NotifyBoxText, NotifyBoxTime, NotifyBoxClose.
+  /// NotifyBoxTitle, NotifyBoxText, NotifyBoxTime, NotifyBoxClose, NotifyBoxCloseArea.
   /// </summary>
   class Part : public Drawable {
   public:
@@ -66,5 +66,8 @@ private:
   ToastData mData;
   StateRender<States> mStateRender;
   // Created after the box's own window is initialized: a child sizes itself against it.
-  std::unique_ptr<Part> mTitle, mText, mTime, mClose;
+  // mCloseArea is an invisible, larger target around the close button: the button's
+  // picture is small, and a click that just misses it would land on the box, which
+  // opens the program instead of only closing the notification.
+  std::unique_ptr<Part> mTitle, mText, mTime, mCloseArea, mClose;
 };
