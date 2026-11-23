@@ -19,3 +19,6 @@ build*.log
 
 # Personal overrides (see personal.rc.example)
 personal.rc
+
+# Packages built by tools\package.ps1
+dist/
