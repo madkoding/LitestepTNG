@@ -1,7 +1,7 @@
 ; ==============================================================================
 ;  LiteStep Enhanced - PORT al motor TNG
 ;  Original: Norman Kaczmarek, 2001 (OTS 2.0, modulos clasicos *NetLoadModule).
-;  Este port recrea el LOOK usando los modulos modernos de C:\LiteStepTNG.
+;  Este port recrea el LOOK usando los modulos modernos de este build.
 ;  Solo usa claves/bangs que existen en este build (misma base que step.rc).
 ; ==============================================================================
 LiteStepVersion "0.25.0"
