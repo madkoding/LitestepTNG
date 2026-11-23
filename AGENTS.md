@@ -123,16 +123,27 @@ Consequences:
 - `litestep.exe !Bang args` (via `Start-Process ... -ArgumentList '!Bang args'`, so the
   command line starts with `!` unquoted) reaches the running instance in this mode and
   is the way to test bangs without touching the mouse.
-- **Explorer's taskbar is hidden by nCore** (`HideExplorerTaskbar true` in theme.rc): a
+- **Explorer's taskbar is hidden by nCore, by default in every theme** (`HideExplorerTaskbar
+  false` in a theme keeps it; before 2026-11-23 the default was the other way round and
+  Glass and Prototype-X showed Windows' taskbar): a
   1 s timer re-hides `Shell_TrayWnd` / `Shell_SecondaryTrayWnd`, and they are shown again
   when Core unloads. If litestep is killed or crashes the taskbar stays hidden until
   litestep (or Explorer) is restarted.
-- **Work area:** `ReserveScreenTop` / `ReserveScreenBottom` (px, primary monitor). Core
+- **Work area:** `ReserveScreenTop` / `Bottom` / `Left` / `Right` (px, primary monitor;
+  all zero = the whole monitor, so the strip Explorer keeps for its hidden taskbar is not
+  left empty). Each theme reserves what its own bars need. Core
   writes `SPI_SETWORKAREA` **without** `SPIF_SENDCHANGE` and re-checks every second.
   Broadcasting the change makes Explorer recompute its own value immediately (a fight
   litestep loses). AppBars are not usable: `SHAppBarMessage` is answered by litestep's own
-  `Shell_TrayWnd` (tray service) and crashed in `shcore.dll`. `Desk.dll` is not loaded in
-  this mode (its desktop would sit under Explorer's and it resets the work area on load).
+  `Shell_TrayWnd` (tray service) and crashed in `shcore.dll`.
+- **Never load `Desk.dll` on top of Explorer.** It does not sit under Explorer's desktop: it
+  takes Explorer's `SHELLDLL_DefView` (the window that paints the wallpaper and the icons)
+  and re-parents it into its own window, giving it back only in `quitModule`. Every
+  restart here kills litestep (`Stop-Process`), so the view is destroyed with it: `Progman`
+  is left without children, the desktop is a flat dark grey on every monitor, and no
+  wallpaper chosen in Windows shows any more. Only restarting explorer.exe repairs it.
+  This happened on 2026-11-23 by switching to Glass / Prototype-X, which loaded it then;
+  no installed theme does now. Check with: does `Progman` have a `SHELLDLL_DefView` child?
 - **Desktop clicks:** the desktop is Explorer's. `DesktopRightClick <bang>` /
   `DesktopMiddleClick <bang>` (nHotKey, low-level mouse hook) run a bang for clicks on
   Explorer's desktop; SHIFT+click passes through to Explorer.
@@ -174,7 +185,8 @@ build, matching the original theme's preview screenshot (1024×768; not part of 
 
 - **The theme is called "LiteStep Enhanced"; do not use any other name for it** (the user
   asked twice). Earlier sessions called the port by the original's internal `ThemeName`;
-  the folder and the git branch (now `litestep-enhanced-theme`) were renamed on 2026-11-23.
+  the folder was renamed on 2026-11-23, and the work branch that carried the old name is gone
+  (the repo has only `master`).
   All that is left of the old name is the `MM` prefix of the theme's variables and
   `original-2002\Theme.rc`, the author's untouched file. `theme.rc` builds its paths from
   `$ThemeName$`, so the folder name is the only place the name lives. In the repo the port
@@ -454,6 +466,15 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   Explorer's taskbar and icons stay hidden. When deploying a module that has not run
   before, check that litestep is still alive afterwards and be ready to disable the module
   in the deployed theme.rc.
+- **Wallpaper (Wallpaper module):** the wallpaper is Windows' own, drawn by Explorer.
+  `ThemeWallpaper "<file>"` (+ `ThemeWallpaperStyle`) gives a theme its picture, applied on
+  load; a theme without it leaves the user's choice alone. When a theme's picture goes up,
+  the one the user had is remembered (`HKCU\Software\LiteStepTNG`: `UserWallpaper`,
+  `ThemeWallpaperApplied`) and comes back when a theme without a wallpaper loads, unless
+  the user has picked another meanwhile. Wallpapers are set with
+  `SystemParametersInfo(SPI_SETDESKWALLPAPER, ..., SPIF_UPDATEINIFILE|SPIF_SENDCHANGE)` on a
+  worker thread; the old code wrote the registry value and broadcast by hand, which makes
+  Explorer redraw nothing. Verify through `SPI_GETDESKWALLPAPER` while switching themes.
 - **Taskbar animation:** `<Taskbar>AnimationDuration` (ms) slides task buttons to their new
   place when tasks are added/removed (`TaskButton::SetTarget/StepAnimation`, timer in
   `Taskbar`). The thumbnail's own `ThumbnailAnimate` and the popup `ShowAnimation*` settings
