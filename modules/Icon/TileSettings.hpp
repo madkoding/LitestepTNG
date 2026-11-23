@@ -17,6 +17,9 @@ public:
   WindowSettings mTileWindowSettings;
   StateRender<Tile::State> mTileStateRender;
   int mIconSize;
+  // Space between the top of the tile and the icon, so a selected or hovered tile
+  // shows its background around the icon and not only below it. Default: 0
+  int mIconOffsetTop;
   float mGhostOpacity;
 
 public:

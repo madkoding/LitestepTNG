@@ -118,6 +118,7 @@
   <ItemGroup>
     <ClCompile Include="Tile.cpp" />
     <ClCompile Include="TileGroup.cpp" />
+    <ClCompile Include="TileGroupDrag.cpp" />
     <ClCompile Include="ModuleEntry.cpp" />
     <ClCompile Include="SelectionRectangle.cpp" />
     <ClCompile Include="TileSettings.cpp" />

@@ -60,7 +60,18 @@ TileGroup::TileGroup(LPCTSTR prefix)
   , mClipBoardCutFiles(false)
   , mInRectangleSelection(false)
   , mNextPositionID(0)
+  // SetFolder releases the previous folder first: left uninitialised, that released a
+  // garbage pointer and took the module down while it was loading.
+  , mWorkingFolder(nullptr)
   , mRootFolder(nullptr)
+  , mReplacesExplorerIcons(false)
+  , mShowsDesktop(false)
+  , mDropTarget(this)
+  , mDropTargetRegistered(false)
+  , mDragMessage(0)
+  , mDragOrigin(nullptr)
+  , mDroppedOnSelf(false)
+  , mRescanTimer(0)
 {
   LoadSettings();
 
@@ -74,10 +85,15 @@ TileGroup::TileGroup(LPCTSTR prefix)
   //mWindow->AddDropRegion();
   mWindow->AddPostPainter(&mSelectionRectagle);
   // TODO::Add the selection rectangle as a brush owner
-  mWindow->Show();
+  if (!mWindow->GetDrawingSettings()->hidden) {
+    mWindow->Show();
+  }
 
   mIconLoadedMessage = mWindow->RegisterUserMessage(this);
   mChangeNotifyMsg = mWindow->RegisterUserMessage(this);
+  mDragMessage = mWindow->RegisterUserMessage(this);
+  // Files can be dropped on the group, and its own icons rearranged by dragging.
+  mDropTargetRegistered = SUCCEEDED(RegisterDragDrop(mWindow->GetWindowHandle(), &mDropTarget));
 
   // Get the root ISHellFolder
   SHGetDesktopFolder(reinterpret_cast<IShellFolder**>(&mRootFolder));
@@ -92,6 +108,13 @@ TileGroup::TileGroup(LPCTSTR prefix)
 /// Destructor
 /// </summary>
 TileGroup::~TileGroup() {
+  if (mDropTargetRegistered) {
+    RevokeDragDrop(mWindow->GetWindowHandle());
+  }
+  if (mDragMessage) {
+    mWindow->ReleaseUserMessage(mDragMessage);
+  }
+
   if (mChangeNotifyUID != 0) {
     SHChangeNotifyDeregister(mChangeNotifyUID);
   }
@@ -139,6 +162,8 @@ void TileGroup::LoadSettings() {
     AddNameFilter(L".user");
     AddNameFilter(L".onedrive");
   }
+
+  mReplacesExplorerIcons = mSettings->GetBool(L"ReplaceExplorerIcons", false);
 
   mSettings->IterateOverCommandTokens(
     L"Hide", std::bind(&TileGroup::AddNameFilter, this, std::placeholders::_1));
@@ -195,7 +220,8 @@ void TileGroup::SetFolder(LPWSTR folder) {
 
   HRESULT hr = S_OK;
 
-  if (_wcsicmp(folder, L"desktop") == 0)
+  mShowsDesktop = _wcsicmp(folder, L"desktop") == 0;
+  if (mShowsDesktop)
   {
     hr = SHGetKnownFolderIDList(FOLDERID_Desktop, 0, nullptr, &idList);
     if (SUCCEEDED(hr))
@@ -252,14 +278,26 @@ void TileGroup::SetFolder(LPWSTR folder) {
 
 LPARAM TileGroup::FolderLoaded(UINT64 id, LoadFolderResponse *response) {
   Window::UpdateLock lock(mWindow);
+  // Icons the user has put somewhere go first, so that the others, which take the
+  // first free slot, do not sit down in one of theirs.
   for (auto item : response->items) {
-    ItemLoaded(id, &item);
+    if (SavedSlot(item.id) >= 0) {
+      ItemLoaded(id, &item);
+    }
+  }
+  for (auto item : response->items) {
+    if (SavedSlot(item.id) < 0) {
+      ItemLoaded(id, &item);
+    }
   }
   return 0;
 }
 
 
 LPARAM TileGroup::ItemLoaded(UINT64 id, LoadItemResponse *item) {
+  if (mReplacesExplorerIcons && mShowsDesktop && !ShownOnExplorerDesktop(item->id)) {
+    return 0;
+  }
   int iconPosition = GetIconPosition(item->id);
   RECT pos = mLayoutSettings.RectFromID(iconPosition, mTileWidth, mTileHeight, int(mWindow->GetSize().width + 0.5f), int(mWindow->GetSize().height + 0.5f));
   Tile *icon = new Tile(this, item->id, mWorkingFolder, mTileWidth, mTileHeight, mTileSettings, item->thumbnail);
@@ -267,6 +305,114 @@ LPARAM TileGroup::ItemLoaded(UINT64 id, LoadItemResponse *item) {
   mTiles.push_back(icon);
 
   return 0;
+}
+
+
+/// <summary>
+/// Asks for a rescan shortly. Changes come in bursts (a copy reports the folder several
+/// times), so they are gathered into one pass.
+/// </summary>
+void TileGroup::ScheduleRescan() {
+  if (mRescanTimer == 0) {
+    mRescanTimer = mWindow->SetCallbackTimer(400, this);
+  }
+}
+
+
+/// <summary>
+/// Compares the folder with the icons on show: adds what is new, removes what is gone.
+/// </summary>
+void TileGroup::Rescan() {
+  if (mWorkingFolder == nullptr) {
+    return;
+  }
+  IEnumIDList *enumerator = nullptr;
+  if (mWorkingFolder->EnumObjects(nullptr, SHCONTF_FOLDERS | SHCONTF_NONFOLDERS, &enumerator) != S_OK
+      || enumerator == nullptr) {
+    return;
+  }
+
+  std::vector<PITEMID_CHILD> present;
+  PITEMID_CHILD item = nullptr;
+  while (enumerator->Next(1, &item, nullptr) == S_OK) {
+    present.push_back(item);
+  }
+  enumerator->Release();
+
+  // Gone: collected first, RemoveIcon changes the list.
+  std::vector<Tile*> gone;
+  for (Tile *tile : mTiles) {
+    bool found = false;
+    for (PITEMID_CHILD child : present) {
+      if (tile->CompareID(child) == 0) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      gone.push_back(tile);
+    }
+  }
+  for (Tile *tile : gone) {
+    RemoveIcon(tile->GetItem());
+  }
+
+  // New: AddIcon skips what is already shown and what should not be.
+  for (PITEMID_CHILD child : present) {
+    AddIcon(child);
+    CoTaskMemFree(child);
+  }
+}
+
+
+/// <summary>
+/// The root of the shell namespace holds more than what Explorer puts on its desktop:
+/// the user's folders, drives of other systems, every system object. A group that
+/// stands in for Explorer's icons shows what Explorer would:
+///  - files and folders that are in the user's or the common Desktop directory and
+///    are not hidden;
+///  - system objects ("::{CLSID}") the user has enabled as desktop icons. Windows
+///    keeps that under HideDesktopIcons (0 = shown); with no entry only the Recycle
+///    Bin is shown.
+/// </summary>
+bool TileGroup::ShownOnExplorerDesktop(PCITEMID_CHILD pidl) const {
+  WCHAR name[MAX_PATH];
+  if (FAILED(GetDisplayNameOf(pidl, SHGDN_FORPARSING, name, _countof(name)))) {
+    return false;
+  }
+
+  if (wcsncmp(name, L"::{", 3) == 0) {
+    LPCWSTR clsid = name + 2;
+    LPCWSTR end = wcschr(clsid, L'}');
+    if (end == nullptr || end[1] != L'\0') {
+      return false; // something inside a system object, not one itself
+    }
+    DWORD hidden = 0, size = sizeof(hidden);
+    if (RegGetValueW(HKEY_CURRENT_USER,
+        L"Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\HideDesktopIcons\\NewStartPanel",
+        clsid, RRF_RT_REG_DWORD, nullptr, &hidden, &size) == ERROR_SUCCESS) {
+      return hidden == 0;
+    }
+    return _wcsicmp(clsid, L"{645FF040-5081-101B-9F08-00AA002F954E}") == 0;
+  }
+
+  DWORD attributes = GetFileAttributesW(name);
+  if (attributes == INVALID_FILE_ATTRIBUTES || (attributes & FILE_ATTRIBUTE_HIDDEN) != 0) {
+    return false;
+  }
+
+  WCHAR parent[MAX_PATH];
+  StringCchCopyW(parent, _countof(parent), name);
+  PathRemoveFileSpecW(parent);
+  for (REFKNOWNFOLDERID folder : { FOLDERID_Desktop, FOLDERID_PublicDesktop }) {
+    LPWSTR path = nullptr;
+    bool match = SUCCEEDED(SHGetKnownFolderPath(folder, 0, nullptr, &path)) && _wcsicmp(path, parent) == 0;
+    CoTaskMemFree(path);
+    if (match) {
+      return true;
+    }
+  }
+  return false;
 }
 
 
@@ -281,6 +427,7 @@ void TileGroup::AddIcon(PCITEMID_CHILD pidl) {
   WCHAR buffer[MAX_PATH];
   GetDisplayNameOf(pidl, SHGDN_FORPARSING, buffer, _countof(buffer));
   if (mHiddenItems.find(buffer) != mHiddenItems.end()) return;
+  if (mReplacesExplorerIcons && mShowsDesktop && !ShownOnExplorerDesktop(pidl)) return;
 
   LoadItemRequest request;
   request.folder = mWorkingFolder;
@@ -296,7 +443,6 @@ void TileGroup::AddIcon(PCITEMID_CHILD pidl) {
 void TileGroup::RemoveIcon(PCITEMID_CHILD pidl) {
   mTiles.remove_if([pidl, this] (Tile *tile) -> bool {
     if (tile->CompareID(pidl) == 0) {
-      mEmptySpots.insert(tile->GetPositionID());
       delete tile;
       return true;
     }
@@ -331,13 +477,17 @@ void TileGroup::RenameIcon(PCITEMID_CHILD oldID, PCITEMID_CHILD newID) {
 /// <summary>
 ///
 /// </summary>
-int TileGroup::GetIconPosition(PCITEMID_CHILD /* pidl */) {
-  if (!mEmptySpots.empty()) {
-    int id = *mEmptySpots.begin();
-    mEmptySpots.erase(mEmptySpots.begin());
-    return id;
+int TileGroup::GetIconPosition(PCITEMID_CHILD pidl) {
+  // Where the user left it, if that slot is free; otherwise the first free slot.
+  int saved = SavedSlot(pidl);
+  if (saved >= 0 && TileInSlot(saved) == nullptr) {
+    return saved;
   }
-  return mNextPositionID++;
+  int slot = 0;
+  while (TileInSlot(slot) != nullptr) {
+    ++slot;
+  }
+  return slot;
 }
 
 
@@ -780,7 +930,14 @@ LRESULT TileGroup::HandleChangeNotify(HANDLE changeHandle, DWORD processId) {
     case SHCNE_ATTRIBUTES:
     case SHCNE_UPDATEITEM:
     case SHCNE_UPDATEDIR:
-      UpdateIcon(ILFindLastID(idList[0]));
+      // About one of the icons, or about the folder as a whole. A folder synchronised
+      // with the cloud (a Desktop kept in OneDrive) reports new and deleted files only
+      // this second way, never as a create or delete of the file itself.
+      if (FindIcon(ILFindLastID(idList[0])) != nullptr) {
+        UpdateIcon(ILFindLastID(idList[0]));
+      } else {
+        ScheduleRescan();
+      }
       break;
 
     case SHCNE_MKDIR:
@@ -818,6 +975,11 @@ LRESULT WINAPI TileGroup::HandleMessage(HWND window, UINT message, WPARAM wParam
     return HandleChangeNotify(HANDLE(wParam), DWORD(lParam));
   }
 
+  if (message == mDragMessage && mDragMessage != 0) {
+    BeginDrag(reinterpret_cast<Tile*>(lParam));
+    return 0;
+  }
+
   if (mContextMenu3) {
     LRESULT result;
     if (SUCCEEDED(mContextMenu3->HandleMenuMsg2(message, wParam, lParam, &result))) {
@@ -832,6 +994,15 @@ LRESULT WINAPI TileGroup::HandleMessage(HWND window, UINT message, WPARAM wParam
   }
 
   switch (message) {
+  case WM_TIMER:
+    if (mRescanTimer != 0 && wParam == mRescanTimer) {
+      mWindow->ClearCallbackTimer(mRescanTimer);
+      mRescanTimer = 0;
+      Rescan();
+      return 0;
+    }
+    break;
+
   case WM_KEYDOWN:
     switch (wParam) {
     case 'A':

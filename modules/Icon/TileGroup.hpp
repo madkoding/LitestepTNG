@@ -87,8 +87,7 @@ private:
 private:
   StateRender<State> mStateRender;
 
-  // Positioning
-  std::set<int> mEmptySpots;
+  // Positioning: each tile knows its slot; see GetIconPosition.
   int mNextPositionID;
 
   // All icons currently part of this group.
@@ -107,6 +106,26 @@ private:
 
   // True if we have files marked as cut.
   bool mClipBoardCutFiles;
+
+  // True if this group is shown instead of Explorer's desktop icons, which are then
+  // hidden while the group is visible (see ModuleEntry.cpp).
+  bool mReplacesExplorerIcons;
+
+  // True if the group shows the Desktop folder (the root of the shell namespace).
+  bool mShowsDesktop;
+
+  // Whether Explorer itself would show this item on its desktop.
+  bool ShownOnExplorerDesktop(PCITEMID_CHILD pidl) const;
+
+  // Bringing the icons in line with the folder when it reports a change as a whole.
+  void ScheduleRescan();
+  void Rescan();
+  UINT_PTR mRescanTimer;
+
+public:
+  bool ReplacesExplorerIcons() const { return mReplacesExplorerIcons; }
+
+private:
 
   // Copy & Paste
 private:
@@ -130,5 +149,46 @@ private:
 private:
   IContextMenu2 *mContextMenu2;
   IContextMenu3 *mContextMenu3;
+
+  // Drag and drop, and the order of the icons (TileGroupDrag.cpp)
+public:
+  void RequestDrag(Tile *origin);
+
+private:
+  class DropTarget : public IDropTarget {
+  public:
+    explicit DropTarget(TileGroup *group);
+    HRESULT WINAPI QueryInterface(REFIID riid, void **object) override;
+    ULONG WINAPI AddRef() override;
+    ULONG WINAPI Release() override;
+    HRESULT WINAPI DragEnter(IDataObject *data, DWORD keys, POINTL point, DWORD *effect) override;
+    HRESULT WINAPI DragOver(DWORD keys, POINTL point, DWORD *effect) override;
+    HRESULT WINAPI DragLeave() override;
+    HRESULT WINAPI Drop(IDataObject *data, DWORD keys, POINTL point, DWORD *effect) override;
+
+  private:
+    void EndForward();
+    TileGroup *mGroup;
+    // The folder's own drop target, while something from outside is over the group.
+    IDropTarget *mForward;
+  };
+  friend class DropTarget;
+
+  void BeginDrag(Tile *origin);
+  bool HasTile(Tile *tile) const;
+  Tile *TileInSlot(int slot) const;
+  int SlotFromPoint(POINT point) const;
+  void MoveTileToSlot(Tile *tile, int slot);
+  void SaveSlot(Tile *tile) const;
+  int SavedSlot(PCITEMID_CHILD pidl) const;
+
+  DropTarget mDropTarget;
+  bool mDropTargetRegistered;
+  UINT mDragMessage;
+  // The tile a drag started from, while one of ours is in progress.
+  Tile *mDragOrigin;
+  // Set by the drop target when one of our own icons is dropped on the group.
+  bool mDroppedOnSelf;
+  POINT mDropPoint;
 };
 
