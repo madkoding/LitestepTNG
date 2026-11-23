@@ -7,7 +7,7 @@
 // FrameClose, each with an "Active" look for the foreground window).
 //
 // Only windows with a standard title bar get one; programs that draw their own are
-// skipped (see TitleBar::GetNativeBarRect). Windows are followed with out-of-context
+// skipped (see WindowFrame::GetNativeBarRect). Windows are followed with out-of-context
 // WinEvent hooks, so the bar trails a dragged window by a moment.
 //
 // RC:    *FramesExclude <window class>   never cover windows of this class
@@ -16,7 +16,7 @@
 #include "../ModuleKit/LiteStep.h"
 #include "../ModuleKit/LSModule.hpp"
 
-#include "TitleBar.hpp"
+#include "WindowFrame.hpp"
 #include "Version.h"
 
 #include <map>
@@ -30,7 +30,7 @@ LSModule gLSModule(TEXT(MODULE_NAME), TEXT(MODULE_AUTHOR), MakeVersion(MODULE_VE
 // The messages we want from the core.
 static UINT gLSMessages[] = { LM_GETREVID, LM_REFRESH, 0 };
 
-static std::map<HWND, std::unique_ptr<TitleBar>> sBars;
+static std::map<HWND, std::unique_ptr<WindowFrame>> sFrames;
 static std::vector<std::wstring> sExcludedClasses;
 static std::vector<HWINEVENTHOOK> sHooks;
 static bool sEnabled = true;
@@ -44,8 +44,8 @@ static int sSettlePasses = 0;
 
 
 static void RestackAll() {
-  for (auto &bar : sBars) {
-    bar.second->Restack();
+  for (auto &frame : sFrames) {
+    frame.second->Restack();
   }
 }
 
@@ -116,28 +116,43 @@ static bool IsExcluded(HWND window) {
 /// Brings one window's bar up to date: creates it, moves it, or removes it.
 /// </summary>
 static void SyncWindow(HWND window) {
-  auto existing = sBars.find(window);
-  if (existing != sBars.end()) {
+  auto existing = sFrames.find(window);
+  if (existing != sFrames.end()) {
     if (!sEnabled || !IsWindow(window) || !existing->second->Sync()) {
-      sBars.erase(existing);
+      sFrames.erase(existing);
     }
     return;
   }
 
   RECT bar;
-  if (sEnabled && TitleBar::GetNativeBarRect(window, bar) && !IsExcluded(window)) {
-    auto created = sBars.emplace(window, std::unique_ptr<TitleBar>(new TitleBar(window))).first;
+  if (sEnabled && WindowFrame::GetNativeBarRect(window, bar) && !IsExcluded(window)) {
+    auto created = sFrames.emplace(window, std::unique_ptr<WindowFrame>(new WindowFrame(window))).first;
     if (!created->second->Sync()) {
-      sBars.erase(created);
+      sFrames.erase(created);
     }
+  }
+}
+
+
+/// <summary>
+/// Re-checks every window that has a frame. Works on a copy of the list: syncing can
+/// remove entries.
+/// </summary>
+static void SyncTracked() {
+  std::vector<HWND> windows;
+  for (auto &frame : sFrames) {
+    windows.push_back(frame.first);
+  }
+  for (HWND tracked : windows) {
+    SyncWindow(tracked);
   }
 }
 
 
 static void SyncAll() {
   std::vector<HWND> windows;
-  for (auto &bar : sBars) {
-    windows.push_back(bar.first);
+  for (auto &frame : sFrames) {
+    windows.push_back(frame.first);
   }
   EnumWindows([] (HWND window, LPARAM lParam) -> BOOL {
     ((std::vector<HWND> *)lParam)->push_back(window);
@@ -169,23 +184,17 @@ static void CALLBACK WinEventProc(HWINEVENTHOOK, DWORD event, HWND window, LONG 
     // The active window concerns every bar: one gains the Active look, one loses it.
     SyncWindow(window);
     {
-      std::vector<HWND> windows;
-      for (auto &bar : sBars) {
-        windows.push_back(bar.first);
-      }
-      for (HWND tracked : windows) {
-        SyncWindow(tracked);
-      }
+      SyncTracked();
     }
     ScheduleSettle();
     return;
 
   case EVENT_OBJECT_DESTROY:
-    sBars.erase(window);
+    sFrames.erase(window);
     return;
   }
 
-  if (sBars.find(window) != sBars.end() || (GetWindowLongPtrW(window, GWL_STYLE) & WS_CHILD) == 0) {
+  if (sFrames.find(window) != sFrames.end() || (GetWindowLongPtrW(window, GWL_STYLE) & WS_CHILD) == 0) {
     SyncWindow(window);
   }
 }
@@ -266,13 +275,7 @@ LRESULT WINAPI LSMessageHandler(HWND window, UINT message, WPARAM wParam, LPARAM
       // A full check, not only the stacking: some changes come without any event for
       // the window (the work area being corrected under a maximized window, a caption
       // that changes height), and the bar would stay where it was.
-      std::vector<HWND> windows;
-      for (auto &bar : sBars) {
-        windows.push_back(bar.first);
-      }
-      for (HWND tracked : windows) {
-        SyncWindow(tracked);
-      }
+      SyncTracked();
     }
     return 0;
 
@@ -283,7 +286,7 @@ LRESULT WINAPI LSMessageHandler(HWND window, UINT message, WPARAM wParam, LPARAM
 
   case LM_REFRESH:
     // The skin may have changed: build the bars again.
-    sBars.clear();
+    sFrames.clear();
     LoadSettings();
     SyncAll();
     return 0;
@@ -303,6 +306,6 @@ EXPORT_CDECL(void) quitModule(HINSTANCE /* instance */) {
     UnhookWinEvent(hook);
   }
   sHooks.clear();
-  sBars.clear();
+  sFrames.clear();
   gLSModule.DeInitalize();
 }

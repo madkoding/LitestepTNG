@@ -10,6 +10,8 @@
 //-------------------------------------------------------------------------------------------------
 #include "AppActivation.hpp"
 
+#include "../Utilities/WindowActivation.h"
+
 #include <appmodel.h>
 #include <dwmapi.h>
 #include <propkey.h>
@@ -91,25 +93,6 @@ static BOOL CALLBACK FindProc(HWND window, LPARAM lParam) {
 }
 
 
-/// <summary>
-/// Gives a window the foreground. The boxes never take focus themselves
-/// (WS_EX_NOACTIVATE), so Windows may refuse a plain SetForegroundWindow; borrowing the
-/// input queue of whoever has the foreground gets around that, as the popups do.
-/// </summary>
-static void BringToFront(HWND window) {
-  if (SetForegroundWindow(window) && GetForegroundWindow() == window) {
-    return;
-  }
-  DWORD self = GetCurrentThreadId();
-  DWORD foreground = GetWindowThreadProcessId(GetForegroundWindow(), nullptr);
-  if (foreground != 0 && foreground != self && AttachThreadInput(self, foreground, TRUE)) {
-    BringWindowToTop(window);
-    SetForegroundWindow(window);
-    AttachThreadInput(self, foreground, FALSE);
-  }
-}
-
-
 bool AppActivation::Activate(LPCWSTR appId) {
   if (appId == nullptr || *appId == L'\0') {
     return false;
@@ -121,7 +104,7 @@ bool AppActivation::Activate(LPCWSTR appId) {
     if (IsIconic(search.found)) {
       ShowWindow(search.found, SW_RESTORE);
     }
-    BringToFront(search.found);
+    WindowActivation::ForceForeground(search.found);
     return true;
   }
 

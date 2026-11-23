@@ -15,6 +15,9 @@
 //   NotifyDismissFromSystem    the X also removes the notification from Windows
 //   NotifyClickDismisses       clicking a box (which goes to its app) also closes it
 //   NotifySound                .wav played when a notification arrives; none by default
+//   NotifyOverflow             when the column is full: DropOldest (default) removes the
+//                              oldest box from the desktop, Wait keeps new ones hidden
+//                              until there is room
 //
 // Bangs: !NotifyTest ["app" ["title" ["text"]]], !NotifyClear
 //-------------------------------------------------------------------------------------------------
@@ -50,25 +53,9 @@ static std::vector<std::unique_ptr<NotificationBox>> sBoxes;
 
 static int sMarginTop, sMarginRight, sMarginBottom, sSpacing;
 static WCHAR sTimeFormat[64];
-static bool sDismissFromSystem, sClickDismisses;
+static bool sDismissFromSystem, sClickDismisses, sOverflowDropsOldest;
 static WCHAR sSound[MAX_PATH];
 static UINT32 sNextTestId = TEST_ID_FLAG;
-
-
-/// <summary>
-/// Decides what happens when the column is full. Called with the number of boxes and
-/// the index of the first one that no longer fits (always at least 1).
-/// </summary>
-/// <returns>The index of a box to drop from the desktop (it stays in the Windows
-/// notification centre), or -1 to keep them all: the ones that do not fit then wait,
-/// hidden, until closing others makes room.</returns>
-static int PickOverflowVictim(size_t count, size_t firstThatDoesNotFit) {
-  UNREFERENCED_PARAMETER(count);
-  UNREFERENCED_PARAMETER(firstThatDoesNotFit);
-  // TODO(human): choose the overflow policy. This default drops the oldest box (the
-  // one at the top), so the column scrolls up and the newest is always visible.
-  return 0;
-}
 
 
 /// <summary>
@@ -97,14 +84,18 @@ static void Relayout() {
       return;
     }
 
-    int victim = PickOverflowVictim(sBoxes.size(), index);
-    if (victim < 0 || size_t(victim) >= sBoxes.size()) {
+    // The column is full (index is the first box that does not fit).
+    if (!sOverflowDropsOldest) {
+      // Keep them all: the ones that do not fit wait, hidden, until closing others
+      // makes room.
       for (; index < sBoxes.size(); ++index) {
         sBoxes[index]->Hide();
       }
       return;
     }
-    sBoxes.erase(sBoxes.begin() + victim);
+    // Drop the oldest box (it stays in the Windows notification centre) and lay the
+    // column out again, so the newest is always on screen.
+    sBoxes.erase(sBoxes.begin());
   }
 }
 
@@ -150,6 +141,9 @@ static void LoadSettings() {
   sSpacing = settings.GetInt(L"Spacing", 6);
   sDismissFromSystem = settings.GetBool(L"DismissFromSystem", true);
   sClickDismisses = settings.GetBool(L"ClickDismisses", true);
+  WCHAR overflow[32];
+  settings.GetString(L"Overflow", overflow, _countof(overflow), L"DropOldest");
+  sOverflowDropsOldest = _wcsicmp(overflow, L"Wait") != 0;
   settings.GetString(L"Sound", sSound, _countof(sSound), L"");
   settings.GetString(L"TimeFormat", sTimeFormat, _countof(sTimeFormat), L"%d . %m . %Y   %H:%M");
 
