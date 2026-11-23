@@ -63,6 +63,12 @@ nDeskDontRenderWallpaper false
 ; Capturas: Win+Shift+S recorte, Win+Alt+R herramienta Recortes (foto/video)
 *HotKey WINSHIFT S  !Execute [ms-screenclip:]
 *HotKey WINALT R    !Execute [snippingtool.exe]
+; Enviar la ventana activa a otro escritorio virtual (tu te quedas en el actual).
+; Tambien con clic derecho en los botones 1-4 de la barra.
+*HotKey WINSHIFT 1  !VWMSend 1
+*HotKey WINSHIFT 2  !VWMSend 2
+*HotKey WINSHIFT 3  !VWMSend 3
+*HotKey WINSHIFT 4  !VWMSend 4
 
 ; ==============================================================================
 ;  BARRA SUPERIOR  =  fondo semi-transparente + panel izq + username + panel der
@@ -157,8 +163,14 @@ MMenuHitOn RightClickUp None !PopupStartMenu
 
 ; Escritorios virtuales (modulo nVWM): los botones 1-4 dibujados en injektion.png
 ; ocupan x 157/177/197/217 (15 px) e y 24..36. MDeskSel es la marca del escritorio
-; actual; nVWM la mueve con VWMDesk<N>Command.
+; actual; nVWM la mueve con VWMDesk<N>Command. Clic izquierdo: ir a ese escritorio;
+; clic derecho: enviar alli la ventana activa.
 VWMDesktops 4
+; Efecto al cambiar de escritorio: la imagen del que dejas se desliza un poco hacia
+; su lado y se desvanece. Duracion en ms, distancia en px. false = cambio instantaneo.
+VWMTransition true
+VWMTransitionDuration 200
+VWMTransitionDistance 120
 VWMDesk1Command !nLabelMove MDeskSel 158 25
 VWMDesk2Command !nLabelMove MDeskSel 178 25
 VWMDesk3Command !nLabelMove MDeskSel 198 25
@@ -177,6 +189,7 @@ MDesk1Width 15
 MDesk1Height 13
 MDesk1Color #01000000
 MDesk1On LeftClickUp None !VWMDesk 1
+MDesk1On RightClickUp None !VWMSend 1
 
 MDesk2X 177
 MDesk2Y 24
@@ -184,6 +197,7 @@ MDesk2Width 15
 MDesk2Height 13
 MDesk2Color #01000000
 MDesk2On LeftClickUp None !VWMDesk 2
+MDesk2On RightClickUp None !VWMSend 2
 
 MDesk3X 197
 MDesk3Y 24
@@ -191,6 +205,7 @@ MDesk3Width 15
 MDesk3Height 13
 MDesk3Color #01000000
 MDesk3On LeftClickUp None !VWMDesk 3
+MDesk3On RightClickUp None !VWMSend 3
 
 MDesk4X 217
 MDesk4Y 24
@@ -198,6 +213,7 @@ MDesk4Width 15
 MDesk4Height 13
 MDesk4Color #01000000
 MDesk4On LeftClickUp None !VWMDesk 4
+MDesk4On RightClickUp None !VWMSend 4
 
 ; Medidores del sistema en la caja oscura que el original reservaba al "quick launch"
 ; (x 180..287, y 1..18 de injektion.png): dos filas de dos. [GPU] y [VRAM] miden la
@@ -292,16 +308,18 @@ MNowPlayingOn LeftClickUp None !MediaPlayerLaunch
 ; clic derecho pasa al siguiente: Winamp -> Spotify -> Tidal, solo los instalados.
 ; Los botones, el slider TRACK y [NowPlaying] siguen al reproductor elegido.
 ;   *MediaPlayer <Nombre> "<ruta>"   varias lineas con el mismo nombre = rutas alternativas
-;   MediaPlayer<Nombre>Command       se ejecuta al elegirlo (aqui cambia el icono)
+;   MediaPlayer<Nombre>Command       se ejecuta al elegirlo. Aqui cambia el icono en sus tres
+;                                    estados (normal, Hover, Pressed): si no, al pasar el mouse
+;                                    volveria la imagen por defecto de la etiqueta.
 *MediaPlayer Winamp  "%ProgramFiles(x86)%\Winamp\winamp.exe"
 *MediaPlayer Winamp  "%ProgramFiles%\Winamp\winamp.exe"
 *MediaPlayer Spotify "%APPDATA%\Spotify\Spotify.exe"
 *MediaPlayer Spotify "shell:AppsFolder\SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify"
 *MediaPlayer Tidal   "%LOCALAPPDATA%\TIDAL\TIDAL.exe"
 *MediaPlayer Tidal   "shell:AppsFolder\WiMPMusic.27241E05630EA_kn85bz84x7te4!TIDAL"
-MediaPlayerWinampCommand  !nSetImage MPlayerIcon "$MMImg$player_winamp.png"
-MediaPlayerSpotifyCommand !nSetImage MPlayerIcon "$MMImg$player_spotify.png"
-MediaPlayerTidalCommand   !nSetImage MPlayerIcon "$MMImg$player_tidal.png"
+MediaPlayerWinampCommand !Execute [!nSetImage MPlayerIcon "$MMImg$player_winamp.png"] [!nSetImage MPlayerIcon Hover "$MMImg$player_winamp.png"] [!nSetImage MPlayerIcon Pressed "$MMImg$player_winamp.png"]
+MediaPlayerSpotifyCommand !Execute [!nSetImage MPlayerIcon "$MMImg$player_spotify.png"] [!nSetImage MPlayerIcon Hover "$MMImg$player_spotify.png"] [!nSetImage MPlayerIcon Pressed "$MMImg$player_spotify.png"]
+MediaPlayerTidalCommand !Execute [!nSetImage MPlayerIcon "$MMImg$player_tidal.png"] [!nSetImage MPlayerIcon Hover "$MMImg$player_tidal.png"] [!nSetImage MPlayerIcon Pressed "$MMImg$player_tidal.png"]
 
 MPlayerIconX 30
 MPlayerIconY 0
