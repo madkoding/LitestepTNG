@@ -95,6 +95,26 @@ run folder, which the deploy script never overwrites:
 In a theme, use `$LiteStepDir$`, `$ThemeName$`, `$USERNAME$` and `%LOCALAPPDATA%`-style
 paths instead of literal ones.
 
+### Package and CI
+`.\tools\package.ps1 -Version <v>` stages a build plus the themes that work on top of
+Explorer (not `Desk.dll`, not the two shell-mode themes, not `original-2002\` or `drafts\`)
+into `dist\stage` and produces `dist\LiteStepTNG-<v>-x64.zip` and, with Inno Setup 6
+installed, `dist\LiteStepTNG-<v>-x64-setup.exe` (`installer\LiteStepTNG.iss` only packs the
+staged folder — the list of what ships lives in the script). The installer is per user
+(no admin), installs to `%LOCALAPPDATA%\Programs\LiteStepTNG`, leaves Explorer as the
+shell, optionally adds the `Run` value with `-overlay`, never overwrites
+`theme-select.rc`, and stops only the LiteStep running from its own folder (`!Quit`
+first, so Explorer's taskbar comes back; kill as a last resort).
+
+`.github\workflows\build.yml` (GitHub Actions, `windows-2022`) builds Release x64 and runs
+that script on every push to `master` and every pull request, keeping the two files as
+an artifact; pushing a tag `v<version>` publishes them as a GitHub release.
+
+**A clean clone must build.** The working tree here hides missing pieces (old binaries
+in `bin\` are reused): `TagLib` was not in the solution and nobody noticed until a fresh
+clone failed to link `MediaInfo`. To check before touching the build: `git clone` into a
+scratch folder and build there.
+
 ### Test
 There are no unit tests. `.\tools\smoke-test.ps1` drives the running shell through its
 bangs and inspects the resulting windows (modules loaded, notifications — only test boxes: `!NotifyClear test` — window frames,
