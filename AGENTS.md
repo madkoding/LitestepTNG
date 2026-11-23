@@ -130,11 +130,14 @@ scaffolding after** — see the taskbar fix in §6 for the method that worked.
 
 ## 4. The active theme: "LiteStep Enhanced" (port of the classic theme of that name)
 
-Goal of the ongoing work: port Norman Kaczmarek's 2002 "LiteStep Enhanced" (metamorphosis)
-theme to this build, matching the reference image **`D:\Downloads\preview-6-223.jpg`**.
+Goal of the ongoing work: port Norman Kaczmarek's 2002 "LiteStep Enhanced" theme to this
+build, matching the reference image **`D:\Downloads\preview-6-223.jpg`**.
 
-- The theme keeps the original's name. Its folder was called `Metamorphosis` until 2026-11-23
-  (the git branch and the `MM*` variable prefixes still are); `theme.rc` builds its paths from
+- **The theme is called "LiteStep Enhanced"; do not use any other name for it** (the user
+  asked twice). Earlier sessions called the port by the original's internal `ThemeName`;
+  the folder and the git branch (now `litestep-enhanced-theme`) were renamed on 2026-11-23.
+  All that is left of the old name is the `MM` prefix of the theme's variables and
+  `Theme.original-2002.rc`, the author's untouched file. `theme.rc` builds its paths from
   `$ThemeName$`, so the folder name is the only place the name lives. In the repo the port
   shares `themes\LiteStep Enhanced\` with the 2002 original's files, whose `Theme.rc` is kept
   as `Theme.original-2002.rc`.
