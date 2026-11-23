@@ -8,6 +8,7 @@
 #include "../ModuleKit/LiteStep.h"
 #include "TextFunctions.h"
 #include "ParsedText.hpp"
+#include "GpuMeter.h"
 #include <strsafe.h>
 #include <ctime>
 #include <string>
@@ -74,6 +75,23 @@ static size_t __cdecl Memory(LPCWSTR, UCHAR, LPWSTR*, LPWSTR dest, size_t cchDes
 
 static size_t __cdecl MemoryUsedGB(LPCWSTR, UCHAR, LPWSTR*, LPWSTR dest, size_t cchDest) {
   StringCchPrintfW(dest, cchDest, L"%.1f", sMemUsedGB);
+  return wcslen(dest);
+}
+
+// [GPU], [VRAM], [VRAMUsedGB]: load and dedicated memory of the main graphics card,
+// sampled by GpuMeter's own thread.
+static size_t __cdecl Gpu(LPCWSTR, UCHAR, LPWSTR*, LPWSTR dest, size_t cchDest) {
+  StringCchPrintfW(dest, cchDest, L"%d", GpuMeter::UsagePercent());
+  return wcslen(dest);
+}
+
+static size_t __cdecl Vram(LPCWSTR, UCHAR, LPWSTR*, LPWSTR dest, size_t cchDest) {
+  StringCchPrintfW(dest, cchDest, L"%d", GpuMeter::MemoryPercent());
+  return wcslen(dest);
+}
+
+static size_t __cdecl VramUsedGB(LPCWSTR, UCHAR, LPWSTR*, LPWSTR dest, size_t cchDest) {
+  StringCchPrintfW(dest, cchDest, L"%.1f", GpuMeter::MemoryUsedGB());
   return wcslen(dest);
 }
 
@@ -288,7 +306,11 @@ void TextFunctions::_Register() {
   RegisterDynamicTextFunction(L"Memory", 0, Memory, true);
   RegisterDynamicTextFunction(L"MemoryUsedGB", 0, MemoryUsedGB, true);
   RegisterDynamicTextFunction(L"NowPlaying", 0, NowPlaying, true);
+  RegisterDynamicTextFunction(L"GPU", 0, Gpu, true);
+  RegisterDynamicTextFunction(L"VRAM", 0, Vram, true);
+  RegisterDynamicTextFunction(L"VRAMUsedGB", 0, VramUsedGB, true);
   _Sample();
+  GpuMeter::Start();
 
   sNpRun.store(true);
   sNpThread = std::thread(NowPlayingLoop);
@@ -321,6 +343,11 @@ void TextFunctions::_Unregister() {
 
   sNpRun.store(false);
   if (sNpThread.joinable()) sNpThread.join();
+  GpuMeter::Stop();
+
+  UnRegisterDynamicTextFunction(L"GPU", 0);
+  UnRegisterDynamicTextFunction(L"VRAM", 0);
+  UnRegisterDynamicTextFunction(L"VRAMUsedGB", 0);
 
   UnRegisterDynamicTextFunction(L"Time", 0);
   UnRegisterDynamicTextFunction(L"Time", 1);

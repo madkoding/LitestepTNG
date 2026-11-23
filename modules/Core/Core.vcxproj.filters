@@ -16,6 +16,7 @@
     <ClInclude Include="IParsedText.hpp" />
     <ClInclude Include="ParsedText.hpp" />
     <ClInclude Include="TextFunctions.h" />
+    <ClInclude Include="GpuMeter.h" />
     <ClInclude Include="Scripting.h">
       <Filter>Scripting</Filter>
     </ClInclude>
@@ -44,6 +45,7 @@
     <ClCompile Include="WindowRegistrar.cpp" />
     <ClCompile Include="ParsedText.cpp" />
     <ClCompile Include="TextFunctions.cpp" />
+    <ClCompile Include="GpuMeter.cpp" />
     <ClCompile Include="ModuleEntry.cpp" />
     <ClCompile Include="Scripting.cpp">
       <Filter>Scripting</Filter>
