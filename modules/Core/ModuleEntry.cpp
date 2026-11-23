@@ -40,11 +40,12 @@ static const LPCWSTR gMsgHandler = L"LSnCore";
 UINT_PTR timeTimer;
 
 // --- Explorer's taskbar, when LiteStep runs on top of Explorer -----------------
-// "HideExplorerTaskbar true" keeps Explorer's taskbars hidden so the theme's own bars
-// replace them. Explorer stays the real shell (UWP apps, Settings, virtual desktops
-// keep working); we only hide its windows, and put them back when the module unloads.
-// Explorer re-shows a taskbar now and then (new monitor, Start menu), hence the timer.
-static bool sHideExplorerTaskbar = false;
+// Explorer's taskbars are kept hidden so the theme's own bars replace them. This is the
+// default for every theme; "HideExplorerTaskbar false" keeps Windows' taskbar. Explorer
+// stays the real shell (UWP apps, Settings, virtual desktops keep working); we only
+// hide its windows, and put them back when the module unloads. Explorer re-shows a
+// taskbar now and then (new monitor, Start menu), hence the timer.
+static bool sHideExplorerTaskbar = true;
 
 static BOOL CALLBACK ExplorerTaskbarProc(HWND window, LPARAM show) {
   WCHAR className[64] = L"";
@@ -75,8 +76,10 @@ static void ShowExplorerTaskbar(bool show) {
 }
 
 
-// Screen space for the theme's bars ("ReserveScreenTop" / "ReserveScreenBottom", pixels
-// on the primary monitor). Explorer owns the work area and knows nothing about our bars:
+// Screen space for the theme's bars ("ReserveScreenTop" / "Bottom" / "Left" / "Right",
+// pixels on the primary monitor; all zero = the whole monitor, so that the strip
+// Explorer keeps for its hidden taskbar is not left empty). Explorer owns the work area
+// and knows nothing about our bars:
 // it reserves an edge for its own (hidden) taskbar and nothing for ours. We write the work
 // area we want and write it again whenever Explorer recomputes it, which only happens on
 // rare events (display change, taskbar settings). The change is deliberately NOT
@@ -84,7 +87,7 @@ static void ShowExplorerTaskbar(bool show) {
 //
 // Registering AppBars would be the textbook way, but SHAppBarMessage talks to the first
 // Shell_TrayWnd it finds, and that is LiteStep's own tray service, not Explorer.
-static int sReserve[2] = { 0, 0 }; // top, bottom
+static int sReserve[4] = { 0, 0, 0, 0 }; // top, bottom, left, right
 static bool sWorkAreaSaved = false;
 static RECT sOriginalWorkArea;     // what Explorer had when we loaded
 
@@ -97,16 +100,18 @@ static bool DesiredWorkArea(RECT *desired) {
   *desired = info.rcMonitor;
   desired->top += sReserve[0];
   desired->bottom -= sReserve[1];
-  return desired->bottom > desired->top;
+  desired->left += sReserve[2];
+  desired->right -= sReserve[3];
+  return desired->bottom > desired->top && desired->right > desired->left;
 }
 
 /// <summary>
-/// Makes the primary work area the monitor minus our top and bottom strips.
+/// Makes the primary work area the monitor minus the strips reserved for the theme.
 /// Does nothing when it already is, so it is cheap to call from the timer.
 /// </summary>
 static void EnforceWorkArea() {
   RECT desired, current;
-  if ((sReserve[0] <= 0 && sReserve[1] <= 0) || !DesiredWorkArea(&desired) ||
+  if (!DesiredWorkArea(&desired) ||
       !SystemParametersInfoW(SPI_GETWORKAREA, 0, &current, 0)) {
     return;
   }
@@ -282,11 +287,13 @@ EXPORT_CDECL(int) initModuleW(HWND parent, HINSTANCE instance, LPCWSTR path) {
   MediaControl::Register();
   timeTimer = SetTimer(ghWndMsgHandler, 1, 1000, nullptr);
 
-  sHideExplorerTaskbar = GetRCBoolDefW(L"HideExplorerTaskbar", FALSE) != FALSE;
+  sHideExplorerTaskbar = GetRCBoolDefW(L"HideExplorerTaskbar", TRUE) != FALSE;
   if (sHideExplorerTaskbar) {
     ShowExplorerTaskbar(false);
     sReserve[0] = LiteStep::GetRCInt(L"ReserveScreenTop", 0);
     sReserve[1] = LiteStep::GetRCInt(L"ReserveScreenBottom", 0);
+    sReserve[2] = LiteStep::GetRCInt(L"ReserveScreenLeft", 0);
+    sReserve[3] = LiteStep::GetRCInt(L"ReserveScreenRight", 0);
     EnforceWorkArea();
   }
 
