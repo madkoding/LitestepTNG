@@ -174,6 +174,7 @@ static LRESULT WINAPI MainProc(HWND window, UINT message, WPARAM wParam, LPARAM 
     return 0;
 
   case LM_REFRESH:
+    TextFunctions::_Refresh();
     return 0;
 
   case WM_SETTINGCHANGE:
@@ -199,6 +200,9 @@ static LRESULT WINAPI MainProc(HWND window, UINT message, WPARAM wParam, LPARAM 
       DynamicTextChangeNotification(L"Memory", 0);
       DynamicTextChangeNotification(L"MemoryUsedGB", 0);
       DynamicTextChangeNotification(L"NowPlaying", 0);
+      DynamicTextChangeNotification(L"GPU", 0);
+      DynamicTextChangeNotification(L"VRAM", 0);
+      DynamicTextChangeNotification(L"VRAMUsedGB", 0);
       if (sHideExplorerTaskbar) {
         ShowExplorerTaskbar(false);
         EnforceWorkArea();

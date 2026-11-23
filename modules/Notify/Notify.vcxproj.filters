@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="ModuleEntry.cpp" />
+    <ClCompile Include="AppActivation.cpp" />
+    <ClCompile Include="Listener.cpp" />
+    <ClCompile Include="NotificationBox.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Version.h" />
+    <ClInclude Include="AppActivation.hpp" />
+    <ClInclude Include="Listener.hpp" />
+    <ClInclude Include="NotificationBox.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Notify.rc" />
+  </ItemGroup>
+</Project>

@@ -3,7 +3,7 @@
 #
 #  Uso:
 #     .\themes\switch-theme.ps1                 # lista los temas disponibles
-#     .\themes\switch-theme.ps1 Metamorphosis   # aplica ese tema
+#     .\themes\switch-theme.ps1 "LiteStep Enhanced"   # aplica ese tema
 #     .\themes\switch-theme.ps1 Windows11-Dark -NoReload   # aplica sin recargar
 #
 #  Cada tema vive en  themes\<Nombre>\step.rc  y "aplicar" = copiarlo a

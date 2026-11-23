@@ -128,13 +128,18 @@ scaffolding after** — see the taskbar fix in §6 for the method that worked.
 
 ---
 
-## 4. The active theme: "Metamorphosis" (port of classic *LiteStep Enhanced*)
+## 4. The active theme: "LiteStep Enhanced" (port of the classic theme of that name)
 
 Goal of the ongoing work: port Norman Kaczmarek's 2002 "LiteStep Enhanced" (metamorphosis)
 theme to this build, matching the reference image **`D:\Downloads\preview-6-223.jpg`**.
 
-- Runtime theme files: **`C:\LiteStepRun\themes\Metamorphosis\`** (`theme.rc`, `images\`).
-- Selected via `C:\LiteStepRun\theme-select.rc` → `ThemeName "Metamorphosis"`, included by
+- The theme keeps the original's name. Its folder was called `Metamorphosis` until 2026-11-23
+  (the git branch and the `MM*` variable prefixes still are); `theme.rc` builds its paths from
+  `$ThemeName$`, so the folder name is the only place the name lives. In the repo the port
+  shares `themes\LiteStep Enhanced\` with the 2002 original's files, whose `Theme.rc` is kept
+  as `Theme.original-2002.rc`.
+- Runtime theme files: **`C:\LiteStepRun\themes\LiteStep Enhanced\`** (`theme.rc`, `images\`).
+- Selected via `C:\LiteStepRun\theme-select.rc` → `ThemeName "LiteStep Enhanced"`, included by
   `step.rc`. Other themes (Glass, Prototype-X) remain switchable the same way.
 - Loader chain: `step.rc` → `theme-select.rc` (`ThemeName "X"`) → `themes\X\theme.rc`.
 
@@ -224,6 +229,13 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   `"Artist - Title"`. `Core/ModuleEntry.cpp` fires `DynamicTextChangeNotification(L"NowPlaying",0)`
   in `WM_TIMER`. `Core/Core.vcxproj` needed `LanguageStandard=stdcpp17`,
   `#pragma comment(lib,"windowsapp.lib")`, and `_ENFORCE_MATCHING_ALLOCATORS=0`.
+- **GPU meters (Core):** `Core/GpuMeter.cpp` adds `[GPU]`, `[VRAM]` (percent) and
+  `[VRAMUsedGB]`, next to the existing `[CPU]` / `[Memory]`. A thread reads the PDH
+  counters Task Manager uses (`\GPU Engine(*)\Utilization Percentage`, busiest engine;
+  `\GPU Adapter Memory(*)\Dedicated Usage`) for the adapter with the most dedicated
+  memory (DXGI; here the RTX 3060, not the Radeon 740M). The theme shows CPU/GPU/RAM/VRAM
+  as `MMeter*` overlay labels in the dark box of `injektion.png` (x 180..287, y 1..18)
+  that the original used for a quick launch.
 - **Media control (Core):** `Core/TextFunctions.cpp` — the GSMTC thread also runs queued
   transport commands and tracks the play position. Bangs: `!MediaPlayPause`, `!MediaPlay`,
   `!MediaPause`, `!MediaStop`, `!MediaNext`, `!MediaPrev`, `!MediaSeek <0-100>`,
@@ -231,6 +243,19 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   `MediaGetPermille(what)` / `MediaSetPermille(what, permille)` (0 = volume, 1 = track).
   Do **not** use `!KeyCombo MEDIA_*` for player buttons: simulated media keys are routed
   by explorer.exe and go nowhere when litestep is the shell.
+- **Media player rotation (Core):** `*MediaPlayer <Name> "<exe | shell:AppsFolder\id>" [match]`
+  lines list the players in rotation order; only installed ones are kept (several lines
+  with one name = alternative paths). The selected one decides which media session the
+  buttons, the track slider and `[NowPlaying]` follow (GSMTC session whose
+  `SourceAppUserModelId` contains the match text; classic Winamp is driven through its
+  `Winamp v1.x` window instead). `!MediaPlayerNext` / `!MediaPlayer <name>` select and run
+  `MediaPlayer<Name>Command`; the theme uses `!nSetImage MPlayerIcon ...` there to swap the
+  icon (`player_winamp|spotify|tidal.png`, 21x17, drawn on the panel's own background).
+  `!MediaPlayerLaunch` opens it; pressing play with the player closed opens it too. The
+  choice is stored in `HKCU\Software\LiteStepTNG\MediaPlayer`. The start-up command runs on
+  Core's first timer tick, because the labels do not exist while Core loads. Only TIDAL is
+  installed on the dev machine: the rotation was verified with stand-in paths, the Winamp
+  and Spotify control paths were not run against the real programs.
 - **Slider labels (Label):** `<Prefix>Slider Volume|Track` + `<Prefix>SliderHandle <label>`
   turn an nLabel into a slider; the handle is normally an overlay child with
   `ClickThrough true`. It polls Core every 500 ms, click/drag sets the value (track seek
@@ -265,7 +290,7 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   absent from `!PopupPrograms`. Items launch with `explorer.exe "shell:AppsFolder\<name>"`
   and can be added to the favorites (`Favorites::AddApp` writes a shortcut by IDList).
   First open costs ~2.5 s of icon extraction; the popup is then kept loaded (47 ms).
-  The Metamorphosis theme has no entry for it: the user had it removed (too long for a
+  The theme has no entry for it: the user had it removed (too long for a
   popup), so the bang exists but no menu uses it.
   The theme's JUEGOS submenu is a hand-written list (Steam `steam://rungameid/<id>` and
   Store apps), so it must be edited when games are installed or removed.
@@ -278,6 +303,54 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   delete/rename notifications mark them `stale` and they rebuild on the next show.
   `!PopupRecentDocuments` lists only the newest `MaxRecentItems` (default 20) shortcuts by
   modification time, newest first, instead of the whole Recent folder (519 here).
+- **Notifications (new module `modules/Notify`, `Notify.dll`):** shows the Windows toast
+  notifications as boxes stacked top-down on the right edge of the work area.
+  `Listener.cpp` polls `UserNotificationListener` (WinRT, works unpackaged here; its
+  `NotificationChanged` event does not, hence the polling) on an MTA thread and posts
+  added/removed ids to the module window. Each `NotificationBox` is a top-level Drawable
+  (prefix `NotifyBox`) with child parts `Title` (app), `Text`, `Time`, `Close`; the X posts
+  `WM_NOTIFY_DISMISS` and, with `NotifyDismissFromSystem true`, also removes the toast from
+  the Windows notification centre. Layout/overflow is in `ModuleEntry.cpp`
+  (`Relayout`, `PickOverflowVictim`). Bangs `!NotifyTest ["app" ["title" ["text"]]]` and
+  `!NotifyClear` test it without the mouse. Clicking a box goes to its app
+  (`AppActivation.cpp`: finds a window by AppUserModelID, else launches
+  `shell:AppsFolder\<id>`; a toast's own action cannot be invoked from outside) and, with
+  `NotifyClickDismisses true`, closes it. `NotifySound` is a .wav played on arrival
+  (`themes\LiteStep Enhanced\sounds\notify.wav`, generated). The user runs Windows in
+  "Do not disturb": no Windows banner or sound, but toasts still reach the listener.
+  PowerShell's own toasts are disabled on this machine, so test toasts must be raised
+  under another AppUserModelID (e.g. Terminal's). Private messages must stay clear of the `LM_`
+  range, which starts at `WM_APP` (32768). Needs `stdcpp17` like Core.
+- **Window frames (new module `modules/Frames`, `Frames.dll`, experimental):** covers the
+  native title bar of other programs' windows with a skinned one (prefix `Frame`, parts
+  `FrameTitle|Min|Max|Close`, `Active*` keys for the foreground window). Nothing is
+  injected: WinEvent hooks (out of context, narrow ranges) report moves, shows, title and
+  z-order changes, and each bar is re-stacked right above its target (it is not made an
+  owned window, which would tie the shell's input queue to the other program). Only
+  windows with a standard caption get one: `TitleBar::GetNativeBarRect` skips those whose
+  client area starts above the caption's bottom (browsers, Terminal, Electron, Store apps).
+  Drag = `WM_NCLBUTTONDOWN/HTCAPTION` posted to the target, buttons = `WM_SYSCOMMAND`,
+  right click = system menu. Known limits: the bar trails a dragged window, elevated
+  windows ignore its clicks, borders are not skinned. `!FramesToggle`, `*FramesExclude`.
+  Since 2026-11-23 the look is the popup frame around the whole window: `TitleBar::Body`
+  (prefix `FrameBody`, `windowframe.png` = `popupframe.png` with a 31px top edge) is a
+  second top-level window drawn OUTSIDE the target (`FrameBodyInset*`), with the content
+  cut out by a window region and `WS_EX_LAYERED|WS_EX_TRANSPARENT` so clicks reach the
+  target's native resize borders; the interactive bar is transparent on top of it. The bar
+  moves the target itself (`SetWindowPos` while the button is down): posting
+  `WM_NCLBUTTONDOWN` does not work, the mouse stays over our bar. Minimize/maximize are
+  only offered when the target has the matching style (forcing SC_MAXIMIZE on a fixed-size
+  dialog ignores the work area). Z-order: activation raises the target above its bar, and
+  top-level reorders are reported for the desktop (not OBJID_WINDOW), hence the settle
+  passes and the 500 ms watchdog.  Maximized: the native caption is 23px, not 31 (the frame's top hangs off the screen), so
+  the decoration shrinks to the strip over the caption, laid out from the window's own
+  corner; bar and decoration share one `outer` rect and the theme positions title/buttons
+  relative to it. Skipped: windows of a higher integrity level (elevated; `SetWindowPos`
+  and posted commands are refused, and a posted test message "succeeds" anyway), and
+  full-screen windows (frame covers the monitor without `IsZoomed`). To test without the
+  mouse: a WinForms window in its own powershell process, driven with `ShowWindow` /
+  `SetWindowPos`.  Verified without the mouse (bar appears, follows a move, hides on minimize, stacks
+  correctly between two overlapping windows); drag, buttons and the Active look were not.
 - **Taskbar animation:** `<Taskbar>AnimationDuration` (ms) slides task buttons to their new
   place when tasks are added/removed (`TaskButton::SetTarget/StepAnimation`, timer in
   `Taskbar`). The thumbnail's own `ThumbnailAnimate` and the popup `ShowAnimation*` settings
@@ -349,5 +422,5 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   the structural match is complete (all elements present, placed, and styled). Residual
   differences are PNG-skin micro-details, not layout or function.
 - `modules/TaskBar/Taskbar.cpp` (the `lines` clamp) is the only code change ready to commit
-  on its own merits; the rest are theme assets/config under `C:\LiteStepRun\themes\Metamorphosis\`
+  on its own merits; the rest are theme assets/config under `C:\LiteStepRun\themes\LiteStep Enhanced\`
   plus the feature source above.
