@@ -3,10 +3,12 @@
   <ItemGroup>
     <ClInclude Include="Version.h" />
     <ClInclude Include="Bangs.h" />
+    <ClInclude Include="ThemeWallpaper.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ModuleEntry.cpp" />
     <ClCompile Include="Bangs.cpp" />
+    <ClCompile Include="ThemeWallpaper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Wallpaper.rc" />

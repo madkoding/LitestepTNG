@@ -1,14 +1,20 @@
 //-------------------------------------------------------------------------------------------------
-// /Wallpaper/nWallpaper.cpp
+// /Wallpaper/ModuleEntry.cpp
 // The nModules Project
 //
 // nWallpaper entry points.
+//
+// RC:    ThemeWallpaper "<file>"        the theme's own wallpaper; without it the user's
+//                                       choice in Windows is left alone (and restored)
+//        ThemeWallpaperStyle <style>     Center|Tile|Stretch|Fit|Fill|Span
+// Bangs: !SetWallpaper "<file>" [style]   !SetWallpaperStyle <style>
 //-------------------------------------------------------------------------------------------------
-#include "Bangs.h"
-#include "Version.h"
-
 #include "../ModuleKit/LiteStep.h"
 #include "../ModuleKit/LSModule.hpp"
+
+#include "Bangs.h"
+#include "ThemeWallpaper.h"
+#include "Version.h"
 
 #include <strsafe.h>
 
@@ -30,6 +36,7 @@ EXPORT_CDECL(int) initModuleW(HWND parent, HINSTANCE instance, LPCWSTR /* path *
     return 1;
   }
   Bangs::_Register();
+  ThemeWallpaper::Apply();
 
   return 0;
 }
@@ -63,6 +70,7 @@ LRESULT WINAPI LSMessageHandler(HWND window, UINT message, WPARAM wParam, LPARAM
     return 0;
 
   case LM_REFRESH:
+    ThemeWallpaper::Apply();
     return 0;
   }
   return DefWindowProc(window, message, wParam, lParam);
