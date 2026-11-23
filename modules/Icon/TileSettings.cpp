@@ -41,6 +41,7 @@ void TileSettings::Load(Settings *settings) {
   mTileWindowSettings.Load(settings, nullptr);
   mTileStateRender.Load(sTileInitData, settings);
   mIconSize = settings->GetInt(L"Size", 48);
+  mIconOffsetTop = settings->GetInt(L"OffsetTop", 0);
   mGhostOpacity = settings->GetFloat(L"GhostOpacity", 0.6f);
 }
 

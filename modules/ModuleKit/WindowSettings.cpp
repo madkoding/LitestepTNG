@@ -40,6 +40,7 @@ WindowSettings::WindowSettings()
     , evaluateText(false)
     , height(100)
     , hidden(false)
+    , onDesktop(false)
     , registerWithCore(false)
     , showAnimationDuration(0)
     , showAnimationOffset(0)
@@ -85,6 +86,11 @@ void WindowSettings::Load(const Settings *settings, const WindowSettings *defaul
   this->evaluateText = defaults->evaluateText;
   this->height = settings->GetDistance(L"Height", defaults->height);
   this->hidden = settings->GetBool(L"Hidden", defaults->hidden);
+  this->onDesktop = settings->GetBool(L"OnDesktop", defaults->onDesktop);
+  if (this->onDesktop) {
+    // In overlay mode windows default to topmost; a desktop window is the opposite.
+    this->alwaysOnTop = false;
+  }
   this->registerWithCore = defaults->registerWithCore;
   this->showAnimationDuration = settings->GetInt(L"ShowAnimationDuration", defaults->showAnimationDuration);
   this->showAnimationOffset = settings->GetInt(L"ShowAnimationOffset", defaults->showAnimationOffset);

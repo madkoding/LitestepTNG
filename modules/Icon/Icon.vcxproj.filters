@@ -13,6 +13,7 @@
     <ClCompile Include="TileSettings.cpp" />
     <ClCompile Include="Tile.cpp" />
     <ClCompile Include="TileGroup.cpp" />
+    <ClCompile Include="TileGroupDrag.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Icon.rc" />

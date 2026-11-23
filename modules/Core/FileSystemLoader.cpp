@@ -24,6 +24,8 @@
 #include <Thumbcache.h>
 #include <unordered_map>
 #include <vector>
+#include "../Utilities/BitmapAlpha.h"
+#include <shobjidl.h>
 
 extern HWND ghWndMsgHandler;
 
@@ -65,6 +67,37 @@ static void CALLBACK LoadItemTaskComplete(LPVOID context, BOOL cancelled);
 
 static UINT64 sNextRequestId = 0;
 static std::unordered_map<UINT64, RequestData> sOutstandingRequests;
+
+
+/// <summary>
+/// Tries to load a preview of the item's content (a picture, a video frame, a document
+/// page) the way Explorer does, through IShellItemImageFactory and the system's
+/// thumbnail cache. Fails for items that only have an icon, which then take the icon
+/// paths below and keep things like the shortcut arrow.
+/// </summary>
+static HRESULT LoadPreviewUsingImageFactory(LoadThumbnailResponse &response, int iconSize, IShellFolder2 *shellFolder, PCUITEMID_CHILD item) {
+  IShellItemImageFactory *factory = nullptr;
+  HRESULT hr = SHCreateItemWithParent(nullptr, shellFolder, item, IID_PPV_ARGS(&factory));
+  if (SUCCEEDED(hr)) {
+    SIZE size = { iconSize, iconSize };
+    HBITMAP bitmap = nullptr;
+    hr = factory->GetImage(size, SIIGBF_RESIZETOFIT | SIIGBF_THUMBNAILONLY, &bitmap);
+    if (SUCCEEDED(hr) && bitmap != nullptr) {
+      BitmapAlpha::MakeOpaqueIfMissing(bitmap);
+      BITMAP bmp;
+      GetObjectW(bitmap, sizeof(BITMAP), &bmp);
+      response.thumbnail.bitmap = bitmap;
+      response.size.height = (FLOAT)bmp.bmHeight;
+      response.size.width = (FLOAT)bmp.bmWidth;
+      response.type = LoadThumbnailResponse::Type::HBITMAP;
+      hr = S_OK;
+    } else if (SUCCEEDED(hr)) {
+      hr = E_FAIL;
+    }
+    factory->Release();
+  }
+  return hr;
+}
 
 
 /// <summary>
@@ -171,7 +204,12 @@ static HRESULT LoadIconUsingExtractIcon(LoadThumbnailResponse &response, int ico
 static void LoadThumbnail(LoadThumbnailResponse &response, int iconSize, IShellFolder2 *folder, PCUITEMID_CHILD item) {
   response.size.height = (FLOAT)iconSize;
   response.size.width = (FLOAT)iconSize;
-  HRESULT hr = LoadIconUsingThumbnailProvider(response, iconSize, folder, item);
+  HRESULT hr = LoadPreviewUsingImageFactory(response, iconSize, folder, item);
+  if (hr != S_OK) {
+    response.size.height = (FLOAT)iconSize;
+    response.size.width = (FLOAT)iconSize;
+    hr = LoadIconUsingThumbnailProvider(response, iconSize, folder, item);
+  }
   if (hr != S_OK) {
     hr = LoadIconUsingExtractImage(response, iconSize, folder, item);
   }

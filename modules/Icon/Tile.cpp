@@ -25,6 +25,7 @@ Tile::Tile(Drawable* parent, PCITEMID_CHILD item, IShellFolder2 *shellFolder, in
     : Drawable(parent, L"Icon")
     , mTileSettings(tileSettings)
     , mMouseOver(false)
+    , mMouseDown(false)
     , mGhosted(false)
 {
     WCHAR name[MAX_PATH];
@@ -63,11 +64,29 @@ LRESULT WINAPI Tile::HandleMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lPa
       mMouseOver = true;
       mTileSettings.mTileStateRender.ActivateState(State::Hover, mWindow);
     }
+    // Pressed here and moved further than a click may wobble: it is a drag.
+    if (mMouseDown) {
+      POINT cursor;
+      GetCursorPos(&cursor);
+      if ((wParam & MK_LBUTTON) == 0) {
+        mMouseDown = false;
+      } else if (abs(cursor.x - mMouseDownPosition.x) > GetSystemMetrics(SM_CXDRAG)
+          || abs(cursor.y - mMouseDownPosition.y) > GetSystemMetrics(SM_CYDRAG)) {
+        mMouseDown = false;
+        // Nothing of this tile may be touched after this call: see RequestDrag.
+        ((TileGroup*)mParent)->RequestDrag(this);
+      }
+    }
     return 0;
 
   case WM_MOUSELEAVE:
     mMouseOver = false;
+    mMouseDown = false;
     mTileSettings.mTileStateRender.ClearState(State::Hover, mWindow);
+    return 0;
+
+  case WM_LBUTTONUP:
+    mMouseDown = false;
     return 0;
 
   case WM_LBUTTONDBLCLK:
@@ -77,12 +96,16 @@ LRESULT WINAPI Tile::HandleMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lPa
     return 0;
 
   case WM_LBUTTONDOWN:
-    if (GetKeyState(VK_CONTROL) >= 0) {
+    // A press on an icon that is already part of a selection keeps the selection, so
+    // that several icons can be dragged together.
+    if (GetKeyState(VK_CONTROL) < 0) {
+      mTileSettings.mTileStateRender.ToggleState(State::Selected, mWindow);
+    } else if (!IsSelected()) {
       ((TileGroup*)mParent)->DeselectAll();
       mTileSettings.mTileStateRender.ActivateState(State::Selected, mWindow);
-    } else {
-      mTileSettings.mTileStateRender.ToggleState(State::Selected, mWindow);
     }
+    mMouseDown = true;
+    GetCursorPos(&mMouseDownPosition);
     return 0;
 
   case WM_RBUTTONDOWN:
@@ -199,20 +222,21 @@ void Tile::ClearGhost() {
 /// </summary>
 void Tile::SetThumbnail(LoadThumbnailResponse &thumbnail) {
   mWindow->ClearOverlays();
-  D2D1_RECT_F pos;
-  pos.top = 0;
-  pos.bottom = pos.top + mTileSettings.mIconSize;
-  pos.left = (mWindow->GetSize().width - (float)mTileSettings.mIconSize) / 2;
-  pos.right = pos.left + mTileSettings.mIconSize;
+  // The icon gets a square of mIconSize, centred in the tile's width and mIconOffsetTop
+  // below its top; a thumbnail that is not square is centred inside that square.
+  const float size = (float)mTileSettings.mIconSize;
+  const float top = (float)mTileSettings.mIconOffsetTop;
+  const float left = (mWindow->GetSize().width - size) / 2;
+  D2D1_RECT_F pos = D2D1::RectF(left, top, left + size, top + size);
 
   if (thumbnail.size.width > thumbnail.size.height) {
     float scale = thumbnail.size.height / thumbnail.size.width;
-    pos.top = mTileSettings.mIconSize*(1 - scale) / 2;
-    pos.bottom = mTileSettings.mIconSize*(1 + scale) / 2;
+    pos.top = top + size * (1 - scale) / 2;
+    pos.bottom = top + size * (1 + scale) / 2;
   } else if (thumbnail.size.width < thumbnail.size.height) {
     float scale = thumbnail.size.width / thumbnail.size.height;
-    pos.left = mTileSettings.mIconSize*(1 - scale) / 2;
-    pos.right = mTileSettings.mIconSize*(1 + scale) / 2;
+    pos.left = left + size * (1 - scale) / 2;
+    pos.right = left + size * (1 + scale) / 2;
   }
 
   if (thumbnail.type == LoadThumbnailResponse::Type::HBITMAP) {

@@ -409,6 +409,41 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   mouse: a WinForms window in its own powershell process, driven with `ShowWindow` /
   `SetWindowPos`.  Verified without the mouse (bar appears, follows a move, hides on minimize, stacks
   correctly between two overlapping windows); drag, buttons and the Active look were not.
+- **Desktop icons (Icon module, first use in this build):** the theme's `MIcons` group shows
+  the Desktop folder over the whole work area of the primary monitor, filled from the top
+  right corner downwards (`MIconsX/Y/Width/Height` choose the area: the whole desktop, as
+  the user wants it, or just a strip; `Start TopRight`,
+  `PrimaryDirection Vertical`), in the theme's font. Three things were added for running
+  on top of Explorer: a generic window setting `<Prefix>OnDesktop true` in ModuleKit (the
+  window is kept at the bottom of the stacking order, which is right above the shell's
+  desktop; implies not topmost); `<Prefix>ReplaceExplorerIcons true`, which hides
+  Explorer's own icon view (`SysListView32` under `SHELLDLL_DefView`) while the group is
+  visible and shows only what Explorer would (files of the user and common Desktop
+  directories, system objects enabled under `HideDesktopIcons`); and `!DesktopIcons
+  [show|hide|toggle]`. `MIconsHidden true` (e.g. in personal.rc) turns it off.
+  `<Prefix>IconOffsetTop` leaves room above the icon inside its tile. Dragging is in
+  `Icon/TileGroupDrag.cpp`: a tile that is pressed and moved posts a message to its group,
+  which runs `SHDoDragDrop` with the folder's `IDataObject` (drag out to folders, programs,
+  the Recycle Bin); the group is a drop target that hands foreign drops to the folder's
+  own `IDropTarget` and, for one of its own icons, only notes the point and returns
+  `DROPEFFECT_NONE` — returning MOVE there would let the drag source delete the files.
+  Dropping an icon on another slot swaps them; slots are kept per icon (parsing name) in
+  `HKCU\Software\LiteStepTNG\IconOrder\<prefix>`. Only the remembered-order loading was
+  verified without the mouse (write a slot value, reload); the gestures were not. The drag
+  carries a picture of the item (`IDragSourceHelper::InitializeFromBitmap` with the image
+  from `IShellItemImageFactory`). Core's `FileSystemLoader` asks that same factory for a
+  content preview first (`SIIGBF_THUMBNAILONLY`: pictures, videos, documents) and falls
+  back to the icon paths; shell thumbnails can come with an all-zero alpha channel, which
+  `Utilities/BitmapAlpha.h` repairs. A folder kept in the cloud (a OneDrive Desktop)
+  never reports `SHCNE_CREATE`/`DELETE` for its files, only `SHCNE_UPDATEITEM` for the
+  folder itself, so on a folder-level notice the group rescans and diffs (`Rescan`,
+  debounced 400 ms). Found with a temporary file log in `HandleChangeNotify`. The module
+  crashed on load before: `TileGroup::mWorkingFolder` was not initialised and `SetFolder`
+  released it. **A module that faults in `initModuleW` is unloaded but its windows remain,
+  so litestep dies a moment later with the fault in `<Module>.dll_unloaded`** — and then
+  Explorer's taskbar and icons stay hidden. When deploying a module that has not run
+  before, check that litestep is still alive afterwards and be ready to disable the module
+  in the deployed theme.rc.
 - **Taskbar animation:** `<Taskbar>AnimationDuration` (ms) slides task buttons to their new
   place when tasks are added/removed (`TaskButton::SetTarget/StepAnimation`, timer in
   `Taskbar`). The thumbnail's own `ThumbnailAnimate` and the popup `ShowAnimation*` settings
