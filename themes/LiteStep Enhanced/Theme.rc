@@ -929,6 +929,9 @@ NotifyShowExisting false
 NotifyDismissFromSystem true
 ; Clic en una caja: lleva al programa que la envio (y true: ademas la cierra).
 NotifyClickDismisses true
+; Si la columna se llena: DropOldest quita del escritorio la mas antigua (sigue en el
+; centro de notificaciones de Windows); Wait deja las nuevas ocultas hasta que haya sitio.
+NotifyOverflow DropOldest
 ; Sonido al llegar una notificacion (con "No molestar" Windows no suena). Vacio = sin sonido.
 NotifySound "$MMDir$sounds\notify.wav"
 
