@@ -34,9 +34,16 @@ modules/           the nModules module DLLs (see list below)
   Label/ Clock/    nLabel / clock labels
   HotKey/ VWM/ Desk/ Icon/ Panels/ Wallpaper/ MediaInfo/ Calendar/ TaskSwitcher/
   External/        third-party (v8, etc.)
+  Notify/          nNotify: Windows notifications as boxes on the desktop
+  Frames/          nFrames: skinned frames around other programs' windows (experimental)
+  Utilities/       headers shared by modules (WindowActivation.h: forcing the foreground)
 utility/           logger etc.
 bin/Release_x64/   build output (DLLs + litestep.exe)
-themes/            (working copy of themes; the RUNTIME uses C:\LiteStepRun — see §3)
+step.rc            the loader: includes theme-select.rc, then themes\<ThemeName>\theme.rc
+theme-select.rc    ThemeName "<folder in themes\>"
+themes/<Name>/     one folder per theme, each with a theme.rc (source of truth; deployed to
+                   C:\LiteStepRun by tools\deploy.ps1 — see §3)
+tools/             deploy.ps1, smoke-test.ps1, switch-theme.ps1
 ```
 
 ---
@@ -58,9 +65,23 @@ $msb = "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\C
 
 ### Deploy to the runtime
 ```powershell
-Copy-Item "C:\LiteStepTNG\bin\Release_x64\<Module>.dll" "C:\LiteStepRun\<Module>.dll" -Force
+.\tools\deploy.ps1                    # every built binary + the installed themes, then restart
+.\tools\deploy.ps1 -Modules Core,VWM  # only those DLLs
+.\tools\deploy.ps1 -ThemesOnly
 ```
-Copy only the DLLs you changed (or all of them). Then restart the shell (see §3).
+It stops litestep (its DLLs are locked while it runs), copies, and starts it again with
+`-overlay`. Only themes already installed in the target are updated (`-Themes <name>` adds
+one): `Windows-nModules` and `Windows11-Dark` were written for litestep as the Windows shell,
+load `Desk.dll`, and must not be offered in the overlay install.
+
+**The repo is the source of the themes.** Edit `themes\<Name>\theme.rc` here and deploy;
+do not edit the copy in `C:\LiteStepRun` (older sessions did, and then copied it back).
+
+### Test
+There are no unit tests. `.\tools\smoke-test.ps1` drives the running shell through its
+bangs and inspects the resulting windows (modules loaded, notifications, window frames,
+sending a window to another desktop); `-IncludeDesktopSwitch` also switches desktops and
+back, which moves the user's windows away for a couple of seconds. Exit code = failed checks.
 
 ---
 
@@ -68,17 +89,17 @@ Copy only the DLLs you changed (or all of them). Then restart the shell (see §3
 
 **Explorer is the Windows shell; litestep runs on top of it in overlay mode.**
 ```
-HKCU...WinlogonShell            (no value; the HKLM default explorer.exe applies)
-HKCU...CurrentVersionRunLiteStep = "C:LiteStepRunlitestep.exe" -overlay
+HKCU\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Shell   (no value; the HKLM default explorer.exe applies)
+HKCU\Software\Microsoft\Windows\CurrentVersion\Run\LiteStep = "C:\LiteStepRun\litestep.exe" -overlay
 ```
 The earlier setup (litestep as the Winlogon shell, explorer not running) was abandoned
 because too much of Windows depends on Explorer's immersive shell: UWP apps (Settings,
 Calculator), `ms-settings:` links, media-key routing, native virtual desktops. See §8 for
-what was tried. The old value is saved in `C:LiteStepRunwinlogon-shell-backup.txt`.
+what was tried. The old value is saved in `C:\LiteStepRun\winlogon-shell-backup.txt`.
 
 Consequences:
 - **Restart litestep with:** `Stop-Process -Name litestep -Force`, then
-  `Start-Process C:LiteStepRunlitestep.exe -ArgumentList '-overlay'`. Nothing respawns
+  `Start-Process C:\LiteStepRun\litestep.exe -ArgumentList '-overlay'`. Nothing respawns
   it any more. **Always pass `-overlay`**: without it litestep sees Explorer's taskbar and
   shows a blocking Yes/No/Cancel prompt.
 - `litestep.exe !Bang args` (via `Start-Process ... -ArgumentList '!Bang args'`, so the
@@ -137,10 +158,11 @@ build, matching the reference image **`D:\Downloads\preview-6-223.jpg`**.
   asked twice). Earlier sessions called the port by the original's internal `ThemeName`;
   the folder and the git branch (now `litestep-enhanced-theme`) were renamed on 2026-11-23.
   All that is left of the old name is the `MM` prefix of the theme's variables and
-  `Theme.original-2002.rc`, the author's untouched file. `theme.rc` builds its paths from
+  `original-2002\Theme.rc`, the author's untouched file. `theme.rc` builds its paths from
   `$ThemeName$`, so the folder name is the only place the name lives. In the repo the port
   shares `themes\LiteStep Enhanced\` with the 2002 original's files, whose `Theme.rc` is kept
-  as `Theme.original-2002.rc`.
+  under `original-2002\` (its `Theme.rc`, Config, icons and the 69 .bmp images); an earlier,
+  image-less port attempt is kept as `drafts\first-port.rc`. Neither is deployed.
 - Runtime theme files: **`C:\LiteStepRun\themes\LiteStep Enhanced\`** (`theme.rc`, `images\`).
 - Selected via `C:\LiteStepRun\theme-select.rc` → `ThemeName "LiteStep Enhanced"`, included by
   `step.rc`. Other themes (Glass, Prototype-X) remain switchable the same way.
@@ -227,7 +249,8 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
 - **Global UPPERCASE:** `ModuleKit/WindowSettings.{hpp,cpp}` add a `bool textUppercase`
   (read from `TextUppercase`, with RC default); `ModuleKit/Window.cpp` applies `CharUpperW`
   in the non-evaluate branches of `SetText`/`UpdateText`.
-- **Now-playing:** `Core/TextFunctions.cpp` adds a `[NowPlaying]` dynamic function backed by
+- **Now-playing:** `Core/MediaControl.cpp` (split out of `TextFunctions.cpp`, which now only
+  has the time and system-meter functions) adds a `[NowPlaying]` dynamic function backed by
   a background thread using **GSMTC** (`winrt Windows.Media.Control`), formatting
   `"Artist - Title"`. `Core/ModuleEntry.cpp` fires `DynamicTextChangeNotification(L"NowPlaying",0)`
   in `WM_TIMER`. `Core/Core.vcxproj` needed `LanguageStandard=stdcpp17`,
@@ -239,7 +262,7 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   memory (DXGI; here the RTX 3060, not the Radeon 740M). The theme shows CPU/GPU/RAM/VRAM
   as `MMeter*` overlay labels in the dark box of `injektion.png` (x 180..287, y 1..18)
   that the original used for a quick launch.
-- **Media control (Core):** `Core/TextFunctions.cpp` — the GSMTC thread also runs queued
+- **Media control (Core):** `Core/MediaControl.cpp` — the GSMTC thread also runs queued
   transport commands and tracks the play position. Bangs: `!MediaPlayPause`, `!MediaPlay`,
   `!MediaPause`, `!MediaStop`, `!MediaNext`, `!MediaPrev`, `!MediaSeek <0-100>`,
   `!MediaVolume <0-100 | +n | -n>` (master volume via `IAudioEndpointVolume`). Exports
@@ -327,7 +350,7 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   (prefix `NotifyBox`) with child parts `Title` (app), `Text`, `Time`, `Close`; the X posts
   `WM_NOTIFY_DISMISS` and, with `NotifyDismissFromSystem true`, also removes the toast from
   the Windows notification centre. Layout/overflow is in `ModuleEntry.cpp`
-  (`Relayout`, `PickOverflowVictim`). Bangs `!NotifyTest ["app" ["title" ["text"]]]` and
+  (`Relayout`; `NotifyOverflow DropOldest|Wait` decides what happens when the column is full). Bangs `!NotifyTest ["app" ["title" ["text"]]]` and
   `!NotifyClear` test it without the mouse. Clicking a box goes to its app
   (`AppActivation.cpp`: finds a window by AppUserModelID, else launches
   `shell:AppsFolder\<id>`; a toast's own action cannot be invoked from outside) and, with
@@ -343,12 +366,12 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   injected: WinEvent hooks (out of context, narrow ranges) report moves, shows, title and
   z-order changes, and each bar is re-stacked right above its target (it is not made an
   owned window, which would tie the shell's input queue to the other program). Only
-  windows with a standard caption get one: `TitleBar::GetNativeBarRect` skips those whose
+  windows with a standard caption get one: `WindowFrame::GetNativeBarRect` skips those whose
   client area starts above the caption's bottom (browsers, Terminal, Electron, Store apps).
   Drag = `WM_NCLBUTTONDOWN/HTCAPTION` posted to the target, buttons = `WM_SYSCOMMAND`,
   right click = system menu. Known limits: the bar trails a dragged window, elevated
   windows ignore its clicks, borders are not skinned. `!FramesToggle`, `*FramesExclude`.
-  Since 2026-11-23 the look is the popup frame around the whole window: `TitleBar::Body`
+  Since 2026-11-23 the look is the popup frame around the whole window: `WindowFrame::Body`
   (prefix `FrameBody`, `windowframe.png` = `popupframe.png` with a 31px top edge) is a
   second top-level window drawn OUTSIDE the target (`FrameBodyInset*`), with the content
   cut out by a window region and `WS_EX_LAYERED|WS_EX_TRANSPARENT` so clicks reach the
