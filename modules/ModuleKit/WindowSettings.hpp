@@ -42,6 +42,10 @@ public:
     // True if the window should start hidden. Default: false
     bool hidden;
 
+    // True to keep the window on the desktop: under every other program's window,
+    // just above the shell's desktop. Implies not topmost. Default: false
+    bool onDesktop;
+
     // True to register this drawable with the core. Not read from RC files. Default: false
     bool registerWithCore;
 

@@ -860,6 +860,15 @@ LRESULT WINAPI Window::HandleMessage(HWND window, UINT msg, WPARAM wParam, LPARA
                     windowPos->hwndInsertAfter = HWND_TOPMOST;
                 }
             }
+            else if (mWindowSettings.onDesktop)
+            {
+                // Whatever asks for it, the window stays at the bottom: the shell keeps
+                // its own desktop window under everything, so the bottom of the
+                // stacking order is right above the desktop.
+                LPWINDOWPOS windowPos = LPWINDOWPOS(lParam);
+                windowPos->hwndInsertAfter = HWND_BOTTOM;
+                windowPos->flags &= ~SWP_NOZORDER;
+            }
         }
         return 0;
 
@@ -945,6 +954,12 @@ void Window::Initialize(WindowSettings &windowSettings, IStateRender *stateRende
     {
         ::SetParent(this->window, nullptr);
         SetWindowPos(this->window, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+    }
+
+    // OnDesktop
+    if (!mIsChild && mWindowSettings.onDesktop)
+    {
+        SetWindowPos(this->window, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
     }
 
     // Set the text.
@@ -1696,6 +1711,10 @@ void Window::Show(int nCmdShow)
         if (mWindowSettings.alwaysOnTop)
         {
             SetWindowPos(this->window, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+        }
+        else if (mWindowSettings.onDesktop)
+        {
+            SetWindowPos(this->window, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
         }
     }
     this->visible = true;
