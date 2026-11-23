@@ -295,6 +295,11 @@ LPARAM TileGroup::FolderLoaded(UINT64 id, LoadFolderResponse *response) {
 
 
 LPARAM TileGroup::ItemLoaded(UINT64 id, LoadItemResponse *item) {
+  // A tile that is already there asked for its picture again.
+  if (Tile *existing = FindIcon(item->id)) {
+    existing->SetThumbnail(item->thumbnail);
+    return 0;
+  }
   if (mReplacesExplorerIcons && mShowsDesktop && !ShownOnExplorerDesktop(item->id)) {
     return 0;
   }
@@ -458,8 +463,26 @@ void TileGroup::RemoveIcon(PCITEMID_CHILD pidl) {
 void TileGroup::UpdateIcon(PCITEMID_CHILD pidl) {
   auto icon = FindIcon(pidl);
   if (icon != nullptr) {
-    icon->UpdateIcon();
+    ReloadThumbnail(icon);
   }
+}
+
+
+/// <summary>
+/// Asks for a tile's picture again. The tile keeps the one it has until the new one
+/// arrives (ItemLoaded). This used to clear the picture and load nothing, so every
+/// "this file was updated" notice left an icon blank; a Desktop kept in the cloud sends
+/// those all the time.
+/// </summary>
+void TileGroup::ReloadThumbnail(Tile *tile) {
+  if (mWorkingFolder == nullptr) {
+    return;
+  }
+  LoadItemRequest request;
+  request.folder = mWorkingFolder;
+  request.targetIconWidth = mTileSettings.mIconSize;
+  request.id = static_cast<PITEMID_CHILD>(ILClone(tile->GetItem()));
+  nCore::LoadFolderItem(request, this);
 }
 
 
@@ -509,9 +532,8 @@ Tile *TileGroup::FindIcon(PCITEMID_CHILD pidl) const {
 /// </summary>
 void TileGroup::UpdateAllIcons() {
   for (auto icon : mTiles) {
-    icon->UpdateIcon(false);
+    ReloadThumbnail(icon);
   }
-  mWindow->Repaint();
 }
 
 

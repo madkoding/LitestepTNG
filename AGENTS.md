@@ -442,7 +442,12 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   `Utilities/BitmapAlpha.h` repairs. A folder kept in the cloud (a OneDrive Desktop)
   never reports `SHCNE_CREATE`/`DELETE` for its files, only `SHCNE_UPDATEITEM` for the
   folder itself, so on a folder-level notice the group rescans and diffs (`Rescan`,
-  debounced 400 ms). Found with a temporary file log in `HandleChangeNotify`. The module
+  debounced 400 ms). Found with a temporary file log in `HandleChangeNotify`. An "item
+  updated" notice used to clear the tile's picture and load nothing (`Tile::UpdateIcon`
+  was a stub), so the pictures vanished one by one and only the captions stayed; it now
+  reloads the picture and keeps the old one until the new one arrives (`ReloadThumbnail`,
+  `ItemLoaded` for an existing tile). Reproduce without touching files:
+  `SHChangeNotify(SHCNE_UPDATEITEM, SHCNF_PATHW, <path>)` and `SHCNE_ASSOCCHANGED`. The module
   crashed on load before: `TileGroup::mWorkingFolder` was not initialised and `SetFolder`
   released it. **A module that faults in `initModuleW` is unloaded but its windows remain,
   so litestep dies a moment later with the fault in `<Module>.dll_unloaded`** — and then
