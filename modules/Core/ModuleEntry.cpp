@@ -174,6 +174,7 @@ static LRESULT WINAPI MainProc(HWND window, UINT message, WPARAM wParam, LPARAM 
     return 0;
 
   case LM_REFRESH:
+    TextFunctions::_Refresh();
     return 0;
 
   case WM_SETTINGCHANGE:
