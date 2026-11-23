@@ -62,6 +62,7 @@ private:
   void AddIcon(PCITEMID_CHILD pidl);
   void RemoveIcon(PCITEMID_CHILD pidl);
   void UpdateIcon(PCITEMID_CHILD pidl);
+  void ReloadThumbnail(Tile *tile);
   void UpdateAllIcons();
   void RenameIcon(PCITEMID_CHILD oldID, PCITEMID_CHILD newID);
   int GetIconPosition(PCITEMID_CHILD);

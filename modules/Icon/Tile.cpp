@@ -165,18 +165,6 @@ void Tile::Hide() {
 
 
 /// <summary>
-/// Updates the icon.
-/// </summary>
-/// <param name="repaint">Repaints the icon.</param>
-void Tile::UpdateIcon(bool repaint) {
-  mWindow->ClearOverlays();
-  if (repaint) {
-    mWindow->Repaint();
-  }
-}
-
-
-/// <summary>
 /// Updates the displayed name for this icon.
 /// </summary>
 /// <param name="newItem">The item ID for the new icon.</param>

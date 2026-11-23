@@ -55,7 +55,6 @@ public:
   void Rename(PCITEMID_CHILD newItem);
 
   // Updates the icon.
-  void UpdateIcon(bool repaint = true);
 
   // Shows the right-click menu for the icon.
   void ShowContextMenu();
@@ -82,7 +81,11 @@ private:
   // The PID of this icon.
   PITEMID_CHILD mItem;
 
+public:
+  // Shows this picture as the tile's icon, replacing the one it had.
   void SetThumbnail(LoadThumbnailResponse &thumbnail);
+
+private:
 
   //
   int mPositionID;
