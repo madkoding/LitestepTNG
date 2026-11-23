@@ -369,7 +369,12 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   (prefix `NotifyBox`) with child parts `Title` (app), `Text`, `Time`, `Close`; the X posts
   `WM_NOTIFY_DISMISS` and, with `NotifyDismissFromSystem true`, also removes the toast from
   the Windows notification centre. Layout/overflow is in `ModuleEntry.cpp`
-  (`Relayout`; `NotifyOverflow DropOldest|Wait` decides what happens when the column is full). Bangs `!NotifyTest ["app" ["title" ["text"]]]` and
+  (`Relayout`; `NotifyOverflow DropOldest|Wait` decides what happens when the column is full).
+  The close button's picture is 10x10, so the box also has an invisible `CloseArea` part
+  (34x20 in the theme) that closes too: a near miss used to land on the box, which opens
+  the program and closes the box, and looked as if the X had opened the program. Clicks
+  can be tested without the mouse by posting `WM_MOUSEMOVE`/`WM_LBUTTONDOWN`/`WM_LBUTTONUP`
+  with client coordinates to the box window. Bangs `!NotifyTest ["app" ["title" ["text"]]]` and
   `!NotifyClear` test it without the mouse. Clicking a box goes to its app
   (`AppActivation.cpp`: finds a window by AppUserModelID, else launches
   `shell:AppsFolder\<id>`; a toast's own action cannot be invoked from outside) and, with
