@@ -224,6 +224,13 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   `"Artist - Title"`. `Core/ModuleEntry.cpp` fires `DynamicTextChangeNotification(L"NowPlaying",0)`
   in `WM_TIMER`. `Core/Core.vcxproj` needed `LanguageStandard=stdcpp17`,
   `#pragma comment(lib,"windowsapp.lib")`, and `_ENFORCE_MATCHING_ALLOCATORS=0`.
+- **GPU meters (Core):** `Core/GpuMeter.cpp` adds `[GPU]`, `[VRAM]` (percent) and
+  `[VRAMUsedGB]`, next to the existing `[CPU]` / `[Memory]`. A thread reads the PDH
+  counters Task Manager uses (`\GPU Engine(*)\Utilization Percentage`, busiest engine;
+  `\GPU Adapter Memory(*)\Dedicated Usage`) for the adapter with the most dedicated
+  memory (DXGI; here the RTX 3060, not the Radeon 740M). The theme shows CPU/GPU/RAM/VRAM
+  as `MMeter*` overlay labels in the dark box of `injektion.png` (x 180..287, y 1..18)
+  that the original used for a quick launch.
 - **Media control (Core):** `Core/TextFunctions.cpp` — the GSMTC thread also runs queued
   transport commands and tracks the play position. Bangs: `!MediaPlayPause`, `!MediaPlay`,
   `!MediaPause`, `!MediaStop`, `!MediaNext`, `!MediaPrev`, `!MediaSeek <0-100>`,
