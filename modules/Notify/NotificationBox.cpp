@@ -32,6 +32,11 @@ static const WindowSettings sCloseDefaults([] (WindowSettings &defaults) {
 static const StateRender<NotificationBox::States>::InitData sInitData(
     [] (StateRender<NotificationBox::States>::InitData &initData) {
   initData[NotificationBox::States::Hover].prefix = L"Hover";
+  // Nothing is painted unless the theme says so: a part without settings (the click
+  // area around the close button) must not show up as a solid block.
+  for (auto &state : initData) {
+    state.defaults.brushSettings[::State::BrushType::Background].color = Color::Create(0x00000000);
+  }
 });
 
 
@@ -106,6 +111,8 @@ NotificationBox::NotificationBox(const ToastData &data, LPCWSTR timeFormat)
   mTitle.reset(new Part(this, L"Title", false));
   mText.reset(new Part(this, L"Text", false));
   mTime.reset(new Part(this, L"Time", false));
+  // The area first: the button is drawn over it, and both close the box.
+  mCloseArea.reset(new Part(this, L"CloseArea", true));
   mClose.reset(new Part(this, L"Close", true));
 
   std::wstring text = mData.title;
