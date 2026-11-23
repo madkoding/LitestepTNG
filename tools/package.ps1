@@ -47,7 +47,7 @@ if (-not ($binaries.Name -contains 'lsapi.dll' -and $binaries.Name -contains 'Co
 }
 
 # --- configuration ----------------------------------------------------------
-foreach ($file in 'step.rc', 'theme-select.rc', 'personal.rc.example', 'theme.lsx', 'theme.lsxstyle', 'README.md') {
+foreach ($file in 'step.rc', 'theme-select.rc', 'personal.rc.example', 'theme.lsx', 'theme.lsxstyle', 'README.md', 'LICENSE') {
     $source = Join-Path $Root $file
     if (Test-Path $source) { Copy-Item $source $Stage }
 }

@@ -1,123 +1,184 @@
-﻿# LiteStep NG - Next Generation Windows Shell Replacement
+﻿# LiteStep TNG
 
-LiteStep NG is the modern Windows 10 and Windows 11 shell replacement that evolves the classic LiteStep vision with a performant core, a declarative theme engine, and tooling tuned for creators who want total control over the desktop experience. This project is built for power users, themers, and automation enthusiasts who need a lightweight, extensible alternative to Explorer.
+A modern x64 build of the classic **LiteStep** desktop for Windows 10 and 11, with
+Direct2D rendering and the nModules suite. It runs **on top of Explorer**: Explorer stays
+the Windows shell, so Store apps, Settings and everything else that depends on it keep
+working, while LiteStep replaces what you see — bars, menus, task list, tray, virtual
+desktops, notifications and desktop icons — with a theme.
 
-## Table of Contents
-- [Highlights](#highlights)
-- [System Requirements](#system-requirements)
-- [Architecture](#architecture)
-- [Differences from Classic LiteStep](#differences-from-classic-litestep)
-- [Getting Started](#getting-started)
-- [Theme Engine V2 at a Glance](#theme-engine-v2-at-a-glance)
-- [Extending LiteStep](#extending-litestep)
-- [Community & Support](#community--support)
-- [License](#license)
+![The LiteStep Enhanced theme](docs/images/desktop.png)
 
-## Highlights
-- **Windows 10/11 core** - Ships with a Windows 10 manifest, targets `_WIN32_WINNT=0x0A00`, and optimizes shell services for current platforms.
-- **Theme Engine V2** - Author elegant layouts with readable `.lsx` markup and pair them with `.lsxstyle` skins for modern glass, blur, and accent effects.
-- **High-performance LSAPI** - A built-in task executor and shared services keep modules responsive without spawning one-off threads.
-- **Modular build pipeline** - Unified MSBuild property sheets simplify module packaging for both x64 and Win32 releases while keeping CI artifacts tidy.
-- **Polished defaults** - The bundled theme delivers a translucent Windows 11-inspired desktop with curated modules and keyboard shortcuts out of the box.
+The default theme, **LiteStep Enhanced**, is a port of Norman Kaczmarek's 2002 theme of
+the same name.
 
-## System Requirements
-- Windows 10 (version 1903 or newer) or Windows Server 2016. Earlier operating systems are not supported by this fork.
-- Visual Studio 2022 with the v143 toolset, or an equivalent MSBuild toolchain.
-- Optional: Windows SDK 10.0 for module development and Doxygen for API documentation.
+| | |
+|---|---|
+| Clock, system meters, virtual desktops and the menu button | ![Left side of the top bar](docs/images/bar-left.png) |
+| Media player controls, now playing, track and volume sliders | ![Right side of the top bar](docs/images/bar-right.png) |
+| Program categories | ![Category bar](docs/images/launcher.png) |
+| Windows notifications as boxes on the desktop | ![Notification boxes](docs/images/notifications.png) |
+
+## Install
+
+Download the latest release from the [releases page](../../releases/latest):
+
+- **`LiteStepTNG-<version>-x64-setup.exe`** — the installer. It installs for the current
+  user (no administrator rights), into `%LOCALAPPDATA%\Programs\LiteStepTNG`, and can
+  start LiteStep when you sign in. It does not change the Windows shell.
+- **`LiteStepTNG-<version>-x64.zip`** — the same files, to unpack anywhere you can write
+  to. Start it with `litestep.exe -overlay`.
+
+Requirements: Windows 10 version 2004 or newer, or Windows 11, 64-bit.
+
+The LiteStep Enhanced theme is designed for the pixel font **hooge 05_55**, which is not
+included. Without it Windows substitutes another font and the text looks different.
+
+To leave LiteStep, run `litestep.exe !Quit` (or uninstall it); Explorer's taskbar comes
+back. If LiteStep is killed instead, the taskbar stays hidden until LiteStep or Explorer
+is started again.
+
+## What is in it
+
+- **Themes:** LiteStep Enhanced (default), Glass and Prototype-X. Change the theme from
+  the menu, or by editing `ThemeName` in `theme-select.rc`.
+- **Bars and labels** (`nLabel`, `Clock`): clock, date, live text such as `[CPU]`,
+  `[GPU]`, `[Memory]`, `[VRAM]` and `[NowPlaying]`, sliders for volume and track position.
+- **Task list and tray** (`nTaskbar`, `nTray`). Explorer's own taskbar is hidden while
+  LiteStep runs (`HideExplorerTaskbar false` in a theme keeps it).
+- **Popup menus** (`nPopup`, `StartMenu`): programs, folders, favourites, recent
+  documents, themes.
+- **Media control:** buttons that drive the player you choose (the rotation is configured
+  in the theme) through the Windows media session.
+- **Virtual desktops** (`VWM`): four desktops with a transition; right-click a desktop
+  button, or press Win+Shift+1..4, to send the active window there.
+- **Notifications** (`Notify`): Windows toasts shown as theme boxes; click one to go to
+  its program, or close it with the X.
+- **Desktop icons** (`Icon`): the Desktop folder drawn in the theme's style, with
+  thumbnails and drag and drop.
+- **Window frames** (`Frames`, experimental): a themed frame around other programs'
+  windows that have a standard title bar.
+- **Wallpaper:** a theme may bring its own (`ThemeWallpaper`); otherwise the wallpaper you
+  choose in Windows is used.
+
+### Personal settings
+
+Things that belong to you live next to `litestep.exe` and are never overwritten by an
+update:
+
+- `personal.rc` — settings that override the theme (see `personal.rc.example`).
+- `theme-select.rc` — the selected theme.
+- `favorites\` and `games\` — shortcuts shown in the menu.
 
 ## Architecture
-```text
-                   +----------------------------+
-                   |   Theme Files (.lsx)       |
-                   +-------------+--------------+
-                                 |
-                                 v
-         +-----------------------+-----------------------+
-         |             Theme Engine V2                   |
-         |  parsing + validation + layout + binding      |
-         +----+---------------+---------------+---------+
-              |               |               |
-              v               v               v
-      +-------+-----+   +-----+------+   +----+----------------+
-      | LiteStep    |   | LSAPI Core |   | TaskExecutor Pool  |
-      | Core Host   |   | Services   |   | async work queues  |
-      +-------+-----+   +-----+------+   +----+----------------+
-              |               |
-              v               v
-      +-------+------+   +----+-------------------------------+
-      | Modules &    |   | Shell Integrations (taskbar, tray,|
-      | Extensions   |   | hotkeys, notifications, startup)  |
-      +--------------+   +-----------------------------------+
-                                 |
-                                 v
-                   +----------------------------+
-                   |   Windows 10 / 11 APIs     |
-                   +----------------------------+
+
+```mermaid
+flowchart TB
+    subgraph config["Configuration (run folder)"]
+        step["step.rc"]
+        select["theme-select.rc"]
+        personal["personal.rc (optional)"]
+        theme["themes/&lt;name&gt;/theme.rc"]
+        step --> select
+        step --> personal
+        step --> theme
+    end
+
+    subgraph core["LiteStep core"]
+        exe["litestep.exe -overlay<br/>module loader, bangs, tray service"]
+        lsapi["lsapi.dll<br/>settings, bangs, messages"]
+        exe --- lsapi
+    end
+
+    subgraph modules["nModules (one DLL each, all link ModuleKit)"]
+        kit["ModuleKit<br/>windows, Direct2D drawing, settings"]
+        ncore["Core<br/>live text, meters, media, work area"]
+        bars["Label, Clock, TaskBar, SysTray"]
+        menus["Popup, StartMenu"]
+        desk["Icon, Wallpaper, Notify"]
+        wins["VWM, Frames, TaskSwitcher, HotKey"]
+        ncore --> kit
+        bars --> kit
+        menus --> kit
+        desk --> kit
+        wins --> kit
+        bars -. "text, icons" .-> ncore
+        menus -. "icons" .-> ncore
+        desk -. "thumbnails" .-> ncore
+    end
+
+    subgraph windows["Windows"]
+        explorer["Explorer (the shell)<br/>desktop, wallpaper, Store apps"]
+        apis["Direct2D / DirectWrite, WinRT<br/>media sessions, notifications"]
+    end
+
+    config --> exe
+    exe -- "loads the modules the theme lists" --> modules
+    modules --> lsapi
+    modules --> apis
+    ncore -- "hides the taskbar, sets the work area" --> explorer
 ```
 
-## Differences from Classic LiteStep
-Here are the major changes from Classic LiteStep:
+Explorer remains the shell and keeps drawing the desktop and the wallpaper. `litestep.exe`
+reads the configuration, loads the modules the theme asks for, and each module draws its
+own windows on top.
 
-- **Windows 10 baseline** - The shell now ships with a Windows 10 manifest, targets `_WIN32_WINNT=0x0A00`, and officially drops support for legacy Windows releases.
-- **Modern toolchain** - The solution targets Visual Studio 2022 with the v143 toolset and uses shared MSBuild property sheets so modules build consistently across x64 and Win32.
-- **Responsive LSAPI** - A built-in pooled task executor keeps modules responsive by handling asynchronous work without spawning raw threads during startup or recycle.
-- **Startup and overlay experience** - Overlay launch modes, Explorer coexistence prompts, automatic shutdown of previous instances, and first-run setup flows make swapping shells smoother.
-- **Windows-aware input and notifications** - nKey understands Windows-key combinations and the tray adopts the Windows 10 notification model for reliable toasts and overflow behavior.
-- **Diagnostics-first approach** - Structured logging, richer module diagnostics, and a refreshed `StartupRunner` shorten the loop when tracking down theme or module issues.
-- **Declarative theming overhaul** - Theme Engine V2 separates structure (`theme.lsx`) from style (`theme.lsxstyle`) and ships with a translucent default theme tuned for Windows 11 aesthetics.
+## Build from source
 
-Together these changes deliver a Windows 10+ native shell experience while intentionally dropping support for Windows 7, Vista, XP, and earlier.
+You need Visual Studio 2022 (or its Build Tools) with the v143 toolset and a Windows 10
+SDK.
 
-## Getting Started
-
-### 1. Download or Clone
-```bash
+```powershell
 git clone <repository-url>
-cd litestep
-```
-(If modules are submodules, run `git submodule update --init`.)
-
-### 2. Build with Visual Studio
-1. Open `litestep.sln`.
-2. Select `x64` or `Win32` and choose `Debug` or `Release`.
-3. Build; binaries land in `bin/<Configuration>_<Platform>/`.
-
-### 3. Run the Shell
-1. Copy `bin/Release_x64` into a staging directory.
-2. Launch `LiteStep.exe` once to register services and warm the cache.
-3. Use `Run Overlay.lnk` to test the shell in a window before replacing Explorer.
-
-## Theme Engine V2 at a Glance
-Structure and style now live in separate files:
-
-```lsl
-#panel { // Start button
-   name = "StartButton"
-   layout = "stack"
-   children = [
-      #button { icon = "start_icon.png" tooltip = "Start" style = "startbutton" }
-   ]
-}
+cd LitestepTNG
+msbuild litestep.sln /p:Configuration=Release /p:Platform=x64 /m
 ```
 
-```css
-#startbutton {
-   radius = 8
-   background = radialGradient(center, THEME_COLOR_ACCENT, THEME_COLOR_ACCENT_MINOR)
-}
+Binaries land in `bin\Release_x64\`. LiteStep runs from a separate folder (the "run
+folder"), not from the repository; the scripts in `tools\` take care of that:
+
+```powershell
+.\tools\deploy.ps1 -LiteStepDir <run folder>      # copy the build and the themes, restart
+.\tools\smoke-test.ps1 -LiteStepDir <run folder>  # drive the running shell and check it
+.\tools\package.ps1 -Version 1.2.3                # zip + installer (Inno Setup 6) in dist\
 ```
 
-See `docs/themev2.txt` for the full language reference, migration tips, and selector guide.
+Always start LiteStep with `-overlay`. Without it, LiteStep sees Explorer's taskbar and
+asks what to do.
 
-## Extending LiteStep
-- Build new modules against `sdk/include/lsapi.h` and link with the provided LSAPI libraries.
-- Use the task executor for background work instead of creating unmanaged threads.
-- Emit module metadata so Theme Engine V2 can auto-bind layout nodes to your components.
+Every push is built and packaged by GitHub Actions (`.github\workflows\build.yml`);
+pushing a tag `v<version>` publishes a release.
 
-## Community & Support
-- Read `docs/manual.txt` for installation guidance, troubleshooting steps, and bang references.
-- Track historical changes or migration paths with `docs/changes.txt` and `docs/themev2.txt`.
-- Share themes and modules with the LiteStep community (forums and Discord coming soon).
+`AGENTS.md` is the detailed guide to the code: architecture, how the modules work, theme
+authoring, and the reasons behind the less obvious decisions.
 
-## License
-LiteStep NG is released under the GNU General Public License v2. Review `docs/license.txt` for full licensing terms.
+## Repository layout
+
+```
+litestep\     the core executable (litestep.exe)
+lsapi\        the LiteStep API (lsapi.dll, lsapi.h)
+modules\      the nModules DLLs and their shared library, ModuleKit
+themes\       one folder per theme, each with a theme.rc
+tools\        deploy, smoke test, theme switch and packaging scripts
+installer\    the Inno Setup script
+step.rc       the loader: theme-select.rc, the optional personal.rc, then the theme
+```
+
+## Notes for theme and module authors
+
+- Themes are `theme.rc` files for the nModules suite. Use `$LiteStepDir$`, `$ThemeName$`
+  and `$USERNAME$` instead of literal paths.
+- Do not load `Desk.dll` on top of Explorer: it takes over Explorer's desktop view. It is
+  not included in the releases.
+- Modules are built against `lsapi\lsapi.h` and link `ModuleKit`.
+- The core also contains an experimental declarative engine ("Theme Engine V2",
+  `litestep\themev2`, files `theme.lsx` / `theme.lsxstyle`). The themes shipped here do
+  not use it.
+
+## Credits and license
+
+LiteStep TNG builds on the work of the LiteStep Development Team, the nModules project,
+and the LiteStepTNG fork this repository comes from. The LiteStep Enhanced theme was
+created by Norman Kaczmarek.
+
+LiteStep is free software, released under the GNU General Public License, version 2 or
+later. See [LICENSE](LICENSE).
