@@ -94,7 +94,7 @@ MBarLeftOn RightClickUp None !PopupContext
 ; Reloj y fecha centrados en la caja oscura (x 5..159 de injektion.png).
 ; La sombra dura del original (negra, +1,+1) se hace con una etiqueta gemela
 ; negra desplazada 1px; el motor solo ofrece contorno (FontStroke), no sombra.
-*MBarLeftOverlayLabel MClockTimeSh MClockDateSh MClockTime MClockDate MMenuHit MDeskSel MDesk1 MDesk2 MDesk3 MDesk4
+*MBarLeftOverlayLabel MClockTimeSh MClockDateSh MClockTime MClockDate MMenuHit MDeskSel MDesk1 MDesk2 MDesk3 MDesk4 MMeterCPU MMeterGPU MMeterRAM MMeterVRAM
 
 MClockTimeShX 6
 MClockTimeShY 5
@@ -197,6 +197,61 @@ MDesk4Width 15
 MDesk4Height 13
 MDesk4Color #01000000
 MDesk4On LeftClickUp None !VWMDesk 4
+
+; Medidores del sistema en la caja oscura que el original reservaba al "quick launch"
+; (x 180..287, y 1..18 de injektion.png): dos filas de dos. [GPU] y [VRAM] miden la
+; tarjeta grafica con mas memoria dedicada. Clic: Administrador de tareas.
+MMeterCPUX 182
+MMeterCPUY 0
+MMeterCPUWidth 52
+MMeterCPUHeight 10
+MMeterCPUColor #01000000
+MMeterCPUFont $MMFontSmall$
+MMeterCPUFontSize 8
+MMeterCPUFontColor $MMInk$
+MMeterCPUTextAlign Left
+MMeterCPUTextVerticalAlign Middle
+MMeterCPUText "CPU [CPU]%"
+MMeterCPUOn LeftClickUp None !Execute [taskmgr.exe]
+
+MMeterGPUX 231
+MMeterGPUY 0
+MMeterGPUWidth 57
+MMeterGPUHeight 10
+MMeterGPUColor #01000000
+MMeterGPUFont $MMFontSmall$
+MMeterGPUFontSize 8
+MMeterGPUFontColor $MMInk$
+MMeterGPUTextAlign Left
+MMeterGPUTextVerticalAlign Middle
+MMeterGPUText "GPU [GPU]%"
+MMeterGPUOn LeftClickUp None !Execute [taskmgr.exe]
+
+MMeterRAMX 182
+MMeterRAMY 9
+MMeterRAMWidth 52
+MMeterRAMHeight 10
+MMeterRAMColor #01000000
+MMeterRAMFont $MMFontSmall$
+MMeterRAMFontSize 8
+MMeterRAMFontColor $MMInk$
+MMeterRAMTextAlign Left
+MMeterRAMTextVerticalAlign Middle
+MMeterRAMText "RAM [Memory]%"
+MMeterRAMOn LeftClickUp None !Execute [taskmgr.exe]
+
+MMeterVRAMX 231
+MMeterVRAMY 9
+MMeterVRAMWidth 57
+MMeterVRAMHeight 10
+MMeterVRAMColor #01000000
+MMeterVRAMFont $MMFontSmall$
+MMeterVRAMFontSize 8
+MMeterVRAMFontColor $MMInk$
+MMeterVRAMTextAlign Left
+MMeterVRAMTextVerticalAlign Middle
+MMeterVRAMText "VRAM [VRAM]%"
+MMeterVRAMOn LeftClickUp None !Execute [taskmgr.exe]
 
 ; --- Panel DERECHO: injektion2.png pegado al borde derecho ---
 *nLabel MBarRight
