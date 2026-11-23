@@ -1,5 +1,5 @@
 //-------------------------------------------------------------------------------------------------
-// /VWM/nVWM.cpp
+// /VWM/ModuleEntry.cpp
 // The nModules Project
 //
 // nVWM entry points and a minimal virtual window manager.
@@ -25,6 +25,7 @@
 //-------------------------------------------------------------------------------------------------
 #include "../ModuleKit/LiteStep.h"
 #include "../ModuleKit/LSModule.hpp"
+#include "../Utilities/WindowActivation.h"
 
 #include "Transition.h"
 #include "Version.h"
@@ -240,24 +241,6 @@ static void Gather() {
 
 
 /// <summary>
-/// Gives the focus to a window even when Windows would refuse a plain request (a bang
-/// run from a keyboard hook has no right to change the foreground).
-/// </summary>
-static void Activate(HWND window) {
-  if (SetForegroundWindow(window) && GetForegroundWindow() == window) {
-    return;
-  }
-  DWORD self = GetCurrentThreadId();
-  DWORD foreground = GetWindowThreadProcessId(GetForegroundWindow(), nullptr);
-  if (foreground != 0 && foreground != self && AttachThreadInput(self, foreground, TRUE)) {
-    BringWindowToTop(window);
-    SetForegroundWindow(window);
-    AttachThreadInput(self, foreground, FALSE);
-  }
-}
-
-
-/// <summary>
 /// Sends a window that is on screen to another desktop, without following it.
 /// </summary>
 /// <param name="desk">Zero-based desktop index.</param>
@@ -281,7 +264,7 @@ static void SendTo(HWND window, int desk) {
     }
     return TRUE;
   }, (LPARAM)&next);
-  Activate(next.found != nullptr ? next.found : LiteStep::GetLitestepWnd());
+  WindowActivation::ForceForeground(next.found != nullptr ? next.found : LiteStep::GetLitestepWnd());
 }
 
 

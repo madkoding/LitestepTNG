@@ -1,17 +1,19 @@
 //-------------------------------------------------------------------------------------------------
-// /Frames/TitleBar.cpp
+// /Frames/WindowFrame.cpp
 // The nModules Project
 //
-// A skinned title bar that sits on top of another program's native one.
+// The skinned frame around another program's window: a decoration drawn outside it and
+// an interactive bar over its native title bar.
 //
 // Nothing is injected into the other program: the bar is a window of ours that follows
 // it, and what the user does on the bar is passed on as the messages the native title
 // bar would have produced.
 //-------------------------------------------------------------------------------------------------
-#include "TitleBar.hpp"
+#include "WindowFrame.hpp"
 
 #include "../ModuleKit/LiteStep.h"
 #include "../ModuleKit/LSModule.hpp"
+#include "../Utilities/WindowActivation.h"
 
 #include <dwmapi.h>
 #include <windowsx.h>
@@ -36,14 +38,14 @@ static const WindowSettings sButtonDefaults([] (WindowSettings &defaults) {
   defaults.height = 10;
 });
 
-static const StateRender<TitleBar::States>::InitData sInitData(
-    [] (StateRender<TitleBar::States>::InitData &initData) {
-  initData[TitleBar::States::Active].prefix = L"Active";
-  initData[TitleBar::States::Hover].prefix = L"Hover";
+static const StateRender<WindowFrame::States>::InitData sInitData(
+    [] (StateRender<WindowFrame::States>::InitData &initData) {
+  initData[WindowFrame::States::Active].prefix = L"Active";
+  initData[WindowFrame::States::Hover].prefix = L"Hover";
 });
 
 
-TitleBar::Part::Part(TitleBar *bar, LPCWSTR name, Role role)
+WindowFrame::Part::Part(WindowFrame *bar, LPCWSTR name, Role role)
     : Drawable(bar, name), mBar(bar), mRole(role), mShown(true) {
   mStateRender.Load(sInitData, mSettings);
 
@@ -54,7 +56,7 @@ TitleBar::Part::Part(TitleBar *bar, LPCWSTR name, Role role)
 }
 
 
-void TitleBar::Part::SetShown(bool shown) {
+void WindowFrame::Part::SetShown(bool shown) {
   if (shown == mShown) {
     return;
   }
@@ -68,7 +70,7 @@ void TitleBar::Part::SetShown(bool shown) {
 }
 
 
-void TitleBar::Part::SetActive(bool active) {
+void WindowFrame::Part::SetActive(bool active) {
   if (active) {
     mStateRender.ActivateState(States::Active, mWindow);
   } else {
@@ -77,7 +79,7 @@ void TitleBar::Part::SetActive(bool active) {
 }
 
 
-LRESULT WINAPI TitleBar::Part::HandleMessage(HWND window, UINT message, WPARAM wParam,
+LRESULT WINAPI WindowFrame::Part::HandleMessage(HWND window, UINT message, WPARAM wParam,
     LPARAM lParam, LPVOID) {
   switch (message) {
   case WM_MOUSEMOVE:
@@ -101,7 +103,7 @@ LRESULT WINAPI TitleBar::Part::HandleMessage(HWND window, UINT message, WPARAM w
 }
 
 
-TitleBar::Body::Body() : Drawable(L"FrameBody") {
+WindowFrame::Body::Body() : Drawable(L"FrameBody") {
   SetRectEmpty(&mOuter);
   SetRectEmpty(&mHole);
   SetRectEmpty(&mClip);
@@ -126,7 +128,7 @@ TitleBar::Body::Body() : Drawable(L"FrameBody") {
 }
 
 
-void TitleBar::Body::SetActive(bool active) {
+void WindowFrame::Body::SetActive(bool active) {
   if (active) {
     mStateRender.ActivateState(States::Active, mWindow);
   } else {
@@ -135,7 +137,7 @@ void TitleBar::Body::SetActive(bool active) {
 }
 
 
-void TitleBar::Body::Place(const RECT &outer, const RECT &hole, const RECT *clip) {
+void WindowFrame::Body::Place(const RECT &outer, const RECT &hole, const RECT *clip) {
   RECT noClip = { 0, 0, 0, 0 };
   if (clip == nullptr) {
     clip = &noClip;
@@ -178,13 +180,13 @@ void TitleBar::Body::Place(const RECT &outer, const RECT &hole, const RECT *clip
 }
 
 
-LRESULT WINAPI TitleBar::Body::HandleMessage(HWND window, UINT message, WPARAM wParam,
+LRESULT WINAPI WindowFrame::Body::HandleMessage(HWND window, UINT message, WPARAM wParam,
     LPARAM lParam, LPVOID) {
   return DefWindowProc(window, message, wParam, lParam);
 }
 
 
-bool TitleBar::GetNativeBarRect(HWND target, RECT &bar) {
+bool WindowFrame::GetNativeBarRect(HWND target, RECT &bar) {
   LONG_PTR style = GetWindowLongPtrW(target, GWL_STYLE);
   LONG_PTR exStyle = GetWindowLongPtrW(target, GWL_EXSTYLE);
   if (!IsWindowVisible(target) || IsIconic(target) || (style & WS_CHILD) != 0
@@ -195,6 +197,14 @@ bool TitleBar::GetNativeBarRect(HWND target, RECT &bar) {
   // Windows parked on another virtual desktop, suspended Store apps...
   int cloaked = 0;
   if (SUCCEEDED(DwmGetWindowAttribute(target, DWMWA_CLOAKED, &cloaked, sizeof(cloaked))) && cloaked != 0) {
+    return false;
+  }
+
+  // Not on any screen: parked on another virtual desktop (the VWM module moves those
+  // far to the right), or dragged out of sight. There is nothing to decorate, and the
+  // screen tests further down only make sense against the monitor the window is on.
+  HMONITOR onMonitor = MonitorFromWindow(target, MONITOR_DEFAULTTONULL);
+  if (onMonitor == nullptr) {
     return false;
   }
 
@@ -237,7 +247,7 @@ bool TitleBar::GetNativeBarRect(HWND target, RECT &bar) {
   // and whatever caption it still has is not meant to be seen. A maximized window can
   // also fill its monitor when nothing is reserved there, hence the IsZoomed test.
   MONITORINFO monitor = { sizeof(monitor) };
-  if (GetMonitorInfoW(MonitorFromWindow(target, MONITOR_DEFAULTTONEAREST), &monitor)) {
+  if (GetMonitorInfoW(onMonitor, &monitor)) {
     const RECT &screen = monitor.rcMonitor;
     if (!IsZoomed(target) && frame.left <= screen.left && frame.top <= screen.top
         && frame.right >= screen.right && frame.bottom >= screen.bottom) {
@@ -254,7 +264,7 @@ bool TitleBar::GetNativeBarRect(HWND target, RECT &bar) {
 }
 
 
-TitleBar::TitleBar(HWND target) : Drawable(L"Frame"), mTarget(target), mActive(false),
+WindowFrame::WindowFrame(HWND target) : Drawable(L"Frame"), mTarget(target), mActive(false),
     mDragArmed(false), mDragging(false) {
   mTitle[0] = L'\0';
   mStateRender.Load(sInitData, mSettings);
@@ -280,7 +290,7 @@ TitleBar::TitleBar(HWND target) : Drawable(L"Frame"), mTarget(target), mActive(f
 }
 
 
-TitleBar::~TitleBar() {
+WindowFrame::~WindowFrame() {
   if (mBody && IsWindow(mTarget)) {
     int corners = DWMWCP_DEFAULT;
     DwmSetWindowAttribute(mTarget, DWMWA_WINDOW_CORNER_PREFERENCE, &corners, sizeof(corners));
@@ -288,7 +298,7 @@ TitleBar::~TitleBar() {
 }
 
 
-bool TitleBar::Sync() {
+bool WindowFrame::Sync() {
   RECT bar;
   if (!GetNativeBarRect(mTarget, bar)) {
     return false;
@@ -389,7 +399,7 @@ bool TitleBar::Sync() {
 }
 
 
-void TitleBar::Restack() {
+void WindowFrame::Restack() {
   // Wanted order, top down: bar, body, target.
   HWND self = mWindow->GetWindowHandle();
   HWND body = mBody ? mBody->GetWindow()->GetWindowHandle() : nullptr;
@@ -424,26 +434,15 @@ void TitleBar::Restack() {
 }
 
 
-void TitleBar::ActivateTarget() {
+void WindowFrame::ActivateTarget() {
   if (GetForegroundWindow() == mTarget) {
     return;
   }
-  if (SetForegroundWindow(mTarget) && GetForegroundWindow() == mTarget) {
-    return;
-  }
-  // The bar never takes focus itself (WS_EX_NOACTIVATE), so Windows may refuse; borrow
-  // the input queue of whoever has the foreground, as the popups do.
-  DWORD self = GetCurrentThreadId();
-  DWORD foreground = GetWindowThreadProcessId(GetForegroundWindow(), nullptr);
-  if (foreground != 0 && foreground != self && AttachThreadInput(self, foreground, TRUE)) {
-    BringWindowToTop(mTarget);
-    SetForegroundWindow(mTarget);
-    AttachThreadInput(self, foreground, FALSE);
-  }
+  WindowActivation::ForceForeground(mTarget);
 }
 
 
-void TitleBar::Command(Role role) {
+void WindowFrame::Command(Role role) {
   LONG_PTR style = GetWindowLongPtrW(mTarget, GWL_STYLE);
   WPARAM command;
   switch (role) {
@@ -462,7 +461,7 @@ void TitleBar::Command(Role role) {
 }
 
 
-LRESULT WINAPI TitleBar::HandleMessage(HWND window, UINT message, WPARAM wParam, LPARAM lParam,
+LRESULT WINAPI WindowFrame::HandleMessage(HWND window, UINT message, WPARAM wParam, LPARAM lParam,
     LPVOID) {
   switch (message) {
   case WM_LBUTTONDOWN:

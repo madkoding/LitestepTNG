@@ -1,8 +1,9 @@
 //-------------------------------------------------------------------------------------------------
-// /Frames/TitleBar.hpp
+// /Frames/WindowFrame.hpp
 // The nModules Project
 //
-// A skinned title bar that sits on top of another program's native one.
+// The skinned frame around another program's window: a decoration drawn outside it and
+// an interactive bar over its native title bar.
 //-------------------------------------------------------------------------------------------------
 #pragma once
 
@@ -12,7 +13,7 @@
 
 #include <memory>
 
-class TitleBar : public Drawable {
+class WindowFrame : public Drawable {
 public:
   // Later states win: a hovered button of the active window shows its Hover look.
   enum class States {
@@ -35,7 +36,7 @@ public:
   /// </summary>
   class Part : public Drawable {
   public:
-    Part(TitleBar *bar, LPCWSTR name, Role role);
+    Part(WindowFrame *bar, LPCWSTR name, Role role);
     void SetActive(bool active);
     void SetShown(bool shown);
 
@@ -44,7 +45,7 @@ public:
 
   private:
     StateRender<States> mStateRender;
-    TitleBar *mBar;
+    WindowFrame *mBar;
     Role mRole;
     bool mShown;
   };
@@ -73,8 +74,8 @@ public:
   };
 
 public:
-  explicit TitleBar(HWND target);
-  ~TitleBar();
+  explicit WindowFrame(HWND target);
+  ~WindowFrame();
 
   /// <summary>
   /// The rectangle (screen coordinates) of a window's native title bar, if it has a

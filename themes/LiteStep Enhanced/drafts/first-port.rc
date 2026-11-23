@@ -1,5 +1,5 @@
 ; ==============================================================================
-;  LiteStep Enhanced (metamorphosis) - PORT al motor TNG
+;  LiteStep Enhanced - PORT al motor TNG
 ;  Original: Norman Kaczmarek, 2001 (OTS 2.0, modulos clasicos *NetLoadModule).
 ;  Este port recrea el LOOK usando los modulos modernos de C:\LiteStepTNG.
 ;  Solo usa claves/bangs que existen en este build (misma base que step.rc).
@@ -7,7 +7,7 @@
 LiteStepVersion "0.25.0"
 
 ; ------------------------------------------------------------------------------
-;  PALETA  (identidad metamorphosis: dark + acento azul-acero)
+;  PALETA  (identidad LiteStep Enhanced: dark + acento azul-acero)
 ;  Referencia del Theme.rc original:
 ;     fondos  ~ #000000 / #000058      texto ~ #FFFFFF
 ;     acento  ~ #A8C0D0 (VWMForeColor / BorderColor, azul acero desaturado)
@@ -19,7 +19,7 @@ BarColor        #FF000000
 AccentColor     #FFA8C0D0
 BarHover        #FF14181C
 
-; Derivadas (coherentes con la paleta original metamorphosis)
+; Derivadas (coherentes con la paleta original)
 BarPressed      #FF1E242A
 TextColor       #FFFFFFFF
 TextDim         #FFA8C0D0
@@ -192,7 +192,7 @@ ClockDateText "[Time('%d. %B %Y')]"
 ClockDateOn LeftClickUp None !Execute [ms-settings:dateandtime]
 
 ; ==============================================================================
-;  BARRA SUPERIOR (metamorphosis): [saludo] ...... [media winamp] [config][power]
+;  BARRA SUPERIOR: [saludo] ...... [media winamp] [config][power]
 ; ==============================================================================
 *nLabel DeskLabel
 DeskLabelX 16
@@ -302,7 +302,7 @@ TopPowerText ""
 TopPowerOn LeftClickUp None !PopupPower
 
 ; ==============================================================================
-;  ESTILO DE MENUS (metamorphosis dark + borde acento)
+;  ESTILO DE MENUS (dark + borde acento)
 ; ==============================================================================
 MenuStyleColor #F2101417
 MenuStyleCornerRadiusX 6

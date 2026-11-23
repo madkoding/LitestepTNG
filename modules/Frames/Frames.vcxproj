@@ -109,11 +109,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
-    <ClCompile Include="TitleBar.cpp" />
+    <ClCompile Include="WindowFrame.cpp" />
     <ClCompile Include="ModuleEntry.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="TitleBar.hpp" />
+    <ClInclude Include="WindowFrame.hpp" />
     <ClInclude Include="Version.h" />
   </ItemGroup>
   <ItemGroup>

@@ -2,11 +2,11 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="ModuleEntry.cpp" />
-    <ClCompile Include="TitleBar.cpp" />
+    <ClCompile Include="WindowFrame.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Version.h" />
-    <ClInclude Include="TitleBar.hpp" />
+    <ClInclude Include="WindowFrame.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Frames.rc" />

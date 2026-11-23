@@ -1,5 +1,5 @@
 ; ==============================================================================
-;  LiteStep Enhanced (metamorphosis) - PORT FIEL con skin de imagenes
+;  LiteStep Enhanced - PORT FIEL con skin de imagenes
 ;  Original: Norman Kaczmarek, 2001. Layout segun preview original.
 ;  Paneles metalicos FLOTAN sobre el escritorio (sin barra solida).
 ;  Fuente: hooge 05_55.  Texto en MAYUSCULAS via TextUppercase (source).
@@ -16,7 +16,7 @@ MMFont "hooge 05_55"
 MMFontSmall "hooge 05_55"
 MMInk  #FFFFFFFF
 MMDim  #FFC0C8CC
-MMUser #FF500058
+MMUser #FF000000
 MMBase #FF000000
 
 ; LiteStep corre SOBRE explorer (litestep.exe -overlay): explorer sigue siendo el shell
@@ -647,7 +647,7 @@ MMMenuItemImageEdgesRight 6
 MMMenuItemImageEdgesBottom 0
 MMMenuItemFont $MMFont$
 MMMenuItemFontSize 8
-MMMenuItemFontColor #FF40084A
+MMMenuItemFontColor #FF000000
 MMMenuItemTextOffsetLeft 38
 MMMenuItemTextOffsetRight 6
 MMMenuItemTextVerticalAlign Middle
@@ -673,7 +673,7 @@ MMMenuFolderItemImageEdgesRight 16
 MMMenuFolderItemImageEdgesBottom 0
 MMMenuFolderItemFont $MMFont$
 MMMenuFolderItemFontSize 8
-MMMenuFolderItemFontColor #FF40084A
+MMMenuFolderItemFontColor #FF000000
 MMMenuFolderItemTextOffsetLeft 38
 MMMenuFolderItemTextOffsetRight 22
 MMMenuFolderItemTextVerticalAlign Middle
@@ -709,7 +709,7 @@ MMMenuInfoItemImageEdgesRight 6
 MMMenuInfoItemImageEdgesBottom 0
 MMMenuInfoItemFont $MMFont$
 MMMenuInfoItemFontSize 8
-MMMenuInfoItemFontColor #FF40084A
+MMMenuInfoItemFontColor #FF000000
 MMMenuInfoItemTextAlign Center
 MMMenuInfoItemTextVerticalAlign Middle
 MMMenuInfoItemTextOffsetLeft 38
@@ -730,7 +730,7 @@ MMMenuSeparatorItemImageEdgesBottom 0
 MMMenuLnkGroup MMMenu
 MMMenuLnkFont $MMFont$
 MMMenuLnkFontSize 8
-MMMenuLnkFontColor #FF40084A
+MMMenuLnkFontColor #FF000000
 MMMenuLnkTextAlign Left
 MMMenuLnkTextVerticalAlign Top
 MMMenuLnkTextOffsetLeft 68
@@ -929,6 +929,9 @@ NotifyShowExisting false
 NotifyDismissFromSystem true
 ; Clic en una caja: lleva al programa que la envio (y true: ademas la cierra).
 NotifyClickDismisses true
+; Si la columna se llena: DropOldest quita del escritorio la mas antigua (sigue en el
+; centro de notificaciones de Windows); Wait deja las nuevas ocultas hasta que haya sitio.
+NotifyOverflow DropOldest
 ; Sonido al llegar una notificacion (con "No molestar" Windows no suena). Vacio = sin sonido.
 NotifySound "$MMDir$sounds\notify.wav"
 
@@ -957,7 +960,7 @@ NotifyBoxTitleHeight 12
 NotifyBoxTitleColor #00000000
 NotifyBoxTitleFont $MMFont$
 NotifyBoxTitleFontSize 8
-NotifyBoxTitleFontColor #FF40084A
+NotifyBoxTitleFontColor #FF000000
 NotifyBoxTitleTextAlign Left
 NotifyBoxTitleTextVerticalAlign Middle
 
@@ -981,7 +984,7 @@ NotifyBoxTextHeight 100%-39
 NotifyBoxTextColor #00000000
 NotifyBoxTextFont $MMFont$
 NotifyBoxTextFontSize 8
-NotifyBoxTextFontColor #FF40084A
+NotifyBoxTextFontColor #FF000000
 NotifyBoxTextTextAlign Left
 NotifyBoxTextTextVerticalAlign Top
 NotifyBoxTextWordWrapping Wrap
@@ -994,7 +997,7 @@ NotifyBoxTimeHeight 12
 NotifyBoxTimeColor #00000000
 NotifyBoxTimeFont $MMFont$
 NotifyBoxTimeFontSize 8
-NotifyBoxTimeFontColor #FF814090
+NotifyBoxTimeFontColor #FF000000
 NotifyBoxTimeTextAlign Left
 NotifyBoxTimeTextVerticalAlign Middle
 
@@ -1039,8 +1042,8 @@ FrameTitleHeight 13
 FrameTitleColor #00000000
 FrameTitleFont $MMFont$
 FrameTitleFontSize 8
-FrameTitleFontColor #FF814090
-FrameTitleActiveFontColor #FF40084A
+FrameTitleFontColor #FF707070
+FrameTitleActiveFontColor #FF000000
 FrameTitleTextAlign Left
 FrameTitleTextVerticalAlign Middle
 

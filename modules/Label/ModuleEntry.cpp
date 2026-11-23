@@ -39,10 +39,6 @@ StringKeyedMaps<wstring, Label*>::UnorderedMap gAllLabels;
 
 
 /// <summary>
-/// Creates a new label.
-/// </summary>
-/// <param name="labelName">The RC settings prefix of the label to create.</param>
-/// <summary>
 /// Finds the window of any label (top-level or overlay) by name, for the !nLabel* bangs.
 /// </summary>
 static Window *FindLabelWindow(LPCWSTR name) {
@@ -51,6 +47,10 @@ static Window *FindLabelWindow(LPCWSTR name) {
 }
 
 
+/// <summary>
+/// Creates a new label.
+/// </summary>
+/// <param name="labelName">The RC settings prefix of the label to create.</param>
 void CreateLabel(LPCWSTR labelName) {
   if (gAllLabels.find(labelName) == gAllLabels.end()) {
     gTopLevelLabels.emplace(

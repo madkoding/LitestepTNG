@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<litestep_theme>
+	<authorinfo>
+		<author>Shadowplayed</author>
+		<email></email>
+		<url></url>
+	</authorinfo>
+	<themeinfo>
+		<title>Protype-X</title>
+		<step>step.rc</step>
+		<preview src="proto.jpg" />
+		<readme></readme>
+		<comment></comment>
+		<windowblinds></windowblinds>
+		<winamp></winamp>
+		<wallpaper>
+			<image src="wallpaper.jpg" />
+			<style></style>
+		</wallpaper>
+	</themeinfo>
+</litestep_theme>

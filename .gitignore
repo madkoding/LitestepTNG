@@ -11,3 +11,8 @@ Debug_*
 .vs
 
 modules/DontCommit
+# Local build logs and configuration backups
+build*.log
+*.bak-*
+*.png.bak
+*.png.notched
