@@ -1,0 +1,30 @@
+; ==============================================================================
+;  personal.rc  -  your own settings, kept out of the themes
+;
+;  Copy this file as "personal.rc" into the folder LiteStep runs from (next to
+;  step.rc). It is optional: without it the themes use their defaults. It is not
+;  part of the repo and tools\deploy.ps1 never touches it.
+;
+;  step.rc includes it BEFORE the theme, and the first definition of a setting
+;  is the one that counts, so anything set here overrides the theme. That works
+;  for plain settings ("Key value"); lines that start with * (menus, hotkeys)
+;  add to the theme's instead of replacing them.
+; ==============================================================================
+
+; The label in the middle of the top bar (LiteStep Enhanced). Default: your
+; Windows user name followed by "'S DESKTOP".
+;MUserText "MY DESKTOP"
+
+; Notifications: keep new ones hidden when the column is full instead of
+; dropping the oldest.
+;NotifyOverflow Wait
+
+; A different notification sound, or none ("").
+;NotifySound "C:\path\to\sound.wav"
+
+; ------------------------------------------------------------------------------
+;  Not settings, but personal too:
+;   games\       shortcuts (.lnk, .url) shown under "JUEGOS" in the menu
+;   favorites\   shortcuts shown under "FAVORITOS" (managed from the menu itself)
+;  Both live in the folder LiteStep runs from.
+; ------------------------------------------------------------------------------
