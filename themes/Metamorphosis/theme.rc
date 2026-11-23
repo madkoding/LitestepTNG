@@ -45,6 +45,7 @@ LoadModule $LiteStepDir$TaskBar.dll
 LoadModule $LiteStepDir$TaskSwitcher.dll
 LoadModule $LiteStepDir$Label.dll
 LoadModule $LiteStepDir$StartMenu.dll
+LoadModule $LiteStepDir$Notify.dll
 
 ; ------------------------------------------------------------------------------
 ;  Escritorio: barra superior 48 px, barra inferior 32 px reservadas
@@ -813,3 +814,92 @@ nPopupUnpinText "Quitar de favoritos"
 *Popup "EXPLORADOR" !Execute [explorer.exe]
 *Popup "EDITAR TEMA" !Execute [notepad.exe "$MMDir$theme.rc"]
 *Popup ~New
+
+; ==============================================================================
+;  NOTIFICACIONES (Notify.dll)
+;  Las notificaciones de Windows aparecen como cajas apiladas de arriba hacia
+;  abajo en el borde derecho del escritorio. Cada caja usa el marco del popup
+;  (popupframe.png): app en la cabecera blanca, texto en el cuerpo, fecha y hora
+;  abajo, y una X para descartarla.
+;  Probar sin una notificacion real:  !NotifyTest "APP" "TITULO" "TEXTO"
+;  Cerrar todas:                      !NotifyClear
+; ==============================================================================
+NotifyMarginTop 8
+NotifyMarginRight 8
+NotifyMarginBottom 8
+NotifySpacing 6
+NotifyTimeFormat "%d . %m . %Y   %H:%M"
+; true: al cargar muestra tambien lo que ya hay en el centro de notificaciones.
+NotifyShowExisting false
+; true: la X tambien quita la notificacion del centro de notificaciones de Windows.
+NotifyDismissFromSystem true
+; Clic en una caja: lleva al programa que la envio (y true: ademas la cierra).
+NotifyClickDismisses true
+; Sonido al llegar una notificacion (con "No molestar" Windows no suena). Vacio = sin sonido.
+NotifySound "$MMDir$sounds\notify.wav"
+
+NotifyBoxWidth 240
+NotifyBoxHeight 80
+; En el escritorio, no por encima de las ventanas.
+NotifyBoxAlwaysOnTop false
+NotifyBoxTextAntiAliasMode Aliased
+NotifyBoxBrushType Image
+NotifyBoxImage "$MMImg$popupframe.png"
+NotifyBoxImageScalingMode Edges
+NotifyBoxImageEdgesLeft 64
+NotifyBoxImageEdgesTop 18
+NotifyBoxImageEdgesRight 20
+NotifyBoxImageEdgesBottom 18
+NotifyBoxColor #00000000
+NotifyBoxFontColor #00000000
+NotifyBoxShowAnimationDuration 200
+NotifyBoxShowAnimationOffset -10
+
+; Nombre de la aplicacion, en la cabecera blanca.
+NotifyBoxTitleX 70
+NotifyBoxTitleY 3
+NotifyBoxTitleWidth 100%-92
+NotifyBoxTitleHeight 12
+NotifyBoxTitleColor #00000000
+NotifyBoxTitleFont $MMFont$
+NotifyBoxTitleFontSize 8
+NotifyBoxTitleFontColor #FF40084A
+NotifyBoxTitleTextAlign Left
+NotifyBoxTitleTextVerticalAlign Middle
+
+; La X, al final de la cabecera.
+NotifyBoxCloseX 100%-17
+NotifyBoxCloseY 4
+NotifyBoxCloseWidth 10
+NotifyBoxCloseHeight 10
+NotifyBoxCloseColor #00000000
+NotifyBoxCloseBrushType Image
+NotifyBoxCloseImage "$MMImg$lsnotes-close.png"
+NotifyBoxCloseImageScalingMode Stretch
+NotifyBoxCloseHoverImage "$MMImg$lsnotes-close-clicked.png"
+NotifyBoxCloseHoverImageScalingMode Stretch
+
+; Titulo y texto de la notificacion.
+NotifyBoxTextX 38
+NotifyBoxTextY 21
+NotifyBoxTextWidth 100%-46
+NotifyBoxTextHeight 100%-39
+NotifyBoxTextColor #00000000
+NotifyBoxTextFont $MMFont$
+NotifyBoxTextFontSize 8
+NotifyBoxTextFontColor #FF40084A
+NotifyBoxTextTextAlign Left
+NotifyBoxTextTextVerticalAlign Top
+NotifyBoxTextWordWrapping Wrap
+
+; Fecha y hora en que llego.
+NotifyBoxTimeX 38
+NotifyBoxTimeY 100%-17
+NotifyBoxTimeWidth 100%-62
+NotifyBoxTimeHeight 12
+NotifyBoxTimeColor #00000000
+NotifyBoxTimeFont $MMFont$
+NotifyBoxTimeFontSize 8
+NotifyBoxTimeFontColor #FF814090
+NotifyBoxTimeTextAlign Left
+NotifyBoxTimeTextVerticalAlign Middle
