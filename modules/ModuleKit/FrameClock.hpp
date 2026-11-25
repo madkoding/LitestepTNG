@@ -21,6 +21,12 @@ namespace FrameClock {
   /// The registered message posted once per frame. The same in every module.
   UINT Message();
 
+  /// Sent to a window to (un)subscribe it from its own window procedure (wParam: TRUE to
+  /// subscribe). Each module has its own clock (ModuleKit is a static library), and the
+  /// clock that subscribes a window must be the one its window procedure Acks; a request
+  /// can come from another module's code (a child whose parent lives in another module).
+  UINT SubscriptionMessage();
+
   /// Starts sending ticks to the window. Subscribing twice has no effect.
   void Subscribe(HWND window);
 

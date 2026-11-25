@@ -876,6 +876,18 @@ LRESULT WINAPI Window::HandleMessage(HWND window, UINT msg, WPARAM wParam, LPARA
         OnFrame();
         return 0;
     }
+    if (msg == FrameClock::SubscriptionMessage())
+    {
+        if (wParam)
+        {
+            FrameClock::Subscribe(window);
+        }
+        else
+        {
+            FrameClock::Unsubscribe(window);
+        }
+        return 0;
+    }
 
     // Forward registered user messages.
     if (msg >= WM_FIRSTREGISTERED)
@@ -1486,14 +1498,8 @@ void Window::UpdateFrameSubscription()
     if (wanted != mFrameSubscribed)
     {
         mFrameSubscribed = wanted;
-        if (wanted)
-        {
-            FrameClock::Subscribe(this->window);
-        }
-        else
-        {
-            FrameClock::Unsubscribe(this->window);
-        }
+        // Through the window procedure, so the module that owns the window does it.
+        SendMessage(this->window, FrameClock::SubscriptionMessage(), wanted ? TRUE : FALSE, 0);
     }
 }
 
