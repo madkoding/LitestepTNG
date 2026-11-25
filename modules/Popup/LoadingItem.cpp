@@ -134,6 +134,12 @@ void LoadingItem::Spinner::DiscardDeviceResources()
 HRESULT LoadingItem::Spinner::ReCreateDeviceResources(ID2D1RenderTarget *renderTarget)
 {
     DiscardDeviceResources();
+    // A hidden window has no render target after a device loss until it paints again;
+    // Paint creates the brush then.
+    if (renderTarget == nullptr)
+    {
+        return S_OK;
+    }
     D2D1_COLOR_F color = D2D1::ColorF(
         float((this->color >> 16) & 0xFF) / 255.0f,
         float((this->color >> 8) & 0xFF) / 255.0f,

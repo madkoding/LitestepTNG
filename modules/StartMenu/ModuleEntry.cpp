@@ -8,6 +8,7 @@
 #include "../Popup/CommandItem.hpp"
 #include "../Popup/SeparatorItem.hpp"
 #include "../Popup/ContentPopup.hpp"
+#include "../Popup/ContentLoader.hpp"
 #include "../Popup/FolderItem.hpp"
 #include "../Popup/InfoItem.hpp"
 
@@ -795,6 +796,8 @@ void quitModule(HINSTANCE)
 {
     UnregisterBang();
     gStartMenuPopup.reset();
+    // Content popups read on worker threads that keep this module loaded until they end.
+    ContentLoader::Shutdown(2000);
     gLSModule.DeInitalize();
 }
 

@@ -8,6 +8,7 @@
 #include "CommandItem.hpp"
 #include "ContainerItem.hpp"
 #include "ContentPopup.hpp"
+#include "ContentLoader.hpp"
 #include "FolderItem.hpp"
 #include "FolderPopup.hpp"
 #include "InfoItem.hpp"
@@ -126,8 +127,13 @@ EXPORT_CDECL(void) quitModule(HINSTANCE instance)
         LiteStep::RemoveBangCommand(popup.second->GetBang());
         delete popup.second;
     }
+    // Cleared, not only deleted: if a content worker still pins this module, litestep's
+    // next load gets this same instance, statics included.
+    gRootPopups.clear();
     LiteStep::RemoveBangCommand(L"!PopupDynamicFolder");
     LiteStep::RemoveBangCommand(L"!ThemeSwitch");
+    // Deleting the popups cancelled their loads; give the workers a moment to end.
+    ContentLoader::Shutdown(2000);
     gLSModule.DeInitalize();
 }
 

@@ -351,6 +351,10 @@ UINT ContentLoader::LoadedMessage() {
 
 
 namespace {
+  // Workers of this module still running, and an event set while there are none.
+  volatile LONG sWorkers = 0;
+  HANDLE sIdle = nullptr;
+
   struct Job {
     HWND target;
     ContentRequest request;
@@ -378,6 +382,9 @@ namespace {
       delete result;
     }
     delete job;
+    if (InterlockedDecrement(&sWorkers) == 0) {
+      SetEvent(sIdle);
+    }
     FreeLibraryAndExitThread(module, 0);
   }
 }
@@ -389,13 +396,41 @@ bool ContentLoader::Start(HWND target, const ContentRequest &request, WPARAM gen
   if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, LPCWSTR(&LoadThread), &module)) {
     return false;
   }
+  if (sIdle == nullptr) {
+    sIdle = CreateEventW(nullptr, TRUE, TRUE, nullptr);
+    if (sIdle == nullptr) {
+      FreeLibrary(module);
+      return false;
+    }
+  }
+  // Start is only called from the module's thread; workers only ever decrement.
+  if (InterlockedIncrement(&sWorkers) == 1) {
+    ResetEvent(sIdle);
+  }
   Job *job = new Job{ target, request, generation, cancel, module };
   HANDLE thread = CreateThread(nullptr, 0, LoadThread, job, 0, nullptr);
   if (thread == nullptr) {
     delete job;
+    if (InterlockedDecrement(&sWorkers) == 0) {
+      SetEvent(sIdle);
+    }
     FreeLibrary(module);
     return false;
   }
   CloseHandle(thread);
+  return true;
+}
+
+
+bool ContentLoader::Shutdown(DWORD timeoutMs) {
+  if (sIdle == nullptr) {
+    return true;
+  }
+  if (WaitForSingleObject(sIdle, timeoutMs) != WAIT_OBJECT_0) {
+    // Still pinned by a worker; the module stays loaded until it ends. Keep the event.
+    return false;
+  }
+  CloseHandle(sIdle);
+  sIdle = nullptr;
   return true;
 }

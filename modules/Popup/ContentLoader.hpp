@@ -46,6 +46,11 @@ struct ContentRequest {
 
 /// The records of one load.
 struct ContentResult {
+  ContentResult() = default;
+  // Owns raw icons and ID lists: a copy would free them twice.
+  ContentResult(const ContentResult&) = delete;
+  ContentResult &operator=(const ContentResult&) = delete;
+
   std::vector<ContentEntry> entries;
   // Folders to watch for changes, as absolute ID lists (ILCloneFull); only folder
   // sources (paths and shell folders) have them.
@@ -74,4 +79,10 @@ namespace ContentLoader {
   /// keeps this module loaded until it ends. Returns false if no thread could start.
   bool Start(HWND target, const ContentRequest &request, WPARAM generation,
     std::shared_ptr<volatile LONG> cancel);
+
+  /// Waits up to timeoutMs for every worker of this module to end. Call on module quit,
+  /// after the popups are deleted (which cancels their loads): a worker still running
+  /// keeps the module loaded, and litestep reloading it would get the same instance with
+  /// its old static state. Returns false if some worker is still running.
+  bool Shutdown(DWORD timeoutMs);
 }
