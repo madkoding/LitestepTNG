@@ -1,7 +1,7 @@
 ; ==============================================================================
 ;  config\menus\windows-settings.rc  -  shared by the themes; no look here (icons come from variables
 ;  each theme defines: none; empty = no icon).
-;  Windows settings, as ms-settings: pages; classic panels only where no page exists. Variant for *Popup; menus\windows-settings-startmenu.rc has the same entries for *PopupStartMenu.
+;  Windows settings, as ms-settings: pages; classic panels only where no page exists. For *Popup menus only (no start menu uses it).
 ;  Owned by the repo: deploy and the installer overwrite it. Personal additions go in
 ;  personal.rc (star lines there add items).
 ; ==============================================================================

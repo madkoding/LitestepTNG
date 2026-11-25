@@ -18,9 +18,9 @@ IconShutdown C:\Windows\System32\shell32.dll,27
 include "$LiteStepDir$config\menus\apps-startmenu.rc"
 *PopupStartMenu .icon="C:\Windows\System32\shell32.dll,25" "EJECUTAR..." !Run
 *PopupStartMenu !Separator
-*PopupStartMenu "CONFIGURACION" Folder
-include "$LiteStepDir$config\menus\windows-settings-startmenu.rc"
-*PopupStartMenu ~Folder
+; El listado completo de Configuracion esta en el submenu del menu contextual; aqui basta
+; la app (StartMenu no anida carpetas: un Folder se mostraria desplegado).
+*PopupStartMenu "Configuración" !Execute [ms-settings:]
 *PopupStartMenu "CAPTURAS" Folder
 include "$LiteStepDir$config\menus\capture-startmenu.rc"
 *PopupStartMenu ~Folder

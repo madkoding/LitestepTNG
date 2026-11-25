@@ -1,5 +1,6 @@
 """config\\menus\\<name>.rc (*Popup) and <name>-startmenu.rc (*PopupStartMenu) must list the
-same entries: they are two copies only because star keys cannot be built from variables."""
+same entries: they are two copies only because star keys cannot be built from variables.
+A piece no start menu uses has no -startmenu variant."""
 import glob
 import os
 import unittest
@@ -22,8 +23,14 @@ class ConfigMenuVariants(unittest.TestCase):
         for popup in popups:
             startmenu = popup[:-3] + '-startmenu.rc'
             with self.subTest(menu=os.path.basename(popup)):
-                self.assertTrue(os.path.isfile(startmenu), 'missing ' + startmenu)
-                self.assertEqual(entries(popup, '*Popup'), entries(startmenu, '*PopupStartMenu'))
+                entries(popup, '*Popup')
+                if os.path.isfile(startmenu):
+                    self.assertEqual(entries(popup, '*Popup'), entries(startmenu, '*PopupStartMenu'))
+
+    def test_every_startmenu_variant_has_its_popup(self):
+        for startmenu in glob.glob(os.path.join(CONFIG, '*-startmenu.rc')):
+            with self.subTest(menu=os.path.basename(startmenu)):
+                self.assertTrue(os.path.isfile(startmenu.replace('-startmenu.rc', '.rc')))
 
 
 if __name__ == '__main__':
