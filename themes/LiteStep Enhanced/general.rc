@@ -1,0 +1,61 @@
+; ==============================================================================
+;  LiteStep Enhanced - Version, global switches, variables, screen reservation, modules, hotkeys.
+; ==============================================================================
+LiteStepVersion "0.25.0"
+
+; Opcion GLOBAL: muestra TODO el texto en mayusculas (reloj, tareas, menus,
+; username...). Implementada en el source (ModuleKit). Pon false para desactivar.
+TextUppercase true
+
+MMDir  "$LiteStepDir$themes\$ThemeName$\"
+MMImg  "$LiteStepDir$themes\$ThemeName$\images\"
+MMFont "hooge 05_55"
+MMFontSmall "hooge 05_55"
+MMInk  #FFFFFFFF
+MMDim  #FFC0C8CC
+MMUser #FF000000
+MMBase #FF000000
+
+; LiteStep corre SOBRE explorer (litestep.exe -overlay): explorer sigue siendo el shell
+; de Windows y nCore mantiene oculta su barra de tareas. Es el comportamiento por
+; defecto en todos los temas; con false se deja ver la barra de Windows.
+HideExplorerTaskbar true
+; Espacio de pantalla para las barras del tema (px en el monitor principal).
+; Lo fija nCore (ver ReserveScreen* en AGENTS.md).
+ReserveScreenTop 48
+ReserveScreenBottom 54
+
+; El escritorio es de explorer: nHotKey intercepta estos clics sobre el y lanza el bang.
+; Con MAYUS pulsada el clic llega a explorer (su menu contextual normal).
+DesktopRightClick !PopupContext
+DesktopMiddleClick !PopupStartMenu
+
+LoadModule $LiteStepDir$Core.dll
+LoadModule $LiteStepDir$VWM.dll
+LoadModule $LiteStepDir$Wallpaper.dll
+; nDesk no se carga sobre explorer: su escritorio queda debajo del de Windows.
+LoadModule $LiteStepDir$Popup.dll
+LoadModule $LiteStepDir$HotKey.dll
+LoadModule $LiteStepDir$SysTray.dll
+LoadModule $LiteStepDir$TaskBar.dll
+LoadModule $LiteStepDir$TaskSwitcher.dll
+LoadModule $LiteStepDir$Label.dll
+LoadModule $LiteStepDir$StartMenu.dll
+LoadModule $LiteStepDir$Notify.dll
+LoadModule $LiteStepDir$Frames.dll
+LoadModule $LiteStepDir$Icon.dll
+
+
+
+*HotKey CTRLALT F12 !PopupStartMenu
+*HotKey WIN X       !PopupContext
+*HotKey CTRLALT R   !Recycle
+; Capturas: Win+Shift+S recorte, Win+Alt+R herramienta Recortes (foto/video)
+*HotKey WINSHIFT S  !Execute [ms-screenclip:]
+*HotKey WINALT R    !Execute [snippingtool.exe]
+; Enviar la ventana activa a otro escritorio virtual (tu te quedas en el actual).
+; Tambien con clic derecho en los botones 1-4 de la barra.
+*HotKey WINSHIFT 1  !VWMSend 1
+*HotKey WINSHIFT 2  !VWMSend 2
+*HotKey WINSHIFT 3  !VWMSend 3
+*HotKey WINSHIFT 4  !VWMSend 4

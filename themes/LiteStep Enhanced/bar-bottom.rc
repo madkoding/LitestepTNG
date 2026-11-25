@@ -1,0 +1,103 @@
+; ==============================================================================
+;  BARRA INFERIOR  -  TAREAS (abajo, full width) + BANDEJA (abajo derecha)
+; ==============================================================================
+*nTaskbar MTasks
+; Sin MTasksMonitor la barra lista las ventanas de TODOS los monitores.
+; Para limitarla a uno: MTasksMonitor primary
+MTasksX 0
+MTasksY 100%-26
+MTasksWidth 100%
+MTasksHeight 26
+MTasksAlwaysOnTop true
+MTasksTextAntiAliasMode Aliased
+MTasksColor $MMBase$
+MTasksBrushType Image
+MTasksImage "$MMImg$taskbar.png"
+MTasksImageScalingMode Stretch
+MTasksPaddingLeft 2
+MTasksPaddingTop 2
+MTasksPaddingRight 2
+MTasksPaddingBottom 2
+MTasksPrimaryDirection Horizontal
+MTasksStart TopLeft
+MTasksColumnSpacing 2
+; Al abrir o cerrar una ventana los botones se deslizan a su sitio (ms; 0 = sin animacion)
+MTasksAnimationDuration 180
+MTasksButtonWidth 200
+MTasksButtonMaxWidth 200
+MTasksButtonHeight 24
+MTasksButtonMaxHeight 24
+MTasksButtonColor #00000000
+MTasksButtonBrushType Image
+MTasksButtonImage "$MMImg$regtaskmain.png"
+MTasksButtonImageScalingMode Stretch
+MTasksButtonFont $MMFont$
+MTasksButtonFontSize 8
+MTasksButtonFontColor $MMInk$
+MTasksButtonTextAlign Left
+MTasksButtonTextVerticalAlign Middle
+MTasksButtonTextOffsetLeft 24
+MTasksButtonTextOffsetRight 4
+MTasksButtonIconSize 14
+MTasksButtonIconX 5
+MTasksButtonIconY 5
+MTasksButtonHoverBrushType Image
+MTasksButtonHoverImage "$MMImg$seltask.png"
+MTasksButtonHoverImageScalingMode Stretch
+MTasksButtonActiveBrushType Image
+MTasksButtonActiveImage "$MMImg$seltask.png"
+MTasksButtonActiveImageScalingMode Stretch
+MTasksButtonActiveFontColor $MMInk$
+MTasksButtonMinimizedFontColor $MMDim$
+MTasksButtonFlashingColor #FFB06A00
+MTasksOn MiddleClickUp None !Recycle
+
+; Vista previa de la ventana al pasar por un boton. Animada: crece desde el borde del
+; boton hasta su tamano (Animate) y aparece con fundido (ShowAnimation). Colores del tema.
+MTasksThumbnailAnimate true
+MTasksThumbnailAnimationDuration 180
+MTasksThumbnailShowAnimationDuration 150
+MTasksThumbnailColor #F034414A
+MTasksThumbnailOutlineColor #FF000000
+MTasksThumbnailOutlineWidth 1
+MTasksThumbnailDistanceFromButton 4
+
+*nTray MTray
+MTrayX 100%-204
+MTrayY 100%-51
+MTrayWidth 204
+MTrayHeight 25
+MTrayAlwaysOnTop true
+MTrayColor $MMBase$
+MTrayBrushType Image
+; Caja oscura (mismo degradado que el reloj): los iconos de bandeja actuales son blancos.
+; El original claro sigue en systray.png.
+MTrayImage "$MMImg$systraydark.png"
+MTrayImageScalingMode Stretch
+MTrayPaddingLeft 50
+MTrayPaddingTop 4
+MTrayPaddingRight 10
+MTrayPaddingBottom 9
+MTrayStart TopRight
+MTrayPrimaryDirection Horizontal
+MTrayColumnSpacing 2
+MTrayOverflowAction SizeLeft
+MTrayIconSize 12
+MTrayOn RightClickUp None !PopupTray
+
+; Tooltip de los iconos de la bandeja: misma fuente de pixel y colores que el tema
+; (caja oscura como el reloj, texto blanco, borde negro).
+MTrayTooltipFont $MMFont$
+MTrayTooltipFontSize 8
+MTrayTooltipFontColor $MMInk$
+MTrayTooltipTextAntiAliasMode Aliased
+MTrayTooltipColor #FF34414A
+MTrayTooltipOutlineColor #FF000000
+MTrayTooltipOutlineWidth 1
+MTrayTooltipTextOffsetLeft 6
+MTrayTooltipTextOffsetRight 6
+MTrayTooltipTextOffsetTop 4
+MTrayTooltipTextOffsetBottom 4
+MTrayTooltipTextAlign Center
+MTrayTooltipTextVerticalAlign Middle
+MTrayTooltipMaxWidth 400

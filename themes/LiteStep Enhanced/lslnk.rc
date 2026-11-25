@@ -1,0 +1,63 @@
+; ==============================================================================
+;  LSLNKMENU  -  categorias (OFFICE/GRAPHIC/MULTIMEDIA/INTERNET/TOOLS)
+;  Tira centrada en la fila superior inferior; cada una abre un popup de apps.
+; ==============================================================================
+*nLabel MLnkOffice
+MLnkOfficeX 1385
+MLnkOfficeY 100%-50
+MLnkOfficeWidth 134
+MLnkOfficeHeight 21
+MLnkOfficeAlwaysOnTop true
+MLnkOfficeColor #01000000
+MLnkOfficeBrushType Image
+MLnkOfficeImage "$MMImg$office.png"
+MLnkOfficeImageScalingMode Stretch
+MLnkOfficeOn LeftClickUp None !PopupLnkOffice
+
+*nLabel MLnkGraphic
+MLnkGraphicX 1519
+MLnkGraphicY 100%-50
+MLnkGraphicWidth 134
+MLnkGraphicHeight 21
+MLnkGraphicAlwaysOnTop true
+MLnkGraphicColor #01000000
+MLnkGraphicBrushType Image
+MLnkGraphicImage "$MMImg$grafik.png"
+MLnkGraphicImageScalingMode Stretch
+MLnkGraphicOn LeftClickUp None !PopupLnkGraphic
+
+*nLabel MLnkMulti
+MLnkMultiX 1653
+MLnkMultiY 100%-50
+MLnkMultiWidth 134
+MLnkMultiHeight 21
+MLnkMultiAlwaysOnTop true
+MLnkMultiColor #01000000
+MLnkMultiBrushType Image
+MLnkMultiImage "$MMImg$multimedia.png"
+MLnkMultiImageScalingMode Stretch
+MLnkMultiOn LeftClickUp None !PopupLnkMulti
+
+*nLabel MLnkInternet
+MLnkInternetX 1787
+MLnkInternetY 100%-50
+MLnkInternetWidth 134
+MLnkInternetHeight 21
+MLnkInternetAlwaysOnTop true
+MLnkInternetColor #01000000
+MLnkInternetBrushType Image
+MLnkInternetImage "$MMImg$internet.png"
+MLnkInternetImageScalingMode Stretch
+MLnkInternetOn LeftClickUp None !PopupLnkInternet
+
+*nLabel MLnkTools
+MLnkToolsX 1921
+MLnkToolsY 100%-50
+MLnkToolsWidth 134
+MLnkToolsHeight 21
+MLnkToolsAlwaysOnTop true
+MLnkToolsColor #01000000
+MLnkToolsBrushType Image
+MLnkToolsImage "$MMImg$tools.png"
+MLnkToolsImageScalingMode Stretch
+MLnkToolsOn LeftClickUp None !PopupLnkTools

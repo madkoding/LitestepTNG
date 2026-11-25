@@ -1,0 +1,75 @@
+; ==============================================================================
+;  MARCOS DE VENTANA (Frames.dll) - EXPERIMENTAL
+;  Rodea las ventanas de otros programas con el marco del popup: riel oscuro a la
+;  izquierda, cabecera con el titulo, pie con la esquina cortada. El marco se
+;  dibuja POR FUERA de la ventana y tapa su barra de titulo nativa. Solo ventanas
+;  con barra estandar: las que dibujan la suya (navegador, Terminal, apps
+;  Electron/Store) se dejan como estan. Maximizada solo queda la cabecera.
+;    FrameBody*   el marco entero (decorativo: deja pasar los clics, asi los bordes
+;                 nativos siguen sirviendo para redimensionar). Inset* = cuanto
+;                 sobresale del contenido por cada lado.
+;    Frame*       la zona del titulo (arrastrar, doble clic, clic derecho) con
+;                 FrameTitle / FrameMin / FrameMax / FrameClose.
+;    Active*      variante para la ventana activa.
+;  !FramesToggle los quita / pone.   *FramesExclude <clase de ventana>
+; ==============================================================================
+; windowframe.png = popupframe.png con 13 filas mas bajo la cabecera, para que el
+; borde superior mida lo mismo que una barra de titulo de Windows (31 px).
+FrameBodyBrushType Image
+FrameBodyImage "$MMImg$windowframe.png"
+FrameBodyImageScalingMode Edges
+FrameBodyImageEdgesLeft 64
+FrameBodyImageEdgesTop 31
+FrameBodyImageEdgesRight 20
+FrameBodyImageEdgesBottom 18
+FrameBodyColor #00000000
+FrameBodyInsetLeft 33
+FrameBodyInsetTop 31
+FrameBodyInsetRight 5
+FrameBodyInsetBottom 14
+
+FrameTextAntiAliasMode Aliased
+FrameColor #00000000
+
+; Titulo dentro de la caja blanca de la cabecera.
+FrameTitleX 63
+FrameTitleY 3
+FrameTitleWidth 100%-110
+FrameTitleHeight 13
+FrameTitleColor #00000000
+FrameTitleFont $MMFont$
+FrameTitleFontSize 8
+FrameTitleFontColor #FF707070
+FrameTitleActiveFontColor #FF000000
+FrameTitleTextAlign Left
+FrameTitleTextVerticalAlign Middle
+
+FrameMinX 100%-44
+FrameMinY 4
+FrameMinWidth 10
+FrameMinHeight 10
+FrameMinBrushType Image
+FrameMinImage "$MMImg$frame_min.png"
+FrameMinImageScalingMode Stretch
+FrameMinHoverImage "$MMImg$frame_min_hover.png"
+FrameMinHoverImageScalingMode Stretch
+
+FrameMaxX 100%-32
+FrameMaxY 4
+FrameMaxWidth 10
+FrameMaxHeight 10
+FrameMaxBrushType Image
+FrameMaxImage "$MMImg$frame_max.png"
+FrameMaxImageScalingMode Stretch
+FrameMaxHoverImage "$MMImg$frame_max_hover.png"
+FrameMaxHoverImageScalingMode Stretch
+
+FrameCloseX 100%-20
+FrameCloseY 4
+FrameCloseWidth 10
+FrameCloseHeight 10
+FrameCloseBrushType Image
+FrameCloseImage "$MMImg$lsnotes-close.png"
+FrameCloseImageScalingMode Stretch
+FrameCloseHoverImage "$MMImg$lsnotes-close-clicked.png"
+FrameCloseHoverImageScalingMode Stretch

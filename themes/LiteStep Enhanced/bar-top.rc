@@ -1,0 +1,367 @@
+; ==============================================================================
+;  BARRA SUPERIOR  =  fondo semi-transparente + panel izq + username + panel der
+;  Los hijos overlay van CONTIGUOS tras cada panel.
+; ==============================================================================
+
+; --- Fondo superior semi-transparente (deja ver el wallpaper por debajo) ---
+*nLabel MBarBG
+MBarBGX 0
+MBarBGY 0
+MBarBGWidth 100%
+MBarBGHeight 48
+MBarBGAlwaysOnTop true
+MBarBGColor #01000000
+MBarBGOn RightClickUp None !PopupContext
+
+; --- Panel IZQUIERDO: injektion.png (reloj + 1234 + MENU) ---
+*nLabel MBarLeft
+MBarLeftX 0
+MBarLeftY 0
+MBarLeftWidth 630
+MBarLeftHeight 48
+MBarLeftAlwaysOnTop true
+MBarLeftTextAntiAliasMode Aliased
+MBarLeftColor #01000000
+MBarLeftBrushType Image
+MBarLeftImage "$MMImg$injektion.png"
+MBarLeftImageScalingMode Stretch
+MBarLeftOn RightClickUp None !PopupContext
+; Reloj y fecha centrados en la caja oscura (x 5..159 de injektion.png).
+; La sombra dura del original (negra, +1,+1) se hace con una etiqueta gemela
+; negra desplazada 1px; el motor solo ofrece contorno (FontStroke), no sombra.
+*MBarLeftOverlayLabel MClockTimeSh MClockDateSh MClockTime MClockDate MMenuHit MDeskSel MDesk1 MDesk2 MDesk3 MDesk4 MMeterCPU MMeterGPU MMeterRAM MMeterVRAM
+
+MClockTimeShX 6
+MClockTimeShY 5
+MClockTimeShWidth 150
+MClockTimeShHeight 16
+MClockTimeShColor #00000000
+MClockTimeShFont $MMFont$
+MClockTimeShFontSize 16
+MClockTimeShFontColor #FF000000
+MClockTimeShTextAlign Center
+MClockTimeShTextVerticalAlign Middle
+MClockTimeShText "[Time('%H:%M:%S')]H"
+
+MClockDateShX 6
+MClockDateShY 23
+MClockDateShWidth 150
+MClockDateShHeight 11
+MClockDateShColor #00000000
+MClockDateShFont $MMFontSmall$
+MClockDateShFontSize 8
+MClockDateShFontColor #FF000000
+MClockDateShTextAlign Center
+MClockDateShTextVerticalAlign Middle
+MClockDateShText "[Time('%d. %B %Y')]"
+
+MClockTimeX 5
+MClockTimeY 4
+MClockTimeWidth 150
+MClockTimeHeight 16
+MClockTimeColor #01000000
+MClockTimeFont $MMFont$
+MClockTimeFontSize 16
+MClockTimeFontColor $MMInk$
+MClockTimeTextAlign Center
+MClockTimeTextVerticalAlign Middle
+MClockTimeText "[Time('%H:%M:%S')]H"
+MClockTimeOn LeftClickUp None !Execute [control.exe timedate.cpl]
+
+MClockDateX 5
+MClockDateY 22
+MClockDateWidth 150
+MClockDateHeight 11
+MClockDateColor #01000000
+MClockDateFont $MMFontSmall$
+MClockDateFontSize 8
+MClockDateFontColor $MMInk$
+MClockDateTextAlign Center
+MClockDateTextVerticalAlign Middle
+MClockDateText "[Time('%d. %B %Y')]"
+
+; Boton MENU dibujado en injektion.png: x 293..371 (294..357 en la base), y 0..19
+MMenuHitX 294
+MMenuHitY 1
+MMenuHitWidth 64
+MMenuHitHeight 18
+MMenuHitColor #01000000
+MMenuHitOn LeftClickUp None !PopupContext
+MMenuHitOn RightClickUp None !PopupStartMenu
+
+; Escritorios virtuales (modulo nVWM): los botones 1-4 dibujados en injektion.png
+; ocupan x 157/177/197/217 (15 px) e y 24..36. MDeskSel es la marca del escritorio
+; actual; nVWM la mueve con VWMDesk<N>Command. Clic izquierdo: ir a ese escritorio;
+; clic derecho: enviar alli la ventana activa.
+VWMDesktops 4
+; Efecto al cambiar de escritorio: la imagen del que dejas se desliza un poco hacia
+; su lado y se desvanece. Duracion en ms, distancia en px. false = cambio instantaneo.
+VWMTransition true
+VWMTransitionDuration 200
+VWMTransitionDistance 120
+VWMDesk1Command !nLabelMove MDeskSel 158 25
+VWMDesk2Command !nLabelMove MDeskSel 178 25
+VWMDesk3Command !nLabelMove MDeskSel 198 25
+VWMDesk4Command !nLabelMove MDeskSel 218 25
+
+MDeskSelX 158
+MDeskSelY 25
+MDeskSelWidth 13
+MDeskSelHeight 11
+MDeskSelColor #6034414A
+MDeskSelClickThrough true
+
+MDesk1X 157
+MDesk1Y 24
+MDesk1Width 15
+MDesk1Height 13
+MDesk1Color #01000000
+MDesk1On LeftClickUp None !VWMDesk 1
+MDesk1On RightClickUp None !VWMSend 1
+
+MDesk2X 177
+MDesk2Y 24
+MDesk2Width 15
+MDesk2Height 13
+MDesk2Color #01000000
+MDesk2On LeftClickUp None !VWMDesk 2
+MDesk2On RightClickUp None !VWMSend 2
+
+MDesk3X 197
+MDesk3Y 24
+MDesk3Width 15
+MDesk3Height 13
+MDesk3Color #01000000
+MDesk3On LeftClickUp None !VWMDesk 3
+MDesk3On RightClickUp None !VWMSend 3
+
+MDesk4X 217
+MDesk4Y 24
+MDesk4Width 15
+MDesk4Height 13
+MDesk4Color #01000000
+MDesk4On LeftClickUp None !VWMDesk 4
+MDesk4On RightClickUp None !VWMSend 4
+
+; Medidores del sistema en la caja oscura que el original reservaba al "quick launch"
+; (x 180..287, y 1..18 de injektion.png): dos filas de dos. [GPU] y [VRAM] miden la
+; tarjeta grafica con mas memoria dedicada. Clic: Administrador de tareas.
+MMeterCPUX 182
+MMeterCPUY 0
+MMeterCPUWidth 52
+MMeterCPUHeight 10
+MMeterCPUColor #01000000
+MMeterCPUFont $MMFontSmall$
+MMeterCPUFontSize 8
+MMeterCPUFontColor $MMInk$
+MMeterCPUTextAlign Left
+MMeterCPUTextVerticalAlign Middle
+MMeterCPUText "CPU [CPU]%"
+MMeterCPUOn LeftClickUp None !Execute [taskmgr.exe]
+
+MMeterGPUX 231
+MMeterGPUY 0
+MMeterGPUWidth 57
+MMeterGPUHeight 10
+MMeterGPUColor #01000000
+MMeterGPUFont $MMFontSmall$
+MMeterGPUFontSize 8
+MMeterGPUFontColor $MMInk$
+MMeterGPUTextAlign Left
+MMeterGPUTextVerticalAlign Middle
+MMeterGPUText "GPU [GPU]%"
+MMeterGPUOn LeftClickUp None !Execute [taskmgr.exe]
+
+MMeterRAMX 182
+MMeterRAMY 9
+MMeterRAMWidth 52
+MMeterRAMHeight 10
+MMeterRAMColor #01000000
+MMeterRAMFont $MMFontSmall$
+MMeterRAMFontSize 8
+MMeterRAMFontColor $MMInk$
+MMeterRAMTextAlign Left
+MMeterRAMTextVerticalAlign Middle
+MMeterRAMText "RAM [Memory]%"
+MMeterRAMOn LeftClickUp None !Execute [taskmgr.exe]
+
+MMeterVRAMX 231
+MMeterVRAMY 9
+MMeterVRAMWidth 57
+MMeterVRAMHeight 10
+MMeterVRAMColor #01000000
+MMeterVRAMFont $MMFontSmall$
+MMeterVRAMFontSize 8
+MMeterVRAMFontColor $MMInk$
+MMeterVRAMTextAlign Left
+MMeterVRAMTextVerticalAlign Middle
+MMeterVRAMText "VRAM [VRAM]%"
+MMeterVRAMOn LeftClickUp None !Execute [taskmgr.exe]
+
+; --- Panel DERECHO: injektion2.png pegado al borde derecho ---
+*nLabel MBarRight
+MBarRightX 100%-394
+MBarRightY 1
+MBarRightWidth 394
+MBarRightHeight 47
+MBarRightAlwaysOnTop true
+MBarRightTextAntiAliasMode Aliased
+MBarRightColor #01000000
+MBarRightBrushType Image
+MBarRightImage "$MMImg$injektion2.png"
+MBarRightImageScalingMode Stretch
+*MBarRightOverlayLabel MPlayerIcon MHitPrev MHitPlay MHitPause MHitStop MHitNext MNowPlaying MTrack MVolume
+
+; Now playing (Spotify/Tidal/cualquier app) DENTRO de la caja oscura del panel
+; (x 238..387, y 0..16 de injektion2.png); el texto largo se recorta en la caja.
+MNowPlayingX 241
+MNowPlayingY 1
+MNowPlayingWidth 144
+MNowPlayingHeight 15
+MNowPlayingColor #01000000
+MNowPlayingFont $MMFont$
+MNowPlayingFontSize 8
+MNowPlayingFontColor $MMInk$
+MNowPlayingTextAlign Left
+MNowPlayingTextVerticalAlign Middle
+MNowPlayingText "[NowPlaying]"
+MNowPlayingOn LeftClickUp None !MediaPlayerLaunch
+
+; Zonas de clic = rectangulos de los botones dibujados en injektion2.png
+; (prev 59, play 84, pause 109, stop 134, next 158; 20 px de ancho, y 0..17).
+; Usan los bangs !Media* de nCore, que hablan con la sesion multimedia de Windows:
+; las teclas multimedia simuladas no llegan a las apps sin explorer.exe.
+; Reproductor: el icono (x 30..50, y 0..16 de injektion2.png, donde el original
+; dibuja el rayo de Winamp) muestra el reproductor elegido. Clic izquierdo lo abre;
+; clic derecho pasa al siguiente: Winamp -> Spotify -> Tidal, solo los instalados.
+; Los botones, el slider TRACK y [NowPlaying] siguen al reproductor elegido.
+;   *MediaPlayer <Nombre> "<ruta>"   varias lineas con el mismo nombre = rutas alternativas
+;   MediaPlayer<Nombre>Command       se ejecuta al elegirlo. Aqui cambia el icono en sus tres
+;                                    estados (normal, Hover, Pressed): si no, al pasar el mouse
+;                                    volveria la imagen por defecto de la etiqueta.
+*MediaPlayer Winamp  "%ProgramFiles(x86)%\Winamp\winamp.exe"
+*MediaPlayer Winamp  "%ProgramFiles%\Winamp\winamp.exe"
+*MediaPlayer Spotify "%APPDATA%\Spotify\Spotify.exe"
+*MediaPlayer Spotify "shell:AppsFolder\SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify"
+*MediaPlayer Tidal   "%LOCALAPPDATA%\TIDAL\TIDAL.exe"
+*MediaPlayer Tidal   "shell:AppsFolder\WiMPMusic.27241E05630EA_kn85bz84x7te4!TIDAL"
+MediaPlayerWinampCommand !Execute [!nSetImage MPlayerIcon "$MMImg$player_winamp.png"] [!nSetImage MPlayerIcon Hover "$MMImg$player_winamp.png"] [!nSetImage MPlayerIcon Pressed "$MMImg$player_winamp.png"]
+MediaPlayerSpotifyCommand !Execute [!nSetImage MPlayerIcon "$MMImg$player_spotify.png"] [!nSetImage MPlayerIcon Hover "$MMImg$player_spotify.png"] [!nSetImage MPlayerIcon Pressed "$MMImg$player_spotify.png"]
+MediaPlayerTidalCommand !Execute [!nSetImage MPlayerIcon "$MMImg$player_tidal.png"] [!nSetImage MPlayerIcon Hover "$MMImg$player_tidal.png"] [!nSetImage MPlayerIcon Pressed "$MMImg$player_tidal.png"]
+
+MPlayerIconX 30
+MPlayerIconY 0
+MPlayerIconWidth 21
+MPlayerIconHeight 17
+MPlayerIconColor #01000000
+MPlayerIconBrushType Image
+MPlayerIconImage "$MMImg$player_winamp.png"
+MPlayerIconImageScalingMode Stretch
+MPlayerIconOn LeftClickUp None !MediaPlayerLaunch
+MPlayerIconOn RightClickUp None !MediaPlayerNext
+
+MHitPrevX 59
+MHitPrevY 0
+MHitPrevWidth 20
+MHitPrevHeight 18
+MHitPrevColor #01000000
+MHitPrevOn LeftClickUp None !MediaPrev
+
+MHitPlayX 84
+MHitPlayY 0
+MHitPlayWidth 20
+MHitPlayHeight 18
+MHitPlayColor #01000000
+MHitPlayOn LeftClickUp None !MediaPlay
+
+MHitPauseX 109
+MHitPauseY 0
+MHitPauseWidth 20
+MHitPauseHeight 18
+MHitPauseColor #01000000
+MHitPauseOn LeftClickUp None !MediaPause
+
+MHitStopX 134
+MHitStopY 0
+MHitStopWidth 20
+MHitStopHeight 18
+MHitStopColor #01000000
+MHitStopOn LeftClickUp None !MediaStop
+
+MHitNextX 158
+MHitNextY 0
+MHitNextWidth 20
+MHitNextHeight 18
+MHitNextColor #01000000
+MHitNextOn LeftClickUp None !MediaNext
+
+; Sliders TRACK y VOLUME (nLabel con "Slider"): la etiqueta cubre el interior de la
+; caja dibujada (track x 166..273, volume x 280..387, y 23..34) y el tirador
+; slider_handle.png se mueve por ella. Clic o arrastre para ajustar; rueda en VOLUME.
+MTrackX 166
+MTrackY 23
+MTrackWidth 108
+MTrackHeight 12
+MTrackColor #01000000
+MTrackSlider Track
+MTrackSliderHandle MTrackKnob
+*MTrackOverlayLabel MTrackKnob
+
+MTrackKnobX 0
+MTrackKnobY 0
+MTrackKnobWidth 6
+MTrackKnobHeight 11
+MTrackKnobBrushType Image
+MTrackKnobImage "$MMImg$slider_handle.png"
+MTrackKnobImageScalingMode Stretch
+MTrackKnobClickThrough true
+
+MVolumeX 280
+MVolumeY 23
+MVolumeWidth 108
+MVolumeHeight 12
+MVolumeColor #01000000
+MVolumeSlider Volume
+MVolumeSliderHandle MVolumeKnob
+MVolumeOn WheelUp None !MediaVolume +5
+MVolumeOn WheelDown None !MediaVolume -5
+*MVolumeOverlayLabel MVolumeKnob
+
+MVolumeKnobX 0
+MVolumeKnobY 0
+MVolumeKnobWidth 6
+MVolumeKnobHeight 11
+MVolumeKnobBrushType Image
+MVolumeKnobImage "$MMImg$slider_handle.png"
+MVolumeKnobImageScalingMode Stretch
+MVolumeKnobClickThrough true
+
+; --- Linea negra de 1px sobre el panel derecho: injektion2.png mide 47px y va
+;     en Y=1; en el original la fila 0 es negra, no se ve el fondo ---
+*nLabel MBarRightTop
+MBarRightTopX 100%-394
+MBarRightTopY 0
+MBarRightTopWidth 394
+MBarRightTopHeight 1
+MBarRightTopAlwaysOnTop true
+MBarRightTopColor #FF000000
+
+; --- Nombre de usuario centrado sobre la franja clara (injektion3.png) ---
+*nLabel MUser
+MUserX 630
+MUserY 0
+MUserWidth 100%-1024
+MUserHeight 15
+MUserAlwaysOnTop true
+MUserTextAntiAliasMode Aliased
+MUserColor #01000000
+MUserBrushType Image
+MUserImage "$MMImg$injektion3.png"
+MUserImageScalingMode Stretch
+MUserFont $MMFont$
+MUserFontSize 8
+MUserFontColor $MMUser$
+MUserTextAlign Center
+MUserTextVerticalAlign Middle
+MUserText "$USERNAME$'S DESKTOP"
+MUserOn RightClickUp None !PopupContext

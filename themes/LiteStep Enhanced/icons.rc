@@ -1,0 +1,68 @@
+; ==============================================================================
+;  ICONOS DEL ESCRITORIO (Icon.dll)
+;  Los elementos de la carpeta Escritorio sobre toda el area de trabajo, colocados
+;  desde la esquina superior derecha hacia abajo (al llenarse una columna sigue
+;  otra a su izquierda), con la tipografia del tema. Se arrastran a cualquier
+;  casilla, y el orden se recuerda. Sustituyen a los iconos que dibuja
+;  Explorer, que se ocultan mientras estos se ven.
+;    MIconsHidden true     para no mostrarlos (vuelven los de Explorer). Se puede
+;                          poner en personal.rc.
+;    !DesktopIcons [show|hide|toggle]   lo mismo, al vuelo.
+;  Doble clic abre; clic derecho en un icono, su menu de Windows; en el hueco, el
+;  menu del tema. La ventana queda siempre bajo las de los programas (OnDesktop).
+; ==============================================================================
+*nIcon MIcons
+MIconsHidden false
+MIconsOnDesktop true
+MIconsReplaceExplorerIcons true
+MIconsFolder Desktop
+; AREA DE LOS ICONOS. Es configurable con estas cuatro claves (tambien desde
+; personal.rc, que tiene prioridad):
+;  - Todo el escritorio (lo activo): el area de trabajo del monitor principal, entre
+;    las barras (y=48 a y=100%-54). Los iconos empiezan arriba a la derecha, pero se
+;    pueden soltar en cualquier casilla.
+;  - Solo una franja: por ejemplo una columna pegada al borde derecho, con
+;        MIconsX 100%-128     MIconsWidth 128
+;    Fuera de la franja el escritorio vuelve a ser el de Explorer.
+MIconsX 0
+MIconsY 48
+MIconsWidth 100%
+MIconsHeight 100%-102
+MIconsColor #00000000
+MIconsTextAntiAliasMode Aliased
+MIconsStart TopRight
+MIconsPrimaryDirection Vertical
+MIconsColumnSpacing 4
+MIconsRowSpacing 4
+MIconsPaddingLeft 4
+MIconsPaddingTop 8
+MIconsPaddingRight 4
+MIconsPaddingBottom 4
+MIconsOn RightClickUp None !PopupContext
+MIconsOn MiddleClickUp None !PopupStartMenu
+
+MIconsTileWidth 120
+MIconsTileHeight 104
+MIconsIconSize 64
+; Hueco sobre el icono: el fondo de la seleccion lo rodea en vez de empezar justo en su borde.
+MIconsIconOffsetTop 7
+MIconsIconColor #00000000
+MIconsIconFont $MMFont$
+MIconsIconFontSize 8
+MIconsIconFontColor $MMInk$
+MIconsIconFontStrokeColor #FF000000
+MIconsIconFontStrokeWidth 2
+MIconsIconTextAlign Center
+MIconsIconTextVerticalAlign Top
+MIconsIconTextOffsetTop 75
+MIconsIconWordWrapping Wrap
+; Bajo el cursor y seleccionado: el gris pizarra de los paneles, sin el azul por defecto.
+MIconsIconHoverColor #6034414A
+MIconsIconHoverOutlineColor #80FFFFFF
+MIconsIconHoverOutlineWidth 1
+MIconsIconSelectedColor #A034414A
+MIconsIconSelectedOutlineColor #C0FFFFFF
+MIconsIconSelectedOutlineWidth 1
+MIconsIconFocusedColor #6034414A
+MIconsIconFocusedOutlineColor #80FFFFFF
+MIconsIconFocusedOutlineWidth 1

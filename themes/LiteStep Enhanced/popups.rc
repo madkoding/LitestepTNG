@@ -1,0 +1,142 @@
+; ==============================================================================
+;  MENUS  -  skin original: popuptop / popupnorm xN / popupseperator / popupbottom
+;  La ventana del popup dibuja popupframe.png (top+norm+bottom apilados) en
+;  9-slice; el padding 18/18 deja visibles la cabecera y el pie en TODOS los
+;  menus (submenus y popups de contenido incluidos).
+; ==============================================================================
+MMMenuBrushType Image
+MMMenuImage "$MMImg$popupframe.png"
+MMMenuImageScalingMode Edges
+MMMenuImageEdgesLeft 64
+MMMenuImageEdgesTop 18
+MMMenuImageEdgesRight 20
+MMMenuImageEdgesBottom 18
+MMMenuColor #00000000
+MMMenuFontColor #00000000
+MMMenuTextAntiAliasMode Aliased
+MMMenuPaddingLeft 0
+MMMenuPaddingTop 18
+MMMenuPaddingRight 0
+MMMenuPaddingBottom 18
+MMMenuItemSpacing 0
+; Los submenus se solapan 4px con el padre, como en el original
+MMMenuChildOffsetX -4
+MMMenuWidth 178
+MMMenuMaxWidth 320
+MMMenuConfineToMonitor true
+MMMenuConfineToWorkArea true
+; Apertura animada de todos los menus y submenus: fundido + caida de 10 px (ms / px)
+MMMenuShowAnimationDuration 200
+MMMenuShowAnimationOffset -10
+
+MMMenuItemHeight 18
+MMMenuItemBrushType Image
+MMMenuItemImage "$MMImg$popupnorm.png"
+MMMenuItemImageScalingMode Edges
+MMMenuItemImageEdgesLeft 38
+MMMenuItemImageEdgesTop 0
+MMMenuItemImageEdgesRight 6
+MMMenuItemImageEdgesBottom 0
+MMMenuItemFont $MMFont$
+MMMenuItemFontSize 8
+MMMenuItemFontColor #FF000000
+MMMenuItemTextOffsetLeft 38
+MMMenuItemTextOffsetRight 6
+MMMenuItemTextVerticalAlign Middle
+MMMenuItemIconSize 16
+MMMenuItemIconX 9
+MMMenuItemIconY 1
+MMMenuItemHoverBrushType Image
+MMMenuItemHoverImage "$MMImg$popupselect.png"
+MMMenuItemHoverImageScalingMode Edges
+MMMenuItemHoverImageEdgesLeft 38
+MMMenuItemHoverImageEdgesTop 0
+MMMenuItemHoverImageEdgesRight 6
+MMMenuItemHoverImageEdgesBottom 0
+MMMenuItemHoverFontColor $MMInk$
+
+MMMenuFolderItemHeight 18
+MMMenuFolderItemBrushType Image
+MMMenuFolderItemImage "$MMImg$popupfolder.png"
+MMMenuFolderItemImageScalingMode Edges
+MMMenuFolderItemImageEdgesLeft 38
+MMMenuFolderItemImageEdgesTop 0
+MMMenuFolderItemImageEdgesRight 16
+MMMenuFolderItemImageEdgesBottom 0
+MMMenuFolderItemFont $MMFont$
+MMMenuFolderItemFontSize 8
+MMMenuFolderItemFontColor #FF000000
+MMMenuFolderItemTextOffsetLeft 38
+MMMenuFolderItemTextOffsetRight 22
+MMMenuFolderItemTextVerticalAlign Middle
+MMMenuFolderItemIconSize 16
+MMMenuFolderItemIconX 9
+MMMenuFolderItemIconY 1
+MMMenuFolderItemHoverBrushType Image
+MMMenuFolderItemHoverImage "$MMImg$popupfolderhover.png"
+MMMenuFolderItemHoverImageScalingMode Edges
+MMMenuFolderItemHoverImageEdgesLeft 38
+MMMenuFolderItemHoverImageEdgesTop 0
+MMMenuFolderItemHoverImageEdgesRight 16
+MMMenuFolderItemHoverImageEdgesBottom 0
+MMMenuFolderItemHoverFontColor $MMInk$
+; Carpeta con su submenu abierto: se queda resaltada (como en el preview)
+MMMenuFolderItemOpenBrushType Image
+MMMenuFolderItemOpenImage "$MMImg$popupfolderhover.png"
+MMMenuFolderItemOpenImageScalingMode Edges
+MMMenuFolderItemOpenImageEdgesLeft 38
+MMMenuFolderItemOpenImageEdgesTop 0
+MMMenuFolderItemOpenImageEdgesRight 16
+MMMenuFolderItemOpenImageEdgesBottom 0
+MMMenuFolderItemOpenFontColor $MMInk$
+
+; Info = fila lisa del panel con texto centrado (caja de fecha/hora, rotulos)
+MMMenuInfoItemHeight 18
+MMMenuInfoItemBrushType Image
+MMMenuInfoItemImage "$MMImg$popupnorm.png"
+MMMenuInfoItemImageScalingMode Edges
+MMMenuInfoItemImageEdgesLeft 38
+MMMenuInfoItemImageEdgesTop 0
+MMMenuInfoItemImageEdgesRight 6
+MMMenuInfoItemImageEdgesBottom 0
+MMMenuInfoItemFont $MMFont$
+MMMenuInfoItemFontSize 8
+MMMenuInfoItemFontColor #FF000000
+MMMenuInfoItemTextAlign Center
+MMMenuInfoItemTextVerticalAlign Middle
+MMMenuInfoItemTextOffsetLeft 38
+MMMenuInfoItemTextOffsetRight 6
+; Fila que muestran los popups de carpetas mientras se leen (con un spinner).
+MMMenuLoadingText "CARGANDO"
+
+; Separador = popupseperator.png: cierra un panel, hueco oscuro, abre el siguiente
+MMMenuSeparatorItemHeight 18
+MMMenuSeparatorItemBrushType Image
+MMMenuSeparatorItemImage "$MMImg$popupseperator.png"
+MMMenuSeparatorItemImageScalingMode Edges
+MMMenuSeparatorItemImageEdgesLeft 38
+MMMenuSeparatorItemImageEdgesTop 0
+MMMenuSeparatorItemImageEdgesRight 6
+MMMenuSeparatorItemImageEdgesBottom 0
+
+; Menus con TITULO dentro de la caja blanca de la cabecera (lslnkmenu).
+; El titulo es el texto propio de la ventana del popup; en MMMenu va oculto.
+MMMenuLnkGroup MMMenu
+MMMenuLnkFont $MMFont$
+MMMenuLnkFontSize 8
+MMMenuLnkFontColor #FF000000
+MMMenuLnkTextAlign Left
+MMMenuLnkTextVerticalAlign Top
+MMMenuLnkTextOffsetLeft 68
+MMMenuLnkTextOffsetTop 4
+MMMenuLnkTextOffsetRight 6
+
+MMMenuIconsGroup MMMenu
+MMMenuIconsItemTextOffsetLeft 38
+MMMenuIconsFolderItemTextOffsetLeft 38
+
+nPopupGroup MMMenu
+PopupStartMenuGroup MMMenu
+PopupStartMenuProgramasGroup MMMenuIcons
+PopupStartMenuRecientesGroup MMMenuIcons
+PopupStartMenuEquipoGroup MMMenuIcons
