@@ -43,9 +43,12 @@ step.rc            the loader: includes theme-select.rc, the optional personal.r
                    themes\<ThemeName>\theme.rc
 theme-select.rc    ThemeName "<folder in themes\>"
 personal.rc.example  template for personal.rc (see "Personal content" in §2)
-themes/<Name>/     one folder per theme, each with a theme.rc (source of truth; deployed to
-                   the run folder by tools\deploy.ps1 — see §2)
-tools/             deploy.ps1, smoke-test.ps1, switch-theme.ps1 (common.ps1 finds the run folder)
+themes/<Name>/     one folder per theme: theme.rc lists the theme's area files (source of
+                   truth; deployed to the run folder by tools\deploy.ps1 — see §2 and §5)
+config/            look-free pieces themes include: menus\ (programs, Windows settings,
+                   capture, session, media), hotkeys.rc, media-players.rc
+tools/             deploy.ps1, smoke-test.ps1, switch-theme.ps1 (common.ps1 finds the run folder),
+                   rc_effective.py (what a theme configures; see §5), tests\ (python -m unittest)
 ```
 
 ---
@@ -282,6 +285,33 @@ build, matching the original theme's preview screenshot (1024×768; not part of 
   `Set-Content -Encoding ASCII` (it corrupts accents, e.g. `Configuración`). Use:
   `[System.IO.File]::WriteAllText($f,$t,(New-Object System.Text.UTF8Encoding($false)))`
   — or just the `Edit`/`Write` tools, which are safe.
+
+### Theme files (layout since 2026-11-25)
+- `theme.rc` is a header plus `include` lines; each area has its own file of ~50–150 lines
+  (`general.rc`, `styles.rc`, `bar-*.rc`, `popups.rc` = menu skin, `menus.rc`, `notify.rc`…).
+- **Order rule.** Plain settings: the FIRST definition wins (`SettingsManager::_FindLine`), so
+  `personal.rc` (included by `step.rc` first) overrides everything and a theme value must come
+  before a shared default it wants to override. Star lines (`*Popup`, `*HotKey`…), `LoadModule`
+  and `<Prefix>On` / `<Prefix>Hide` are read line by line: file order is item order.
+- **Styles.** `<Label>Group <Style>`: the label takes every key of the style it does not set
+  (`Settings.cpp`; child prefixes follow: `PGroup S` makes `PItemX` fall back to `SItemX`).
+  `<Prefix>On` lines of a style ADD to every member's handlers. Style names must not be a
+  prefix of one another (`MMText` vs `MMTextCenter`): fallbacks are resolved by name prefix.
+- **`config\`** is shared and repo-owned (mirrored by deploy, packaged). Menu pieces come in
+  two variants (`apps.rc` for `*Popup`, `apps-startmenu.rc` for `*PopupStartMenu`):
+  star keys cannot be built from variables and `include` does not work inside a
+  `Prefix { }` block. `tools\tests\test_config_menus.py` keeps the variants equal. Icons are
+  the theme's: `.icon="$IconExplorer$"` etc.; define the variables WITHOUT quotes (a quoted
+  value expands to `.icon=""path""`), or bare (empty) for no icon.
+- **Check every theme edit** with `tools\rc_effective.py`: dump before, edit, dump after, diff.
+  ```
+  python tools\rc_effective.py dump --root . --theme "LiteStep Enhanced" > before.txt
+  python tools\rc_effective.py diff before.txt after.txt --ignore-new <newstyleprefix>
+  ```
+  It models includes, first-wins, `Prefix { }` blocks with `@`, star lines, `$Var$` at read
+  time and `Group` chains; "equal" means the theme configures exactly the same. It caught
+  three real mistakes during the restructure (a dropped include, quoted icon variables, and
+  the old "Editar tema" entries, which had always expanded to a doubly quoted path).
 
 ---
 
