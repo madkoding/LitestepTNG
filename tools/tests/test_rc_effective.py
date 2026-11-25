@@ -105,6 +105,19 @@ class ResolveTests(TreeCase):
         self.assertIn('L loadmodule 1 = b.dll', t.dump())
         self.assertEqual(self.diff_exit(a, b), 1)
 
+    def test_on_lines_are_all_kept_and_accumulate_through_group(self):
+        t = self.load({'theme.rc': 'BtnOn LeftClickUp None !a\nBtnOn RightClickUp None !b\n'
+                                   'BtnGroup S\nSOn MiddleClickUp None !c\n'})
+        dump = t.dump()
+        self.assertIn('L btnon 0 = LeftClickUp None !a', dump)
+        self.assertIn('L btnon 1 = RightClickUp None !b', dump)
+        self.assertIn('L btnon 2 = MiddleClickUp None !c', dump)
+
+    def test_duration_is_not_an_on_line(self):
+        t = self.load({'theme.rc': 'XShowAnimationDuration 200\nXShowAnimationDuration 300\n'})
+        self.assertEqual(t.resolve('XShowAnimationDuration'), '200')
+        self.assertNotIn('L xshowanimationduration 0 = 200', t.dump())
+
     def test_if_unsupported(self):
         with self.assertRaises(rc_effective.Unsupported):
             self.load({'theme.rc': 'if 1\nX 1\nendif\n'})

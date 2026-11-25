@@ -27,6 +27,10 @@ RESERVED = '"\'[];$'
 KEYWORDS = ('if', 'else', 'elseif', 'endif')
 # Plain keys that litestep reads line by line (every occurrence, in order), not first-wins.
 MULTI_KEYS = ('loadmodule', 'netloadmodule')
+# <Prefix><Suffix> keys that ModuleKit reads line by line and accumulates along the Group
+# chain (Settings::IterateOverCommandLines): click handlers and hidden tray icons. Matched
+# case-sensitively, as themes write them, so "...Duration" is not taken for "...On".
+CHAIN_SUFFIXES = ('On', 'Hide')
 MAX_NAME = 240
 
 
@@ -74,6 +78,7 @@ class Tree:
         self.settings = {}      # lower name -> (name, raw value)
         self.order = []         # lower names in definition order
         self.stars = {}         # lower *key -> [raw lines]
+        self.chained = {}       # lower <prefix><On|Hide> -> [raw lines], every occurrence
         self.unresolved = set()
         self._including = []
         self._define('ThemeName', theme)
@@ -158,6 +163,9 @@ class Tree:
             if name.startswith('*') or low in MULTI_KEYS:
                 self.stars.setdefault(low, []).append(value)
                 continue
+            for suffix in CHAIN_SUFFIXES:
+                if name.endswith(suffix) and len(name) > len(suffix):
+                    self.chained.setdefault(low, []).append(value)
             self._define(name, value)
         self._including.pop()
 
@@ -240,8 +248,34 @@ class Tree:
             names |= added
         return names
 
+    def chained_lines(self, low, suffix):
+        """Settings::IterateOverCommandLines: the lines of <P><suffix>, then those of each
+        group in P's chain (a group is read directly from <P>Group, without fallback)."""
+        prefix = low[:-len(suffix)]
+        lines, seen = [], set()
+        while prefix and prefix not in seen:
+            seen.add(prefix)
+            lines.extend(self.chained.get(prefix + suffix.lower(), []))
+            group = self.settings.get(prefix + 'group')
+            prefix = self.expand(group[1]).strip('"').lower() if group else ''
+        return lines
+
     def dump(self):
         out = []
+        chain_names = set()
+        for low in self.names():
+            for suffix in CHAIN_SUFFIXES:
+                if low.endswith(suffix.lower()) and low in self.chained:
+                    chain_names.add((low, suffix))
+        # Names that only get handlers through a group still have the group's lines.
+        for prefix_key in [k for k in self.settings if k.endswith('group')]:
+            prefix = prefix_key[:-5]
+            for suffix in CHAIN_SUFFIXES:
+                if self.chained_lines(prefix + suffix.lower(), suffix):
+                    chain_names.add((prefix + suffix.lower(), suffix))
+        for low, suffix in chain_names:
+            for n, line in enumerate(self.chained_lines(low, suffix)):
+                out.append('L %s %d = %s' % (low, n, self.expand(line)))
         for low in self.names():
             value = self.resolve(low)
             if value is not None:
