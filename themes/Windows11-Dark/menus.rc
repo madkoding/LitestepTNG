@@ -1,0 +1,53 @@
+; ------------------------------------------------------------------------------
+;  Menu Inicio (modulo StartMenu, lineas *PopupStartMenu)
+; ------------------------------------------------------------------------------
+*PopupStartMenu "Programas" !PopupPrograms
+*PopupStartMenu "Recientes" !PopupRecentDocuments
+*PopupStartMenu "Equipo" !PopupMyComputer
+*PopupStartMenu !Separator
+*PopupStartMenu "Explorador de archivos" !Execute [explorer.exe]
+*PopupStartMenu "Terminal" !Execute [wt.exe]
+*PopupStartMenu "Configuración" !Execute [ms-settings:]
+*PopupStartMenu "Ejecutar..." !Run
+*PopupStartMenu !Separator
+*PopupStartMenu "Bloquear" !Execute [rundll32.exe user32.dll,LockWorkStation]
+*PopupStartMenu "Cerrar sesión" !Logoff
+*PopupStartMenu "Reiniciar" !Execute [shutdown.exe /r /t 0]
+*PopupStartMenu "Apagar" !Execute [shutdown.exe /s /t 0]
+
+; ------------------------------------------------------------------------------
+;  Menus nPopup  (sintaxis:  *Popup !New !Bang ... *Popup ~New)
+; ------------------------------------------------------------------------------
+*Popup !New !PopupContext
+*Popup !Info "LiteStep"
+*Popup "Explorador de archivos" !Execute [explorer.exe]
+*Popup "Terminal" !Execute [wt.exe]
+*Popup "Administrador de tareas" !Execute [taskmgr.exe]
+*Popup "Configuración" !Execute [ms-settings:]
+*Popup !Separator
+*Popup "Programas" !PopupPrograms MenuIcons
+*Popup "Personalizar fondo" !Execute [ms-settings:personalization-background]
+*Popup "Pantalla" !Execute [ms-settings:display]
+*Popup !Separator
+*Popup "Recargar LiteStep" !Recycle
+*Popup "Editar step.rc" !Execute [notepad.exe "$LiteStepDir$step.rc"]
+*Popup ~New
+
+*Popup !New !PopupTray
+*Popup !Separator
+*Popup "Red e Internet" !Execute [ms-settings:network]
+*Popup "Sonido" !Execute [ms-settings:sound]
+*Popup "Bluetooth" !Execute [ms-settings:bluetooth]
+*Popup !Separator
+*Popup "Administrador de tareas" !Execute [taskmgr.exe]
+*Popup ~New
+
+
+*Popup !New !PopupPower MenuDown
+*Popup "Bloquear" !Execute [rundll32.exe user32.dll,LockWorkStation]
+*Popup "Suspender" !Execute [rundll32.exe powrprof.dll,SetSuspendState 0,1,0]
+*Popup "Cerrar sesión" !Logoff
+*Popup !Separator
+*Popup "Reiniciar" !Execute [shutdown.exe /r /t 0]
+*Popup "Apagar" !Execute [shutdown.exe /s /t 0]
+*Popup ~New

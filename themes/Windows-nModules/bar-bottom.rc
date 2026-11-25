@@ -1,0 +1,71 @@
+; ------------------------------------------------------------------------------
+; bottom taskbar, tray, and start affordances
+; ------------------------------------------------------------------------------
+*nTaskbar TaskbarMain
+TaskbarMainMonitor primary
+TaskbarMainX 96
+TaskbarMainY 100%-54
+TaskbarMainWidth 100%-320
+TaskbarMainHeight 54
+TaskbarMainAlwaysOnTop true
+TaskbarMainBlurBehind true
+TaskbarMainColor #DD101820
+TaskbarMainFont "Segoe UI"
+TaskbarMainFontSize 12
+TaskbarMainFontColor #FFFFFFFF
+TaskbarMainTextVerticalAlign Middle
+TaskbarMainPadding 12 6 12 6
+TaskbarMainPrimaryDirection Horizontal
+TaskbarMainStart BottomLeft
+TaskbarMainButtonWidth 178
+TaskbarMainButtonHeight 38
+TaskbarMainButtonMaxWidth 220
+TaskbarMainButtonMaxHeight 38
+TaskbarMainRowSpacing 4
+TaskbarMainOn MiddleClickUp !Recycle
+
+*nTray TrayDock
+TrayDockX 100%-220
+TrayDockY 100%-54
+TrayDockWidth 220
+TrayDockHeight 54
+TrayDockAlwaysOnTop true
+TrayDockColor #DD101820
+TrayDockFont "Segoe UI"
+TrayDockFontSize 11
+TrayDockFontColor #FFFFFFFF
+TrayDockIconSize 22
+TrayDockOverflowAction SizeLeft
+TrayDockOn RightClickUp None !PopupTray
+
+*nLabel ClockLabel
+ClockLabelX 100%-340
+ClockLabelY 100%-54
+ClockLabelWidth 120
+ClockLabelHeight 54
+ClockLabelAlwaysOnTop true
+ClockLabelColor #00101820
+ClockLabelFont "Segoe UI Semibold"
+ClockLabelFontSize 20
+ClockLabelFontColor #FFFFFFFF
+ClockLabelTextVerticalAlign Middle
+ClockLabelTextAlign Center
+ClockLabelText [Time('%a %b %d %H:%M')]
+ClockLabelOn LeftDoubleClick None !Execute [$WINDIR$\System32\control.exe timedate.cpl]
+
+*nLabel StartButton
+StartButtonX 12
+StartButtonY 100%-54
+StartButtonWidth 72
+StartButtonHeight 54
+StartButtonAlwaysOnTop true
+StartButtonRoundedCorners 12
+StartButtonColor #FF1C2A34
+StartButtonFont "Segoe UI Semibold"
+StartButtonFontSize 18
+StartButtonFontColor #FFFFFFFF
+StartButtonTextVerticalAlign Middle
+StartButtonTextAlign Center
+StartButtonText Start
+StartButtonOn LeftClickUp None !PopupStartMenu
+StartButtonOn RightClickUp None !PopupContext

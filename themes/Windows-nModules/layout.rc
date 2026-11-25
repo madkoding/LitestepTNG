@@ -1,0 +1,72 @@
+; ------------------------------------------------------------------------------
+; layout containers
+; ------------------------------------------------------------------------------
+*PanelsGridPanel BottomBar StartButton TaskbarMain ClockLabel TrayDock
+PanelsBottomBarX 0
+PanelsBottomBarY 100%-54
+PanelsBottomBarWidth 100%
+PanelsBottomBarHeight 54
+PanelsBottomBarPadding 16 8 16 8
+PanelsBottomBarColumnSpacing 8
+PanelsBottomBarGridUnit 4
+PanelsBottomBarColumns 96,*,120,220
+PanelsBottomBarChildStartButtonColumn 0
+PanelsBottomBarChildStartButtonRow 0
+PanelsBottomBarChildStartButtonHAlign Center
+PanelsBottomBarChildStartButtonVAlign Stretch
+PanelsBottomBarChildTaskbarMainColumn 1
+PanelsBottomBarChildTaskbarMainRow 0
+PanelsBottomBarChildTaskbarMainMargin 8,0,8,0
+PanelsBottomBarChildTaskbarMainHAlign Stretch
+PanelsBottomBarChildTaskbarMainVAlign Stretch
+PanelsBottomBarChildClockLabelColumn 2
+PanelsBottomBarChildClockLabelRow 0
+PanelsBottomBarChildClockLabelHAlign Center
+PanelsBottomBarChildClockLabelVAlign Stretch
+PanelsBottomBarChildTrayDockColumn 3
+PanelsBottomBarChildTrayDockRow 0
+PanelsBottomBarChildTrayDockHAlign Stretch
+PanelsBottomBarChildTrayDockVAlign Stretch
+
+*PanelsGridPanel TopBar TopBarBackground MediaPrev MediaPlayPause MediaNext MediaTitle SearchLauncher DesktopPrev DesktopIndicator DesktopNext NotificationCenter
+PanelsTopBarX 0
+PanelsTopBarY 0
+PanelsTopBarWidth 100%
+PanelsTopBarHeight 42
+PanelsTopBarPadding 16 4 16 4
+PanelsTopBarColumnSpacing 8
+PanelsTopBarGridUnit 4
+PanelsTopBarColumns 36,36,36,*,160,32,120,32,130
+PanelsTopBarChildTopBarBackgroundColumn 0
+PanelsTopBarChildTopBarBackgroundRow 0
+PanelsTopBarChildTopBarBackgroundColumnSpan 9
+PanelsTopBarChildTopBarBackgroundHAlign Stretch
+PanelsTopBarChildTopBarBackgroundVAlign Stretch
+PanelsTopBarChildMediaPrevColumn 0
+PanelsTopBarChildMediaPrevHAlign Stretch
+PanelsTopBarChildMediaPrevVAlign Stretch
+PanelsTopBarChildMediaPlayPauseColumn 1
+PanelsTopBarChildMediaPlayPauseHAlign Stretch
+PanelsTopBarChildMediaPlayPauseVAlign Stretch
+PanelsTopBarChildMediaNextColumn 2
+PanelsTopBarChildMediaNextHAlign Stretch
+PanelsTopBarChildMediaNextVAlign Stretch
+PanelsTopBarChildMediaTitleColumn 3
+PanelsTopBarChildMediaTitleHAlign Stretch
+PanelsTopBarChildMediaTitleVAlign Stretch
+PanelsTopBarChildSearchLauncherColumn 4
+PanelsTopBarChildSearchLauncherHAlign Stretch
+PanelsTopBarChildSearchLauncherVAlign Stretch
+PanelsTopBarChildDesktopPrevColumn 5
+PanelsTopBarChildDesktopPrevHAlign Stretch
+PanelsTopBarChildDesktopPrevVAlign Stretch
+PanelsTopBarChildDesktopIndicatorColumn 6
+PanelsTopBarChildDesktopIndicatorHAlign Stretch
+PanelsTopBarChildDesktopIndicatorVAlign Stretch
+PanelsTopBarChildDesktopNextColumn 7
+PanelsTopBarChildDesktopNextHAlign Stretch
+PanelsTopBarChildDesktopNextVAlign Stretch
+PanelsTopBarChildNotificationCenterColumn 8
+PanelsTopBarChildNotificationCenterHAlign Stretch
+PanelsTopBarChildNotificationCenterVAlign Stretch
+; End of self-contained theme

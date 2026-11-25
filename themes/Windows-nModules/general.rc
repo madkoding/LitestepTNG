@@ -1,0 +1,50 @@
+LiteStepVersion "0.25.0"
+
+; convenience paths for popup shortcuts and helper commands
+SetEnv USERDOCS "$USERPROFILE$\Documents"
+SetEnv USERDL "$USERPROFILE$\Downloads"
+SetEnv USERMUSIC "$USERPROFILE$\Music"
+SetEnv USERPICTURES "$USERPROFILE$\Pictures"
+
+; load core experience modules
+LoadModule $LiteStepDir$Core.dll
+LoadModule $LiteStepDir$Wallpaper.dll
+LoadModule $LiteStepDir$Desk.dll
+LoadModule $LiteStepDir$Popup.dll
+LoadModule $LiteStepDir$HotKey.dll
+LoadModule $LiteStepDir$SysTray.dll
+LoadModule $LiteStepDir$TaskBar.dll
+LoadModule $LiteStepDir$TaskSwitcher.dll
+LoadModule $LiteStepDir$Label.dll
+LoadModule $LiteStepDir$Clock.dll
+LoadModule $LiteStepDir$StartMenu.dll
+LoadModule $LiteStepDir$VWM.dll
+LoadModule $LiteStepDir$Calendar.dll
+LoadModule $LiteStepDir$Panels.dll
+
+; wallpaper defaults
+OnStartup !SetWallpaper "$WINDIR$\Web\Wallpaper\Windows\img0.jpg"
+OnStartup !SetWallpaperStyle 10 ; Fill
+
+; desktop rendering behaviour
+nDeskTransitionEffect FadeOut
+nDeskTransitionDuration 450
+nDeskTransitionSquareSize 120
+nDeskInvalidateAllOnUpdate true
+nDeskDontRenderWallpaper false
+*nDeskWorkArea primary 0 42 0 54
+OnStartup !nDeskSetWorkArea primary 0 42 0 54
+OnRefresh !nDeskSetWorkArea primary 0 42 0 54
+OnStartup !PanelsRefresh
+OnRefresh !PanelsRefresh
+
+; ------------------------------------------------------------------------------
+; keyboard shortcuts
+; ------------------------------------------------------------------------------
+*HotKey WIN SPACE !Popup
+*HotKey WIN X !PopupContext
+*HotKey WIN V !PopupDesktops
+*HotKey WINCTRL LEFT !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('#^{LEFT}')"]
+*HotKey WINCTRL RIGHT !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('#^{RIGHT}')"]
+*HotKey WIN TAB !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('#{TAB}')"]
+*HotKey ALT OEM_3 !TaskSwitch

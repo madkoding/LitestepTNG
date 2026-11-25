@@ -1,0 +1,77 @@
+; ==============================================================================
+;  ESTILO DE MENUS  (compartido: <Prefijo>Group MenuStyle)
+; ==============================================================================
+MenuStyleColor #F22B2B2B
+MenuStyleCornerRadiusX 8
+MenuStyleCornerRadiusY 8
+MenuStylePaddingLeft 6
+MenuStylePaddingTop 6
+MenuStylePaddingRight 6
+MenuStylePaddingBottom 6
+MenuStyleItemSpacing 2
+MenuStyleWidth 260
+MenuStyleMaxWidth 420
+MenuStyleConfineToMonitor true
+MenuStyleConfineToWorkArea true
+; el popup pinta su titulo como texto de la ventana: se oculta
+MenuStyleFontColor #00000000
+
+MenuStyleItemHeight 32
+MenuStyleItemColor #00000000
+MenuStyleItemCornerRadiusX 4
+MenuStyleItemCornerRadiusY 4
+MenuStyleItemFont $UIFont$
+MenuStyleItemFontSize 12
+MenuStyleItemFontColor $TextColor$
+MenuStyleItemTextOffsetLeft 14
+MenuStyleItemTextOffsetRight 8
+MenuStyleItemTextVerticalAlign Middle
+MenuStyleItemIconSize 16
+MenuStyleItemIconX 10
+MenuStyleItemIconY 8
+MenuStyleItemHoverColor #FF3A3A3A
+MenuStyleItemHoverFontColor $TextColor$
+
+MenuStyleFolderItemHeight 32
+MenuStyleFolderItemColor #00000000
+MenuStyleFolderItemCornerRadiusX 4
+MenuStyleFolderItemCornerRadiusY 4
+MenuStyleFolderItemFont $UIFont$
+MenuStyleFolderItemFontSize 12
+MenuStyleFolderItemFontColor $TextColor$
+MenuStyleFolderItemTextOffsetLeft 14
+MenuStyleFolderItemTextVerticalAlign Middle
+MenuStyleFolderItemIconSize 16
+MenuStyleFolderItemIconX 10
+MenuStyleFolderItemIconY 8
+MenuStyleFolderItemHoverColor #FF3A3A3A
+MenuStyleFolderItemOpenColor #FF333333
+
+MenuStyleInfoItemHeight 28
+MenuStyleInfoItemColor #00000000
+MenuStyleInfoItemFont "Segoe UI Semibold"
+MenuStyleInfoItemFontSize 11
+MenuStyleInfoItemFontColor $AccentColor$
+MenuStyleInfoItemTextOffsetLeft 12
+
+MenuStyleSeparatorItemHeight 1
+MenuStyleSeparatorItemColor #FF454545
+
+; Animacion de entrada (fade + deslizamiento, ms / px)
+MenuStyleShowAnimationDuration 160
+MenuStyleShowAnimationOffset 10
+
+; Menus que se abren hacia abajo desde la barra superior
+MenuDownGroup MenuStyle
+MenuDownShowAnimationOffset -10
+
+; Menus con iconos de archivos/carpetas: mismo estilo + hueco para el icono
+MenuIconsGroup MenuStyle
+MenuIconsItemTextOffsetLeft 36
+MenuIconsFolderItemTextOffsetLeft 36
+
+nPopupGroup MenuStyle
+PopupStartMenuGroup MenuStyle
+PopupStartMenuProgramasGroup MenuIcons
+PopupStartMenuRecientesGroup MenuIcons
+PopupStartMenuEquipoGroup MenuIcons

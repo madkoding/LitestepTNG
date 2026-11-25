@@ -1,0 +1,69 @@
+; ------------------------------------------------------------------------------
+; start menu entries and styling
+; ------------------------------------------------------------------------------
+PopupStartMenuWidth 280
+PopupStartMenuMaxWidth 340
+PopupStartMenuPadding 18 14 18 18
+PopupStartMenuItemSpacing 6
+PopupStartMenuAlwaysOnTop true
+PopupStartMenuBlurBehind true
+PopupStartMenuConfineToMonitor true
+PopupStartMenuShadowPreset Win11
+PopupStartMenuItemFont "Segoe UI"
+PopupStartMenuItemFontSize 14
+PopupStartMenuItemFontColor #FFE8F0FA
+PopupStartMenuItemTextOffsetLeft 20
+PopupStartMenuItemTextVerticalAlign Middle
+PopupStartMenuItemColor #22101820
+PopupStartMenuItemCornerRadius 14
+PopupStartMenuItemHoverColor #55327FFE
+PopupStartMenuItemHoverFontColor #FFFFFFFF
+PopupStartMenuItemHoverCornerRadius 14
+PopupStartMenuItemHoverTextOffsetLeft 20
+PopupStartMenuItemHoverTextVerticalAlign Middle
+
+*PopupStartMenu "Programs" !PopupPrograms
+*PopupStartMenu "Recent" !PopupRecentDocuments
+*PopupStartMenu "Settings" !Execute [ms-settings:]
+*PopupStartMenu "Network" !PopupNetwork
+*PopupStartMenu "Command Prompt" !Execute [$WINDIR$\System32\cmd.exe]
+*PopupStartMenu "Run" !PopupRun
+*PopupStartMenu "Shutdown" !PopupPower
+*PopupStartMenu "Recycle" !PopupRecycleBin
+
+; desktop and context popups
+; ------------------------------------------------------------------------------
+HotlistName "Glassboard"
+*nDeskOn RIGHTUP NONE !PopupContext
+PopupIcons
+PopupAdaptiveWidth
+PopupMinWidth 200
+PopupMaxWidth 360
+PopupNoBevel
+
+*PopupContext "File Explorer" !Execute [$WINDIR$\explorer.exe]
+*PopupContext "Terminal" !Execute [wt.exe]
+*PopupContext "Settings" !Execute [ms-settings:]
+*PopupContext !Separator
+*PopupContext "Task Manager" !Execute [$WINDIR$\System32\Taskmgr.exe]
+*PopupContext "Run..." !PopupRun
+*PopupContext !Separator
+*PopupContext "Restart LiteStep" !Recycle
+
+*PopupTray "Notifications" !Execute [ms-actioncenter:]
+*PopupTray "Network & Internet" !Execute [ms-settings:network]
+*PopupTray "Task Manager" !Execute [$WINDIR$\System32\Taskmgr.exe]
+
+*PopupDesktops "Desktop 1" !VWMGoToDesktop 1
+*PopupDesktops "Desktop 2" !VWMGoToDesktop 2
+*PopupDesktops "Desktop 3" !VWMGoToDesktop 3
+*PopupDesktops !Separator
+*PopupDesktops "New Desktop" !VWMCreateDesktop
+*PopupDesktops "Close Desktop" !VWMDestroyDesktop
+
+; retain a lightweight master popup
+*Popup "Start" !Popup
+*Popup "Desktops" !PopupDesktops
+*Popup "Context" !PopupContext
+*Popup !Separator
+*Popup "Recycle LiteStep" !Recycle
