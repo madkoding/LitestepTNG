@@ -11,6 +11,7 @@
 #include "ContentLoader.hpp"
 #include "CommandItem.hpp"
 #include "FolderItem.hpp"
+#include "InfoItem.hpp"
 #include <Shlwapi.h>
 #include <ShlObj.h>
 #include <shellapi.h>
@@ -87,6 +88,14 @@ ContentPopup::ContentPopup(LPCTSTR path, bool dynamic, LPCTSTR title, LPCTSTR ba
 
 ContentPopup::~ContentPopup()
 {
+    // A worker still running posts to a window that is about to be destroyed: the post
+    // fails and the worker frees its result.
+    if (this->cancel)
+    {
+        *this->cancel = 1;
+    }
+    ++this->generation;
+
     for (WATCHFOLDERMAP::const_iterator iter = this->watchedFolders.begin(); iter != this->watchedFolders.end(); ++iter)
     {
         iter->second.second->Release();
@@ -110,23 +119,73 @@ void ContentPopup::PreShow()
         Unload();
     }
 
-    if (!this->loaded)
+    if (!this->loaded && !this->loading)
     {
-        LoadContent();
-        // Themes are already listed alphabetically by folder name; sorting by the
-        // displayed title would move items around depending on the active-theme mark.
-        // Recent documents are listed newest first, not alphabetically.
-        if (this->source != ContentSource::THEMES && this->source != ContentSource::RECENT_DOCUMENTS)
+        // Folders are read on a worker thread: reading them here would stall litestep's
+        // main thread, and with it every mouse move (its low-level mouse hooks run here).
+        if (this->source == ContentSource::THEMES || !StartLoading())
         {
-            std::sort(this->items.begin(), this->items.end(), [] (PopupItem* a, PopupItem* b) { return a->CompareTo(b); });
+            LoadContent();
+            SortItems();
+            this->loaded = true;
         }
-        this->loaded = true;
+    }
+}
+
+
+void ContentPopup::SortItems()
+{
+    // Themes are already listed alphabetically by folder name; sorting by the
+    // displayed title would move items around depending on the active-theme mark.
+    // Recent documents are listed newest first, not alphabetically.
+    if (this->source != ContentSource::THEMES && this->source != ContentSource::RECENT_DOCUMENTS)
+    {
+        std::sort(this->items.begin(), this->items.end(), [] (PopupItem* a, PopupItem* b) { return a->CompareTo(b); });
+    }
+}
+
+
+bool ContentPopup::StartLoading()
+{
+    std::shared_ptr<volatile LONG> stop = std::make_shared<volatile LONG>(0);
+    WPARAM next = this->generation + 1;
+    if (!ContentLoader::Start(mWindow->GetWindowHandle(), MakeRequest(), next, stop))
+    {
+        return false;
+    }
+    this->generation = next;
+    this->cancel = stop;
+    this->loading = true;
+    WCHAR text[256];
+    mSettings->GetString(L"LoadingText", text, _countof(text), L"Loading...");
+    this->loadingRow = new InfoItem(this, text);
+    AddItem(this->loadingRow);
+    return true;
+}
+
+
+void ContentPopup::RemoveLoadingRow()
+{
+    if (this->loadingRow != nullptr)
+    {
+        DeleteItem(this->loadingRow);
+        this->loadingRow = nullptr;
     }
 }
 
 
 void ContentPopup::PostClose()
 {
+    // Closed before the content arrived: stop reading, unless the content is worth
+    // keeping, in which case it is applied while hidden and the next show is instant.
+    if (this->loading && !this->keepLoaded)
+    {
+        *this->cancel = 1;
+        ++this->generation;
+        this->loading = false;
+        RemoveLoadingRow();
+    }
+
     // Dynamic content is rebuilt on every show, except what is worth keeping: rebuilding
     // the Programs tree means re-extracting every icon, which is the delay users notice.
     if (this->dynamic && (!this->keepLoaded || this->stale))
@@ -175,6 +234,15 @@ void ContentPopup::LoadContent()
 /// Frees the items and stops watching the folders; the next show loads again.
 /// </summary>
 void ContentPopup::Unload() {
+  if (this->loading)
+  {
+    *this->cancel = 1;
+    ++this->generation;
+    this->loading = false;
+  }
+  // Deleted with the other items below.
+  this->loadingRow = nullptr;
+
   for (WATCHFOLDERMAP::const_iterator iter = this->watchedFolders.begin(); iter != this->watchedFolders.end(); ++iter)
   {
     iter->second.second->Release();
@@ -571,6 +639,25 @@ void ContentPopup::CreateItems(ContentResult &result)
 
 LRESULT WINAPI ContentPopup::HandleMessage(HWND window, UINT message, WPARAM wParam, LPARAM lParam, LPVOID Window)
 {
+    if (message == ContentLoader::LoadedMessage())
+    {
+        std::unique_ptr<ContentResult> result(reinterpret_cast<ContentResult*>(lParam));
+        if (this->loading && wParam == this->generation)
+        {
+            // The popup is visible: without the lock every item added, moved and sized
+            // would repaint it synchronously (about a second for 20 items). One paint at
+            // the end instead.
+            Window::UpdateLock lock(mWindow);
+            RemoveLoadingRow();
+            CreateItems(*result);
+            SortItems();
+            this->loading = false;
+            this->loaded = true;
+            Refit();
+        }
+        return 0;
+    }
+
     if (message >= Window::WM_FIRSTREGISTERED)
     {
         WATCHFOLDERMAP::const_iterator folder = this->watchedFolders.find(message);

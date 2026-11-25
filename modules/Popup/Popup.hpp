@@ -36,6 +36,10 @@ public:
     void Show();
     void Show(int x, int y);
     void Show(LPRECT position, Popup* owner = NULL);
+
+    // Sizes and places a visible popup again after its items changed (content that
+    // finished loading after the popup was shown). Does nothing while it is hidden.
+    void Refit();
     
     // Called by PopupItems
     void OpenChild(Popup*, LPRECT position, PopupItem* childItem);
@@ -73,6 +77,9 @@ protected:
     //
     void Size(LPRECT limits);
 
+    // Takes items out of the popup and deletes them.
+    void DeleteItem(PopupItem *item);
+
     //
     vector<PopupItem*> items;
 
@@ -82,6 +89,13 @@ private:
 
     //
     bool CheckFocus(HWND newActive, __int8 direction);
+
+    // Sizes the popup if needed and moves it next to "position" (the item or point it
+    // opens from), inside the configured limits.
+    void Place(LPRECT position);
+
+    // Where the popup was last shown from, for Refit.
+    RECT mLastPosition;
 
     //
     int itemSpacing;

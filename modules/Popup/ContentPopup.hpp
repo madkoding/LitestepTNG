@@ -10,6 +10,7 @@
 #include "Popup.hpp"
 #include "FolderItem.hpp"
 #include <ShlObj.h>
+#include <memory>
 
 // Favorites: LiteStep's own list of pinned applications, a folder of shortcuts under the
 // LiteStep directory. (Windows does not let programs pin to its taskbar, so this cannot be
@@ -82,6 +83,13 @@ private:
 
 
 
+    // Starts reading on a worker thread and shows a loading row meanwhile. Returns false
+    // if no thread could be started (the caller then loads synchronously).
+    bool StartLoading();
+    // Removes the loading row, if any.
+    void RemoveLoadingRow();
+    // Sorts the items the way this source lists them.
+    void SortItems();
     // What to read for this popup (a copy, safe to hand to a worker thread).
     struct ContentRequest MakeRequest() const;
     // Creates the items of a load and watches its folders; empties the result.
@@ -104,6 +112,14 @@ private:
     // Set when a kept popup learns its folder changed in a way we do not patch in place
     // (delete, rename); it is then rebuilt the next time it is shown.
     bool stale;
+    // A worker thread is reading the content; the loading row is shown.
+    bool loading = false;
+    PopupItem *loadingRow = nullptr;
+    // Bumped whenever a running load must be ignored (closed, unloaded, destroyed): the
+    // result of a load is only applied if it carries the current generation.
+    WPARAM generation = 0;
+    // Set to nonzero to make the running worker stop early.
+    std::shared_ptr<volatile LONG> cancel;
 
     // If the source is a folder, the path to it.
     std::list<LPCTSTR> paths;

@@ -331,8 +331,30 @@ void Popup::Show(LPRECT position, Popup* owner)
     SetParent(mWindow->GetWindowHandle(), nullptr);
     PreShow();
 
-    MonitorInfo &monInfo = nCore::FetchMonitorInfo();
+    mLastPosition = *position;
+    Place(position);
 
+    mWindow->Show();
+    SetWindowPos(mWindow->GetWindowHandle(), HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    // When LiteStep runs on top of Explorer it is not the foreground process, and a popup
+    // that is only active inside our own thread never receives WA_INACTIVE: it would stay
+    // open until an item is clicked. Taking the foreground lets a click elsewhere close it.
+    TakeForeground(mWindow->GetWindowHandle());
+    if (owner == nullptr)
+    {
+        WatchOutsideClicks(mWindow->GetWindowHandle());
+    }
+    SetFocus(mWindow->GetWindowHandle());
+    SetActiveWindow(mWindow->GetWindowHandle());
+}
+
+
+/// <summary>
+/// Sizes the popup if needed and moves it next to position, inside the limits.
+/// </summary>
+void Popup::Place(LPRECT position)
+{
+    MonitorInfo &monInfo = nCore::FetchMonitorInfo();
     int x, y;
     RECT limits = monInfo.GetVirtualDesktop().rect;
 
@@ -371,19 +393,36 @@ void Popup::Show(LPRECT position, Popup* owner)
     y = std::max<int>(limits.top, std::min<int>(limits.bottom - int(mWindow->GetSize().height + 0.5f), position->top));
 
     mWindow->Move((float)x, (float)y);
+}
 
-    mWindow->Show();
-    SetWindowPos(mWindow->GetWindowHandle(), HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-    // When LiteStep runs on top of Explorer it is not the foreground process, and a popup
-    // that is only active inside our own thread never receives WA_INACTIVE: it would stay
-    // open until an item is clicked. Taking the foreground lets a click elsewhere close it.
-    TakeForeground(mWindow->GetWindowHandle());
-    if (owner == nullptr)
+
+/// <summary>
+/// Sizes and places a visible popup again after its items changed.
+/// </summary>
+void Popup::Refit()
+{
+    if (!mWindow->IsVisible())
     {
-        WatchOutsideClicks(mWindow->GetWindowHandle());
+        return;
     }
-    SetFocus(mWindow->GetWindowHandle());
-    SetActiveWindow(mWindow->GetWindowHandle());
+    this->sized = false;
+    Place(&mLastPosition);
+    mWindow->Repaint();
+}
+
+
+/// <summary>
+/// Takes an item out of the popup and deletes it.
+/// </summary>
+void Popup::DeleteItem(PopupItem *item)
+{
+    auto it = std::find(this->items.begin(), this->items.end(), item);
+    if (it != this->items.end())
+    {
+        this->items.erase(it);
+    }
+    delete item;
+    this->sized = false;
 }
 
 
