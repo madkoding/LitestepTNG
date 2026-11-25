@@ -1,0 +1,12 @@
+; ==============================================================================
+;  config\media-players.rc  -  players the media buttons rotate through (Core).
+;  Only installed ones are kept; several lines with one name are alternative paths.
+;  What each one changes on screen (MediaPlayer<Name>Command) belongs to the theme.
+;  Owned by the repo: deploy and the installer overwrite it.
+; ==============================================================================
+*MediaPlayer Winamp  "%ProgramFiles(x86)%\Winamp\winamp.exe"
+*MediaPlayer Winamp  "%ProgramFiles%\Winamp\winamp.exe"
+*MediaPlayer Spotify "%APPDATA%\Spotify\Spotify.exe"
+*MediaPlayer Spotify "shell:AppsFolder\SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify"
+*MediaPlayer Tidal   "%LOCALAPPDATA%\TIDAL\TIDAL.exe"
+*MediaPlayer Tidal   "shell:AppsFolder\WiMPMusic.27241E05630EA_kn85bz84x7te4!TIDAL"

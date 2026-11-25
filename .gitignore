@@ -22,3 +22,6 @@ personal.rc
 
 # Packages built by tools\package.ps1
 dist/
+
+# Python bytecode (tools\tests)
+__pycache__/

@@ -1,0 +1,11 @@
+; ==============================================================================
+;  config\hotkeys.rc  -  hotkeys and desktop clicks shared by the themes.
+;  A theme that wants another desktop click defines DesktopRightClick/MiddleClick
+;  before including this file (the first definition wins); hotkeys only add.
+;  Owned by the repo: deploy and the installer overwrite it.
+; ==============================================================================
+DesktopRightClick !PopupContext
+DesktopMiddleClick !PopupStartMenu
+*HotKey CTRLALT F12 !PopupStartMenu
+*HotKey WIN X       !PopupContext
+*HotKey CTRLALT R   !Recycle

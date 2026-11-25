@@ -52,6 +52,10 @@ foreach ($file in 'step.rc', 'theme-select.rc', 'personal.rc.example', 'theme.ls
     if (Test-Path $source) { Copy-Item $source $Stage }
 }
 
+# --- shared theme configuration (menus, hotkeys, players) ---------------------
+$null = robocopy (Join-Path $Root 'config') (Join-Path $Stage 'config') /E /NFL /NDL /NJH /NJS /NP
+if ($LASTEXITCODE -ge 8) { throw "robocopy failed for config (code $LASTEXITCODE)" }
+
 # --- themes (reference material and drafts stay in the repo) -------------------
 foreach ($theme in $Themes) {
     $source = Join-Path $Root "themes\$theme"

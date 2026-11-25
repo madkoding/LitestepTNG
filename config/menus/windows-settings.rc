@@ -1,0 +1,27 @@
+; ==============================================================================
+;  config\menus\windows-settings.rc  -  shared by the themes; no look here (icons come from variables
+;  each theme defines: none; empty = no icon).
+;  Windows settings, as ms-settings: pages; classic panels only where no page exists. Variant for *Popup; menus\windows-settings-startmenu.rc has the same entries for *PopupStartMenu.
+;  Owned by the repo: deploy and the installer overwrite it. Personal additions go in
+;  personal.rc (star lines there add items).
+; ==============================================================================
+*Popup "Configuración" !Execute [ms-settings:]
+*Popup "Pantalla" !Execute [ms-settings:display]
+*Popup "Bluetooth" !Execute [ms-settings:bluetooth]
+*Popup "Windows Update" !Execute [ms-settings:windowsupdate]
+*Popup "Panel de control" !Execute [control.exe]
+*Popup "Sistema" !Execute [ms-settings:about]
+*Popup "Sonido" !Execute [ms-settings:sound]
+*Popup "Mezclador de volumen" !Execute [ms-settings:apps-volume]
+*Popup "Conexiones de red" !Execute [ms-settings:network-advancedsettings]
+*Popup "Red e Internet" !Execute [ms-settings:network]
+*Popup "Dispositivos e impresoras" !Execute [ms-settings:printers]
+*Popup "Fondo de escritorio" !Execute [ms-settings:personalization-background]
+*Popup "Aplicaciones instaladas" !Execute [ms-settings:appsfeatures]
+*Popup "Cuentas de usuario" !Execute [ms-settings:yourinfo]
+*Popup "Fecha y hora" !Execute [ms-settings:dateandtime]
+*Popup "Región e idioma" !Execute [ms-settings:regionlanguage]
+*Popup "Energía" !Execute [ms-settings:powersleep]
+*Popup "Mouse" !Execute [ms-settings:mousetouchpad]
+*Popup "Firewall" !Execute [control.exe firewall.cpl]
+*Popup "Variables de entorno" !Execute [rundll32.exe sysdm.cpl,EditEnvironmentVariables]
