@@ -1,0 +1,37 @@
+LiteStepVersion "0.25.0"
+
+PXDir     "$LiteStepDir$themes\Prototype-X\"
+PXImg     "$LiteStepDir$themes\Prototype-X\images\"
+PXFont    "Exo 2"
+PXInk     #FF000000
+PXInkSoft #FF202429
+
+LoadModule $LiteStepDir$Core.dll
+LoadModule $LiteStepDir$Wallpaper.dll
+LoadModule $LiteStepDir$Popup.dll
+LoadModule $LiteStepDir$HotKey.dll
+LoadModule $LiteStepDir$SysTray.dll
+LoadModule $LiteStepDir$TaskBar.dll
+LoadModule $LiteStepDir$TaskSwitcher.dll
+LoadModule $LiteStepDir$Label.dll
+LoadModule $LiteStepDir$StartMenu.dll
+
+; ------------------------------------------------------------------------------
+;  Escritorio: columna izquierda (44 px) y barra superior (26 px) reservadas
+; ------------------------------------------------------------------------------
+; LiteStep corre sobre Explorer (litestep -overlay): el escritorio es el de Windows. nDesk
+; no se carga: se apropia de la vista de escritorio de Explorer (ver AGENTS.md).
+; El tema trae su fondo; al pasar a un tema sin fondo propio vuelve el que tenias tu.
+ThemeWallpaper "$PXDir$wallpaper.jpg"
+ThemeWallpaperStyle Fill
+; nCore oculta la barra de tareas de Windows y reserva el sitio de las barras del tema.
+ReserveScreenLeft 44
+ReserveScreenTop 26
+
+; Clics sobre el escritorio de Windows (los intercepta nHotKey; con MAYUS pasan a Windows).
+DesktopRightClick !PopupContext
+DesktopMiddleClick !PopupStartMenu
+
+*HotKey CTRLALT F12 !PopupStartMenu
+*HotKey WIN X       !PopupContext
+*HotKey CTRLALT R   !Recycle

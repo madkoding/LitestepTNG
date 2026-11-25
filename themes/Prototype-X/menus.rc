@@ -1,0 +1,47 @@
+*PopupStartMenu "Programas" !PopupPrograms
+*PopupStartMenu "Recientes" !PopupRecentDocuments
+*PopupStartMenu "Equipo" !PopupMyComputer
+*PopupStartMenu !Separator
+*PopupStartMenu "Terminal" !Execute [wt.exe]
+*PopupStartMenu "Explorador" !Execute [explorer.exe shell:MyComputerFolder]
+*PopupStartMenu "Configuración" !Execute [ms-settings:]
+*PopupStartMenu "Ejecutar..." !Run
+*PopupStartMenu !Separator
+*PopupStartMenu "Bloquear" !Execute [rundll32.exe user32.dll,LockWorkStation]
+*PopupStartMenu "Reiniciar" !Execute [shutdown.exe /r /t 0]
+*PopupStartMenu "Apagar" !Execute [shutdown.exe /s /t 0]
+
+*Popup !New !PopupContext
+*Popup !Info "PrototypeX"
+*Popup "Programas" !PopupPrograms PXMenuIcons
+*Popup "Recientes" !PopupRecentDocuments PXMenuIcons
+*Popup !Separator
+*Popup "Terminal" !Execute [wt.exe]
+*Popup "Explorador" !Execute [explorer.exe shell:MyComputerFolder]
+*Popup "Administrador de tareas" !Execute [taskmgr.exe]
+*Popup "Configuración" !Execute [ms-settings:]
+*Popup !Separator
+*Popup "Multimedia" Folder
+*Popup "Anterior" !KeyCombo MEDIA_PREV
+*Popup "Play / Pausa" !KeyCombo MEDIA_PLAY
+*Popup "Siguiente" !KeyCombo MEDIA_NEXT
+*Popup ~Folder
+*Popup "Shell" Folder
+*Popup "Recargar LiteStep" !Recycle
+*Popup "Carpeta de LiteStep" !Execute [explorer.exe "$LiteStepDir$"]
+*Popup "Editar tema" !Execute [notepad.exe "$PXDir$theme.rc"]
+*Popup "Temas" !PopupThemes
+*Popup ~Folder
+*Popup !Separator
+*Popup "Bloquear" !Execute [rundll32.exe user32.dll,LockWorkStation]
+*Popup "Apagar" !Execute [shutdown.exe /s /t 0]
+*Popup ~New
+
+*Popup !New !PopupTray
+*Popup !Info "Bandeja"
+*Popup "Red e Internet" !Execute [ms-settings:network]
+*Popup "Sonido" !Execute [ms-settings:sound]
+*Popup "Bluetooth" !Execute [ms-settings:bluetooth]
+*Popup !Separator
+*Popup "Administrador de tareas" !Execute [taskmgr.exe]
+*Popup ~New

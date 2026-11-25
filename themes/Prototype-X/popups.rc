@@ -1,0 +1,106 @@
+; ==============================================================================
+;  MENUS (popup1 = titulo, popup2 = item, popup3 = seleccionado)
+; ==============================================================================
+PXMenuColor #FFFFFFFF
+PXMenuOutlineColor #FF9A9A9A
+PXMenuOutlineWidth 1
+PXMenuFontColor #00000000
+PXMenuPaddingLeft 1
+PXMenuPaddingTop 1
+PXMenuPaddingRight 1
+PXMenuPaddingBottom 6
+PXMenuItemSpacing 0
+PXMenuWidth 170
+PXMenuMaxWidth 320
+PXMenuConfineToMonitor true
+PXMenuConfineToWorkArea true
+PXMenuShowAnimationDuration 120
+
+PXMenuItemHeight 18
+PXMenuItemBrushType Image
+PXMenuItemImage "$PXImg$popup2.png"
+PXMenuItemImageScalingMode Edges
+PXMenuItemImageEdgesLeft 2
+PXMenuItemImageEdgesTop 0
+PXMenuItemImageEdgesRight 2
+PXMenuItemImageEdgesBottom 0
+PXMenuItemFont $PXFont$
+PXMenuItemFontSize 11
+PXMenuItemFontColor $PXInkSoft$
+PXMenuItemTextOffsetLeft 10
+PXMenuItemTextOffsetRight 6
+PXMenuItemTextVerticalAlign Middle
+PXMenuItemIconSize 14
+PXMenuItemIconX 4
+PXMenuItemIconY 2
+PXMenuItemHoverBrushType Image
+PXMenuItemHoverImage "$PXImg$popup3.png"
+PXMenuItemHoverImageScalingMode Edges
+PXMenuItemHoverImageEdgesLeft 4
+PXMenuItemHoverImageEdgesTop 3
+PXMenuItemHoverImageEdgesRight 4
+PXMenuItemHoverImageEdgesBottom 3
+PXMenuItemHoverFontColor $PXInk$
+
+PXMenuFolderItemHeight 18
+PXMenuFolderItemBrushType Image
+PXMenuFolderItemImage "$PXImg$popup2.png"
+PXMenuFolderItemImageScalingMode Edges
+PXMenuFolderItemImageEdgesLeft 2
+PXMenuFolderItemImageEdgesTop 0
+PXMenuFolderItemImageEdgesRight 2
+PXMenuFolderItemImageEdgesBottom 0
+PXMenuFolderItemFont $PXFont$
+PXMenuFolderItemFontSize 11
+PXMenuFolderItemFontColor $PXInkSoft$
+PXMenuFolderItemTextOffsetLeft 10
+PXMenuFolderItemTextVerticalAlign Middle
+PXMenuFolderItemIconSize 14
+PXMenuFolderItemIconX 4
+PXMenuFolderItemIconY 2
+PXMenuFolderItemHoverBrushType Image
+PXMenuFolderItemHoverImage "$PXImg$popup3.png"
+PXMenuFolderItemHoverImageScalingMode Edges
+PXMenuFolderItemHoverImageEdgesLeft 4
+PXMenuFolderItemHoverImageEdgesTop 3
+PXMenuFolderItemHoverImageEdgesRight 4
+PXMenuFolderItemHoverImageEdgesBottom 3
+PXMenuFolderItemOpenBrushType Image
+PXMenuFolderItemOpenImage "$PXImg$popup3.png"
+PXMenuFolderItemOpenImageScalingMode Edges
+PXMenuFolderItemOpenImageEdgesLeft 4
+PXMenuFolderItemOpenImageEdgesTop 3
+PXMenuFolderItemOpenImageEdgesRight 4
+PXMenuFolderItemOpenImageEdgesBottom 3
+
+; titulo (el "PrototypeX" con la esquina doblada)
+PXMenuInfoItemHeight 18
+PXMenuInfoItemBrushType Image
+PXMenuInfoItemImage "$PXImg$popup1.png"
+PXMenuInfoItemImageScalingMode Edges
+PXMenuInfoItemImageEdgesLeft 10
+PXMenuInfoItemImageEdgesTop 0
+PXMenuInfoItemImageEdgesRight 2
+PXMenuInfoItemImageEdgesBottom 0
+PXMenuInfoItemFont $PXFont$
+PXMenuInfoItemFontSize 11
+PXMenuInfoItemFontWeight Bold
+PXMenuInfoItemFontColor $PXInk$
+PXMenuInfoItemTextAlign Center
+PXMenuInfoItemTextVerticalAlign Middle
+
+PXMenuSeparatorItemHeight 3
+PXMenuSeparatorItemColor #FF9A9A9A
+
+; menus con iconos de archivos: hueco para el icono
+PXMenuIconsGroup PXMenu
+PXMenuIconsItemTextOffsetLeft 24
+PXMenuIconsFolderItemTextOffsetLeft 24
+
+nPopupGroup PXMenu
+PopupStartMenuGroup PXMenu
+PopupStartMenuProgramasGroup PXMenuIcons
+PopupStartMenuRecientesGroup PXMenuIcons
+PopupStartMenuEquipoGroup PXMenuIcons
+
+; ------------------------------------------------------------------------------

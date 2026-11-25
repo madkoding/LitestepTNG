@@ -1,0 +1,116 @@
+; ==============================================================================
+;  BARRA SUPERIOR (taskbg.png en 3 piezas)  [PrototypeX][ tareas ][ tray ][hora]
+; ==============================================================================
+*nLabel PXHot
+PXHotX 44
+PXHotY 0
+PXHotWidth 130
+PXHotHeight 26
+PXHotAlwaysOnTop true
+PXHotBrushType Image
+PXHotImage "$PXImg$bar_left.png"
+PXHotImageScalingMode Edges
+PXHotImageEdgesLeft 12
+PXHotImageEdgesTop 0
+PXHotImageEdgesRight 0
+PXHotImageEdgesBottom 0
+PXHotFont $PXFont$
+PXHotFontSize 13
+PXHotFontWeight Medium
+PXHotFontColor $PXInk$
+PXHotTextAlign Center
+PXHotTextVerticalAlign Middle
+PXHotText "PrototypeX"
+PXHotHoverFontColor #FF3A7CA5
+PXHotOn LeftClickUp None !PopupStartMenu
+PXHotOn RightClickUp None !PopupContext
+
+*nTaskbar PXTasks
+PXTasksMonitor primary
+PXTasksX 174
+PXTasksY 0
+PXTasksWidth 100%-474
+PXTasksHeight 26
+PXTasksAlwaysOnTop true
+PXTasksBrushType Image
+PXTasksImage "$PXImg$bar_mid.png"
+PXTasksImageScalingMode Tile
+PXTasksPaddingLeft 2
+PXTasksPaddingTop 1
+PXTasksPaddingRight 2
+PXTasksPaddingBottom 1
+PXTasksPrimaryDirection Horizontal
+PXTasksStart TopLeft
+PXTasksColumnSpacing 2
+PXTasksButtonWidth 170
+PXTasksButtonMaxWidth 170
+PXTasksButtonHeight 24
+PXTasksButtonMaxHeight 24
+PXTasksButtonColor #00000000
+PXTasksButtonFont $PXFont$
+PXTasksButtonFontSize 11
+PXTasksButtonFontColor $PXInk$
+PXTasksButtonTextAlign Left
+PXTasksButtonTextVerticalAlign Middle
+PXTasksButtonTextOffsetLeft 26
+PXTasksButtonTextOffsetRight 4
+PXTasksButtonIconSize 14
+PXTasksButtonIconX 7
+PXTasksButtonIconY 5
+PXTasksButtonHoverColor #33B5D2E4
+PXTasksButtonActiveBrushType Image
+PXTasksButtonActiveImage "$PXImg$popup3.png"
+PXTasksButtonActiveImageScalingMode Edges
+PXTasksButtonActiveImageEdgesLeft 4
+PXTasksButtonActiveImageEdgesTop 3
+PXTasksButtonActiveImageEdgesRight 4
+PXTasksButtonActiveImageEdgesBottom 3
+PXTasksButtonMinimizedFontColor #FF707070
+PXTasksButtonFlashingColor #FFFFD27A
+PXTasksOn MiddleClickUp None !Recycle
+
+; vistas previas: hoja blanca con borde gris, se abren hacia abajo
+PXTasksThumbnailPosition Bottom
+PXTasksThumbnailAnimate true
+PXTasksThumbnailAnimationDuration 140
+PXTasksThumbnailShowAnimationDuration 140
+PXTasksThumbnailSizeToButton false
+PXTasksThumbnailMaxWidth 300
+PXTasksThumbnailMaxHeight 200
+PXTasksThumbnailDistanceFromButton 4
+PXTasksThumbnailOffsetLeft 6
+PXTasksThumbnailOffsetTop 6
+PXTasksThumbnailOffsetRight 6
+PXTasksThumbnailOffsetBottom 6
+PXTasksThumbnailColor #FFFFFFFF
+PXTasksThumbnailOutlineColor #FF9A9A9A
+PXTasksThumbnailOutlineWidth 1
+PXTasksThumbnailFontColor #00000000
+
+*nTray PXTray
+PXTrayX 100%-300
+PXTrayY 0
+PXTrayWidth 300
+PXTrayHeight 26
+PXTrayAlwaysOnTop true
+PXTrayBrushType Image
+PXTrayImage "$PXImg$bar_right.png"
+PXTrayImageScalingMode Edges
+PXTrayImageEdgesLeft 0
+PXTrayImageEdgesTop 0
+PXTrayImageEdgesRight 12
+PXTrayImageEdgesBottom 0
+PXTrayPaddingLeft 4
+PXTrayPaddingTop 5
+PXTrayPaddingRight 14
+PXTrayPaddingBottom 5
+PXTrayStart TopRight
+PXTrayPrimaryDirection Horizontal
+PXTrayColumnSpacing 6
+PXTrayOverflowAction SizeLeft
+PXTrayIconSize 16
+; fondo gris tras cada icono: los iconos blancos no se pierden en el papel
+PXTrayIconColor #66707A84
+PXTrayIconCornerRadiusX 3
+PXTrayIconCornerRadiusY 3
+PXTrayOn RightClickUp None !PopupTray
