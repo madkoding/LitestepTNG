@@ -20,6 +20,7 @@
 ; ==============================================================================
 
 include "$LiteStepDir$themes\$ThemeName$\general.rc"
+include "$LiteStepDir$themes\$ThemeName$\styles.rc"
 include "$LiteStepDir$themes\$ThemeName$\column-top.rc"
 include "$LiteStepDir$themes\$ThemeName$\column-bottom.rc"
 include "$LiteStepDir$themes\$ThemeName$\bar-top.rc"

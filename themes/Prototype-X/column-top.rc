@@ -2,84 +2,44 @@
 ;  COLUMNA IZQUIERDA ARRIBA - medidores (rain.png, antes Rainmeter)
 ; ==============================================================================
 *nLabel PXRain
+PXRainGroup PXColumnPanel
 PXRainX 0
 PXRainY 0
-PXRainWidth 44
-PXRainHeight 176
-PXRainAlwaysOnTop true
-PXRainBrushType Image
 PXRainImage "$PXImg$rain.png"
-PXRainImageScalingMode Stretch
 *PXRainOverlayLabel PXCpuCap PXCpuVal PXMemCap PXMemVal PXClkCap PXClkVal
 
 ; textos chicos sobre cada caja (como el "cpu:3%" original)
+PXCpuCapGroup PXGaugeCaption
 PXCpuCapX 3
 PXCpuCapY 14
-PXCpuCapWidth 40
-PXCpuCapHeight 14
-PXCpuCapColor #00000000
-PXCpuCapFont $PXFont$
-PXCpuCapFontSize 9
-PXCpuCapFontColor $PXInk$
 PXCpuCapText "cpu"
 
+PXMemCapGroup PXGaugeCaption
 PXMemCapX 3
 PXMemCapY 63
-PXMemCapWidth 40
-PXMemCapHeight 14
-PXMemCapColor #00000000
-PXMemCapFont $PXFont$
-PXMemCapFontSize 9
-PXMemCapFontColor $PXInk$
 PXMemCapText "mem"
 
+PXClkCapGroup PXGaugeCaption
 PXClkCapX 3
 PXClkCapY 113
-PXClkCapWidth 40
-PXClkCapHeight 14
-PXClkCapColor #00000000
-PXClkCapFont $PXFont$
-PXClkCapFontSize 9
-PXClkCapFontColor $PXInk$
 PXClkCapText "time"
 
 ; valores dentro de las cajas celestes
+PXCpuValGroup PXGaugeValue
 PXCpuValX 3
 PXCpuValY 26
-PXCpuValWidth 38
-PXCpuValHeight 30
-PXCpuValColor #00000000
-PXCpuValFont $PXFont$
-PXCpuValFontSize 13
 PXCpuValFontWeight Medium
-PXCpuValFontColor $PXInk$
-PXCpuValTextAlign Center
-PXCpuValTextVerticalAlign Middle
 PXCpuValText "[CPU]%"
 
+PXMemValGroup PXGaugeValue
 PXMemValX 3
 PXMemValY 75
-PXMemValWidth 38
-PXMemValHeight 30
-PXMemValColor #00000000
-PXMemValFont $PXFont$
-PXMemValFontSize 13
 PXMemValFontWeight Medium
-PXMemValFontColor $PXInk$
-PXMemValTextAlign Center
-PXMemValTextVerticalAlign Middle
 PXMemValText "[Memory]%"
 
+PXClkValGroup PXGaugeValue
 PXClkValX 3
 PXClkValY 125
-PXClkValWidth 38
-PXClkValHeight 30
-PXClkValColor #00000000
-PXClkValFont $PXFont$
-PXClkValFontSize 13
 PXClkValFontWeight Medium
-PXClkValFontColor $PXInk$
-PXClkValTextAlign Center
-PXClkValTextVerticalAlign Middle
 PXClkValText "[Time('%H:%M')]"
 PXClkValOn LeftClickUp None !Execute [ms-settings:dateandtime]

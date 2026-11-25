@@ -1,0 +1,19 @@
+; ==============================================================================
+;  Glass - styles. A label takes every key of its style it does not set
+;  itself (<Label>Group <Style>, see Settings.cpp); styles build on each other.
+; ==============================================================================
+
+; A piece of the bars: bar colour, always on top, centred text.
+GlassBarItemColor $BarColor$
+GlassBarItemAlwaysOnTop true
+GlassBarItemTextAlign Center
+
+; A dim icon button (Segoe Fluent Icons glyph) on a bar.
+GlassIconButtonGroup GlassBarItem
+GlassIconButtonFont $IconFont$
+GlassIconButtonFontColor $TextDim$
+GlassIconButtonTextVerticalAlign Middle
+
+; Text in the UI font on a bar.
+GlassUiTextGroup GlassBarItem
+GlassUiTextFont $UIFont$

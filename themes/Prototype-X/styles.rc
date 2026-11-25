@@ -1,0 +1,39 @@
+; ==============================================================================
+;  Prototype-X - styles. A label takes every key of its style it does not set
+;  itself (<Label>Group <Style>, see Settings.cpp); styles build on each other.
+; ==============================================================================
+
+; The two image panels of the left column.
+PXColumnPanelBrushType Image
+PXColumnPanelImageScalingMode Stretch
+PXColumnPanelAlwaysOnTop true
+PXColumnPanelHeight 176
+PXColumnPanelWidth 44
+
+; One of the four launcher buttons of the dock (a Segoe Fluent Icons glyph).
+PXLauncherIconFont "Segoe Fluent Icons"
+PXLauncherIconFontSize 16
+PXLauncherIconFontColor $PXInkSoft$
+PXLauncherIconTextAlign Center
+PXLauncherIconTextVerticalAlign Middle
+PXLauncherIconColor #01FFFFFF
+PXLauncherIconHeight 44
+PXLauncherIconWidth 44
+
+; The small caption above a meter (CPU, MEM, CLK).
+PXGaugeCaptionFont $PXFont$
+PXGaugeCaptionFontSize 9
+PXGaugeCaptionFontColor $PXInk$
+PXGaugeCaptionColor #00000000
+PXGaugeCaptionHeight 14
+PXGaugeCaptionWidth 40
+
+; The value of a meter.
+PXGaugeValueFont $PXFont$
+PXGaugeValueFontSize 13
+PXGaugeValueFontColor $PXInk$
+PXGaugeValueTextAlign Center
+PXGaugeValueTextVerticalAlign Middle
+PXGaugeValueColor #00000000
+PXGaugeValueHeight 30
+PXGaugeValueWidth 38

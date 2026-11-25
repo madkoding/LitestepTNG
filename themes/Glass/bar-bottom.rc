@@ -3,16 +3,14 @@
 ;  Piezas contiguas con el mismo color -> se ven como una sola barra.
 ; ==============================================================================
 *nLabel StartButton
+StartButtonGroup GlassBarItem
 StartButtonX 0
 StartButtonY 100%-48
 StartButtonWidth 56
 StartButtonHeight 48
-StartButtonAlwaysOnTop true
-StartButtonColor $BarColor$
 StartButtonFont $IconFont$
 StartButtonFontSize 20
 StartButtonFontColor $AccentColor$
-StartButtonTextAlign Center
 StartButtonTextVerticalAlign Middle
 StartButtonText ""
 StartButtonOn LeftClickUp None !PopupStartMenu
@@ -97,31 +95,25 @@ TrayDockIconSize 20
 TrayDockOn RightClickUp None !PopupTray
 
 *nLabel ClockTime
+ClockTimeGroup GlassUiText
 ClockTimeX 100%-140
 ClockTimeY 100%-48
 ClockTimeWidth 140
 ClockTimeHeight 24
-ClockTimeAlwaysOnTop true
-ClockTimeColor $BarColor$
-ClockTimeFont $UIFont$
 ClockTimeFontSize 13
 ClockTimeFontColor $TextColor$
-ClockTimeTextAlign Center
 ClockTimeTextVerticalAlign Bottom
 ClockTimeText "[Time('%H:%M')]"
 ClockTimeOn LeftClickUp None !Execute [ms-settings:dateandtime]
 
 *nLabel ClockDate
+ClockDateGroup GlassUiText
 ClockDateX 100%-140
 ClockDateY 100%-24
 ClockDateWidth 140
 ClockDateHeight 24
-ClockDateAlwaysOnTop true
-ClockDateColor $BarColor$
-ClockDateFont $UIFont$
 ClockDateFontSize 11
 ClockDateFontColor $TextDim$
-ClockDateTextAlign Center
 ClockDateTextVerticalAlign Top
 ClockDateText "[Time('%d/%m/%Y')]"
 ClockDateOn LeftClickUp None !Execute [ms-settings:dateandtime]

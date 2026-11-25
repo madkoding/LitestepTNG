@@ -2,74 +2,42 @@
 ;  COLUMNA IZQUIERDA ABAJO - lanzador (vwm.png, antes ckVWM)
 ; ==============================================================================
 *nLabel PXDock
+PXDockGroup PXColumnPanel
 PXDockX 0
 PXDockY 100%-176
-PXDockWidth 44
-PXDockHeight 176
-PXDockAlwaysOnTop true
-PXDockBrushType Image
 PXDockImage "$PXImg$vwm.png"
-PXDockImageScalingMode Stretch
 *PXDockOverlayLabel PXL1 PXL2 PXL3 PXL4
 
+PXL1Group PXLauncherIcon
 PXL1X 0
 PXL1Y 0
-PXL1Width 44
-PXL1Height 44
-PXL1Color #01FFFFFF
-PXL1Font "Segoe Fluent Icons"
-PXL1FontSize 16
-PXL1FontColor $PXInkSoft$
-PXL1TextAlign Center
-PXL1TextVerticalAlign Middle
 PXL1HoverBrushType Image
 PXL1HoverImage "$PXImg$vwm2.png"
 PXL1HoverImageScalingMode Stretch
 PXL1Text ""
 PXL1On LeftClickUp None !Execute [wt.exe]
 
+PXL2Group PXLauncherIcon
 PXL2X 0
 PXL2Y 44
-PXL2Width 44
-PXL2Height 44
-PXL2Color #01FFFFFF
-PXL2Font "Segoe Fluent Icons"
-PXL2FontSize 16
-PXL2FontColor $PXInkSoft$
-PXL2TextAlign Center
-PXL2TextVerticalAlign Middle
 PXL2HoverBrushType Image
 PXL2HoverImage "$PXImg$vwm2.png"
 PXL2HoverImageScalingMode Stretch
 PXL2Text ""
 PXL2On LeftClickUp None !Execute [explorer.exe shell:MyComputerFolder]
 
+PXL3Group PXLauncherIcon
 PXL3X 0
 PXL3Y 88
-PXL3Width 44
-PXL3Height 44
-PXL3Color #01FFFFFF
-PXL3Font "Segoe Fluent Icons"
-PXL3FontSize 16
-PXL3FontColor $PXInkSoft$
-PXL3TextAlign Center
-PXL3TextVerticalAlign Middle
 PXL3HoverBrushType Image
 PXL3HoverImage "$PXImg$vwm2.png"
 PXL3HoverImageScalingMode Stretch
 PXL3Text ""
 PXL3On LeftClickUp None !Execute [https://www.google.com]
 
+PXL4Group PXLauncherIcon
 PXL4X 0
 PXL4Y 132
-PXL4Width 44
-PXL4Height 44
-PXL4Color #01FFFFFF
-PXL4Font "Segoe Fluent Icons"
-PXL4FontSize 16
-PXL4FontColor $PXInkSoft$
-PXL4TextAlign Center
-PXL4TextVerticalAlign Middle
 PXL4HoverBrushType Image
 PXL4HoverImage "$PXImg$vwm2.png"
 PXL4HoverImageScalingMode Stretch
