@@ -6,6 +6,7 @@ IconExplorer C:\Windows\explorer.exe,0
 IconTerminal C:\Windows\System32\cmd.exe,0
 IconTaskManager C:\Windows\System32\taskmgr.exe,0
 IconLock C:\Windows\System32\shell32.dll,47
+IconLogoff C:\Windows\System32\shell32.dll,44
 IconRestart C:\Windows\System32\shell32.dll,238
 IconShutdown C:\Windows\System32\shell32.dll,27
 

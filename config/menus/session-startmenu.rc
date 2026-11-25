@@ -1,10 +1,11 @@
 ; ==============================================================================
 ;  config\menus\session-startmenu.rc  -  shared by the themes; no look here (icons come from variables
-;  each theme defines: IconLock, IconRestart, IconShutdown; empty = no icon).
-;  Lock, restart, shut down. Variant for *PopupStartMenu; menus\session.rc has the same entries for *Popup.
+;  each theme defines: IconLock, IconLogoff, IconRestart, IconShutdown; empty = no icon).
+;  Lock, sign out, restart, shut down. Variant for *PopupStartMenu; menus\session.rc has the same entries for *Popup.
 ;  Owned by the repo: deploy and the installer overwrite it. Personal additions go in
 ;  personal.rc (star lines there add items).
 ; ==============================================================================
 *PopupStartMenu .icon="$IconLock$" "Bloquear" !Execute [rundll32.exe user32.dll,LockWorkStation]
+*PopupStartMenu .icon="$IconLogoff$" "Cerrar sesión" !Logoff
 *PopupStartMenu .icon="$IconRestart$" "Reiniciar" !Execute [shutdown.exe /r /t 0]
 *PopupStartMenu .icon="$IconShutdown$" "Apagar" !Execute [shutdown.exe /s /t 0]

@@ -21,7 +21,7 @@ MediaPrevWidth 44
 MediaPrevHeight 32
 MediaPrevFontSize 12
 MediaPrevText ""
-MediaPrevOn LeftClickUp None !KeyCombo MEDIA_PREV
+MediaPrevOn LeftClickUp None !MediaPrev
 
 *nLabel MediaPlay
 MediaPlayGroup GlassBarItem
@@ -34,7 +34,7 @@ MediaPlayFontSize 12
 MediaPlayFontColor $TextColor$
 MediaPlayTextVerticalAlign Middle
 MediaPlayText ""
-MediaPlayOn LeftClickUp None !KeyCombo MEDIA_PLAY
+MediaPlayOn LeftClickUp None !MediaPlayPause
 
 *nLabel MediaNext
 MediaNextGroup GlassIconButton
@@ -44,7 +44,7 @@ MediaNextWidth 36
 MediaNextHeight 32
 MediaNextFontSize 12
 MediaNextText ""
-MediaNextOn LeftClickUp None !KeyCombo MEDIA_NEXT
+MediaNextOn LeftClickUp None !MediaNext
 
 ; Botones derechos (no dependen de explorer.exe)
 *nLabel TopRun
