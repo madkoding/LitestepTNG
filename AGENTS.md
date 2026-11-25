@@ -216,7 +216,7 @@ build, matching the original theme's preview screenshot (1024×768; not part of 
   shares `themes\LiteStep Enhanced\` with the 2002 original's files, whose `Theme.rc` is kept
   under `original-2002\` (its `Theme.rc`, Config, icons and the 69 .bmp images); an earlier,
   image-less port attempt is kept as `drafts\first-port.rc`. Neither is deployed.
-- Deployed theme files: **`<run folder>\themes\LiteStep Enhanced\`** (`theme.rc`, `images\`, `sounds\`).
+- Deployed theme files: **`<run folder>\themes\LiteStep Enhanced\`** (`theme.rc` + area files, `images\`, `sounds\`; see §5 "Theme files").
 - Selected via `theme-select.rc` in the run folder → `ThemeName "LiteStep Enhanced"`, included by
   `step.rc`. Other themes (Glass, Prototype-X) remain switchable the same way.
 - Loader chain: `step.rc` → `theme-select.rc` (`ThemeName "X"`) → `themes\X\theme.rc`.
