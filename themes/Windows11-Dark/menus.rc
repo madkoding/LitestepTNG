@@ -1,3 +1,11 @@
+; Los menus compartidos (config\menus) llevan .icon="$Icon...$"; este tema no usa iconos ahi.
+IconExplorer
+IconTerminal
+IconTaskManager
+IconLock
+IconLogoff
+IconRestart
+IconShutdown
 ; ------------------------------------------------------------------------------
 ;  Menu Inicio (modulo StartMenu, lineas *PopupStartMenu)
 ; ------------------------------------------------------------------------------
@@ -5,24 +13,18 @@
 *PopupStartMenu "Recientes" !PopupRecentDocuments
 *PopupStartMenu "Equipo" !PopupMyComputer
 *PopupStartMenu !Separator
-*PopupStartMenu "Explorador de archivos" !Execute [explorer.exe]
-*PopupStartMenu "Terminal" !Execute [wt.exe]
+include "$LiteStepDir$config\menus\apps-startmenu.rc"
 *PopupStartMenu "Configuración" !Execute [ms-settings:]
 *PopupStartMenu "Ejecutar..." !Run
 *PopupStartMenu !Separator
-*PopupStartMenu "Bloquear" !Execute [rundll32.exe user32.dll,LockWorkStation]
-*PopupStartMenu "Cerrar sesión" !Logoff
-*PopupStartMenu "Reiniciar" !Execute [shutdown.exe /r /t 0]
-*PopupStartMenu "Apagar" !Execute [shutdown.exe /s /t 0]
+include "$LiteStepDir$config\menus\session-startmenu.rc"
 
 ; ------------------------------------------------------------------------------
 ;  Menus nPopup  (sintaxis:  *Popup !New !Bang ... *Popup ~New)
 ; ------------------------------------------------------------------------------
 *Popup !New !PopupContext
 *Popup !Info "LiteStep"
-*Popup "Explorador de archivos" !Execute [explorer.exe]
-*Popup "Terminal" !Execute [wt.exe]
-*Popup "Administrador de tareas" !Execute [taskmgr.exe]
+include "$LiteStepDir$config\menus\apps.rc"
 *Popup "Configuración" !Execute [ms-settings:]
 *Popup !Separator
 *Popup "Programas" !PopupPrograms MenuIcons

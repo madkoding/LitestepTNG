@@ -37,12 +37,7 @@ MNowPlayingOn LeftClickUp None !MediaPlayerLaunch
 ;   MediaPlayer<Nombre>Command       se ejecuta al elegirlo. Aqui cambia el icono en sus tres
 ;                                    estados (normal, Hover, Pressed): si no, al pasar el mouse
 ;                                    volveria la imagen por defecto de la etiqueta.
-*MediaPlayer Winamp  "%ProgramFiles(x86)%\Winamp\winamp.exe"
-*MediaPlayer Winamp  "%ProgramFiles%\Winamp\winamp.exe"
-*MediaPlayer Spotify "%APPDATA%\Spotify\Spotify.exe"
-*MediaPlayer Spotify "shell:AppsFolder\SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify"
-*MediaPlayer Tidal   "%LOCALAPPDATA%\TIDAL\TIDAL.exe"
-*MediaPlayer Tidal   "shell:AppsFolder\WiMPMusic.27241E05630EA_kn85bz84x7te4!TIDAL"
+include "$LiteStepDir$config\media-players.rc"
 MediaPlayerWinampCommand !Execute [!nSetImage MPlayerIcon "$MMImg$player_winamp.png"] [!nSetImage MPlayerIcon Hover "$MMImg$player_winamp.png"] [!nSetImage MPlayerIcon Pressed "$MMImg$player_winamp.png"]
 MediaPlayerSpotifyCommand !Execute [!nSetImage MPlayerIcon "$MMImg$player_spotify.png"] [!nSetImage MPlayerIcon Hover "$MMImg$player_spotify.png"] [!nSetImage MPlayerIcon Pressed "$MMImg$player_spotify.png"]
 MediaPlayerTidalCommand !Execute [!nSetImage MPlayerIcon "$MMImg$player_tidal.png"] [!nSetImage MPlayerIcon Hover "$MMImg$player_tidal.png"] [!nSetImage MPlayerIcon Pressed "$MMImg$player_tidal.png"]

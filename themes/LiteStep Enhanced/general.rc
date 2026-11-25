@@ -27,8 +27,7 @@ ReserveScreenBottom 54
 
 ; El escritorio es de explorer: nHotKey intercepta estos clics sobre el y lanza el bang.
 ; Con MAYUS pulsada el clic llega a explorer (su menu contextual normal).
-DesktopRightClick !PopupContext
-DesktopMiddleClick !PopupStartMenu
+; (DesktopRightClick / DesktopMiddleClick: config\hotkeys.rc)
 
 LoadModule $LiteStepDir$Core.dll
 LoadModule $LiteStepDir$VWM.dll
@@ -47,9 +46,7 @@ LoadModule $LiteStepDir$Icon.dll
 
 
 
-*HotKey CTRLALT F12 !PopupStartMenu
-*HotKey WIN X       !PopupContext
-*HotKey CTRLALT R   !Recycle
+include "$LiteStepDir$config\hotkeys.rc"
 ; Capturas: Win+Shift+S recorte, Win+Alt+R herramienta Recortes (foto/video)
 *HotKey WINSHIFT S  !Execute [ms-screenclip:]
 *HotKey WINALT R    !Execute [snippingtool.exe]
