@@ -384,6 +384,19 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   The theme's JUEGOS submenu is the `games\` folder of the run folder (shortcuts: `.url` with
   `steam://rungameid/<id>` for Steam, `.lnk` to `shell:AppsFolder\<id>` for Store apps, which
   then show the app's own icon), so games are added or removed there, not in the theme.
+- **Content popups load off the UI thread:** reading a folder and extracting its icons on
+  litestep's main thread stalled the whole system's mouse (the low-level mouse hooks of
+  nHotKey and the popups run on that thread). `Popup/ContentLoader.cpp` reads any source
+  except `THEMES` into plain `ContentEntry` records (strings, extracted `HICON`s, ID lists of
+  folders to watch) on a worker thread (own STA, pins its module); `ContentPopup` shows a
+  `LoadingItem` meanwhile (info-row skin, `<Popup>LoadingText`, the theme sets `CARGANDO`, and
+  a spinner stepped by `FrameClock`, both hidden for the first 150 ms) and builds the items
+  when `LiteStepTNG.PopupContentLoaded` arrives. A generation number drops results of loads
+  that were closed, unloaded or destroyed; kept popups (`keepLoaded`) finish loading while
+  hidden. The arrival must run under `Window::UpdateLock`: without it every item added to a
+  visible popup repainted it synchronously (800 ms for 20 items). Measured: opening
+  `!PopupApps` cold blocked the main thread 1757 ms before, 93 ms after; System32 (~5000
+  items) still blocks once for ~0.5 s while its item windows are created.
 - **`!PopupFolder:"path"` with spaces:** the rest of the line is the path; the parser used
   to read a piece of it as the settings prefix, which corrupted the whole root popup.
 - **Content popup caching:** content popups are "dynamic": `PostClose` used to free every item
