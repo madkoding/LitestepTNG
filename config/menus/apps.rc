@@ -2,8 +2,8 @@
 ;  config\menus\apps.rc  -  shared by the themes; no look here (icons come from variables
 ;  each theme defines: IconExplorer, IconTerminal, IconTaskManager; empty = no icon).
 ;  Programs every theme offers at the top of its menus. Variant for *Popup; menus\apps-startmenu.rc has the same entries for *PopupStartMenu.
-;  Owned by the repo: deploy and the installer overwrite it. Personal additions go in
-;  personal.rc (star lines there add items).
+;  Owned by the repo: deploy and the installer overwrite it. Menus cannot be extended
+;  from personal.rc (it is read before the theme; see AGENTS.md section 5).
 ; ==============================================================================
 *Popup .icon="$IconExplorer$" "Explorador" !Execute [explorer.exe]
 *Popup .icon="$IconTerminal$" "Terminal" !Execute [wt.exe]

@@ -2,8 +2,8 @@
 ;  config\menus\capture.rc  -  shared by the themes; no look here (icons come from variables
 ;  each theme defines: none; empty = no icon).
 ;  Screen capture tools. Variant for *Popup; menus\capture-startmenu.rc has the same entries for *PopupStartMenu.
-;  Owned by the repo: deploy and the installer overwrite it. Personal additions go in
-;  personal.rc (star lines there add items).
+;  Owned by the repo: deploy and the installer overwrite it. Menus cannot be extended
+;  from personal.rc (it is read before the theme; see AGENTS.md section 5).
 ; ==============================================================================
 *Popup "Recorte de pantalla (Win+Shift+S)" !Execute [ms-screenclip:]
 *Popup "Herramienta Recortes (foto/vídeo)" !Execute [snippingtool.exe]

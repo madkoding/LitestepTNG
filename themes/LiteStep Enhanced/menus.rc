@@ -2,13 +2,13 @@
 ;  LiteStep Enhanced - menus. The entries shared by every theme come from config\menus\
 ;  (text and command there; the icons are this theme's, set by the Icon* variables).
 ; ==============================================================================
-IconExplorer C:\Windows\explorer.exe,0
-IconTerminal C:\Windows\System32\cmd.exe,0
-IconTaskManager C:\Windows\System32\taskmgr.exe,0
-IconLock C:\Windows\System32\shell32.dll,47
-IconLogoff C:\Windows\System32\shell32.dll,44
-IconRestart C:\Windows\System32\shell32.dll,238
-IconShutdown C:\Windows\System32\shell32.dll,27
+IconExplorer "C:\Windows\explorer.exe,0"
+IconTerminal "C:\Windows\System32\cmd.exe,0"
+IconTaskManager "C:\Windows\System32\taskmgr.exe,0"
+IconLock "C:\Windows\System32\shell32.dll,47"
+IconLogoff "C:\Windows\System32\shell32.dll,44"
+IconRestart "C:\Windows\System32\shell32.dll,238"
+IconShutdown "C:\Windows\System32\shell32.dll,27"
 
 ; --- Menu de inicio (clic derecho en MENU, clic central en el escritorio) ---
 *PopupStartMenu .icon="C:\Windows\System32\shell32.dll,19" "PROGRAMAS" !PopupPrograms

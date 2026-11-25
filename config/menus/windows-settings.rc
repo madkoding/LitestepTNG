@@ -2,8 +2,8 @@
 ;  config\menus\windows-settings.rc  -  shared by the themes; no look here (icons come from variables
 ;  each theme defines: none; empty = no icon).
 ;  Windows settings, as ms-settings: pages; classic panels only where no page exists. For *Popup menus only (no start menu uses it).
-;  Owned by the repo: deploy and the installer overwrite it. Personal additions go in
-;  personal.rc (star lines there add items).
+;  Owned by the repo: deploy and the installer overwrite it. Menus cannot be extended
+;  from personal.rc (it is read before the theme; see AGENTS.md section 5).
 ; ==============================================================================
 *Popup "Configuración" !Execute [ms-settings:]
 *Popup "Pantalla" !Execute [ms-settings:display]

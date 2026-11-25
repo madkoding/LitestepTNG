@@ -31,7 +31,8 @@ MULTI_KEYS = ('loadmodule', 'netloadmodule')
 # chain (Settings::IterateOverCommandLines): click handlers and hidden tray icons. Matched
 # case-sensitively, as themes write them, so "...Duration" is not taken for "...On".
 CHAIN_SUFFIXES = ('On', 'Hide')
-MAX_NAME = 240
+# Keys are cut to MAX_RCCOMMAND - 1 characters by the GetPrefixedRC* helpers.
+MAX_NAME = 63
 
 
 class Unsupported(Exception):
@@ -63,13 +64,42 @@ def _strip_value(text):
 
 
 def _read_lines(path):
+    """litestep opens rc files as UTF-8 ("rt, ccs=UTF-8"); anything else would be garbled
+    there, so it is refused here rather than read some other way."""
     with open(path, 'rb') as f:
         raw = f.read()
     try:
         text = raw.decode('utf-8-sig')
-    except UnicodeDecodeError:
-        text = raw.decode('cp1252')
-    return text.splitlines()
+    except UnicodeDecodeError as e:
+        raise Unsupported('%s is not UTF-8 (%s); litestep would read it garbled' % (path, e))
+    # fgets splits on '\n' only (not on U+0085, U+2028... as str.splitlines would).
+    return text.replace('\r\n', '\n').split('\n')
+
+
+def get_token(value):
+    """GetTokenW(value, ..., bUseBrackets=FALSE): the first token, outer quotes removed; a quote
+    that starts inside a token joins the next token to it."""
+    i, n = 0, len(value)
+    while i < n and value[i] in WHITESPACE:
+        i += 1
+    out, quote, started = [], '', False
+    while i < n:
+        c = value[i]
+        if c.isspace() and not quote:
+            break
+        if c in '"\'':
+            if not quote:
+                if started:
+                    return ''.join(out) + get_token(value[i:])
+                quote = c
+                i += 1
+                continue
+            if c == quote:
+                break
+        started = True
+        out.append(c)
+        i += 1
+    return ''.join(out)
 
 
 class Tree:
@@ -81,9 +111,11 @@ class Tree:
         self.chained = {}       # lower <prefix><On|Hide> -> [raw lines], every occurrence
         self.unresolved = set()
         self._including = []
-        self._define('ThemeName', theme)
-        self._define('LiteStepDir', self.root.rstrip('\\/') + '\\')
-        self._define('USERNAME', os.environ.get('USERNAME', 'user'))
+        # Quoted, as theme-select.rc writes ThemeName and litestep stores its own paths: a
+        # variable expands to its first token, so an unquoted "LiteStep Enhanced" would be cut.
+        self._define('ThemeName', '"%s"' % theme)
+        self._define('LiteStepDir', '"%s\\"' % self.root.rstrip('\\/'))
+        self._define('USERNAME', '"%s"' % os.environ.get('USERNAME', 'user'))
         step = os.path.join(self.root, 'step.rc')
         if personal:
             # step.rc includes personal.rc from the run folder; a given file stands in for it.
@@ -199,7 +231,8 @@ class Tree:
             if low in seen:
                 return m.group(0)
             if low in self.settings:
-                return self.expand(self.settings[low][1], seen | {low})
+                # VarExpansionEx substitutes GetTokenW(value), not the raw value.
+                return self.expand(get_token(self.settings[low][1]), seen | {low})
             env = os.environ.get(var)
             if env is not None:
                 return env

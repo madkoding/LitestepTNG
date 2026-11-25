@@ -74,6 +74,30 @@ class ResolveTests(TreeCase):
         t = self.load({'theme.rc': 'XImage "$Img$a.png"\nImg C:\\i\\\n'})
         self.assertEqual(t.resolve('XImage'), '"C:\\i\\a.png"')
 
+    def test_variable_expands_to_its_first_token_unquoted(self):
+        # VarExpansionEx runs GetTokenW on a variable's value: first token, outer quotes off.
+        t = self.load({'theme.rc': 'Words one two\nQuoted "C:\\a b\\c.exe,0"\n'
+                                   'LabelText $Words$\nXIcon .icon="$Quoted$"\n'})
+        self.assertEqual(t.resolve('LabelText'), 'one')
+        self.assertEqual(t.resolve('XIcon'), '.icon="C:\\a b\\c.exe,0"')
+
+    def test_theme_name_with_a_space(self):
+        # theme-select.rc quotes the name; the include must find "themes\My Theme\theme.rc".
+        root = self.make({'theme.rc': 'X 1\n'}, theme='My Theme')
+        t = rc_effective.load(root, 'My Theme')
+        self.assertEqual(t.resolve('X'), '1')
+
+    def test_unquoted_path_with_space_is_cut(self):
+        t = self.load({'theme.rc': 'IconApp C:\\Program Files\\App\\app.exe,0\nXIcon .icon="$IconApp$"\n'})
+        self.assertEqual(t.resolve('XIcon'), '.icon="C:\\Program"')
+
+    def test_invalid_utf8_is_refused(self):
+        root = self.make({'theme.rc': 'X 1\n'})
+        with open(os.path.join(root, 'themes', 'T', 'theme.rc'), 'wb') as f:
+            f.write('XText "Configuraci\u00f3n"\n'.encode('cp1252'))
+        with self.assertRaises(rc_effective.Unsupported):
+            rc_effective.load(root, 'T')
+
     def test_prefix_block(self):
         t = self.load({'theme.rc': textwrap.dedent('''\
             MClock

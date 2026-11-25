@@ -295,23 +295,31 @@ build, matching the original theme's preview screenshot (1024×768; not part of 
   and `<Prefix>On` / `<Prefix>Hide` are read line by line: file order is item order.
 - **Styles.** `<Label>Group <Style>`: the label takes every key of the style it does not set
   (`Settings.cpp`; child prefixes follow: `PGroup S` makes `PItemX` fall back to `SItemX`).
-  `<Prefix>On` lines of a style ADD to every member's handlers. Style names must not be a
-  prefix of one another (`MMText` vs `MMTextCenter`): fallbacks are resolved by name prefix.
+  `<Prefix>On` lines of a style ADD to every member's handlers. The engine reads `Group` only
+  at the exact prefix a module builds; the checker cannot know those prefixes and tries every
+  split of a name, so keep style names from being a prefix of one another (`MMText` vs
+  `MMTextCenter`) or it reports names that do not exist.
 - **`config\`** is shared and repo-owned (mirrored by deploy, packaged). Menu pieces come in
   two variants (`apps.rc` for `*Popup`, `apps-startmenu.rc` for `*PopupStartMenu`):
   star keys cannot be built from variables and `include` does not work inside a
   `Prefix { }` block. `tools\tests\test_config_menus.py` keeps the variants equal. Icons are
-  the theme's: `.icon="$IconExplorer$"` etc.; define the variables WITHOUT quotes (a quoted
-  value expands to `.icon=""path""`), or bare (empty) for no icon.
+  the theme's: `.icon="$IconExplorer$"` etc. A `$Var$` expands to the FIRST TOKEN of its value
+  with the outer quotes removed (`GetTokenW` in `VarExpansionEx`), so quote any value with
+  spaces (`IconApp "C:\Program Files\App\app.exe,0"`); unquoted it becomes `C:\Program`.
+  A bare key or `""` expands to nothing: no icon.
+- **Personal menus** cannot be added through `personal.rc`: it is read before the theme's
+  `*Popup !New` lines, and a root-level `*Popup` line that is not `!New` is dropped;
+  `*PopupStartMenu` lines there land at the top of the start menu.
 - **Check every theme edit** with `tools\rc_effective.py`: dump before, edit, dump after, diff.
   ```
   python tools\rc_effective.py dump --root . --theme "LiteStep Enhanced" > before.txt
   python tools\rc_effective.py diff before.txt after.txt --ignore-new <newstyleprefix>
   ```
   It models includes, first-wins, `Prefix { }` blocks with `@`, star lines, `$Var$` at read
-  time and `Group` chains; "equal" means the theme configures exactly the same. It caught
-  three real mistakes during the restructure (a dropped include, quoted icon variables, and
-  the old "Editar tema" entries, which had always expanded to a doubly quoted path).
+  time (first token, unquoted) and `Group` chains; it refuses `if` blocks and files that are
+  not UTF-8. "Equal" means the theme configures exactly the same — check that both dumps are
+  not nearly empty (a wrong theme name makes every include miss on both sides).
+  `python -m unittest discover -s tools\tests` runs its tests and the config-menu check.
 
 ---
 
@@ -594,7 +602,8 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   So litestep's presence in shell mode blocks explorer's immersive shell; the cause inside
   litestep is not identified (not the shell window, not the tray service). Untested next
   step: explorer as the real Winlogon shell with litestep in overlay mode.
-  **Workaround in place (user's choice):** the theme's config menus use classic Win32
+  **Workaround used then (replaced on 2026-11-25 by `ms-settings:` pages in
+  `config\menus\windows-settings.rc`, now that Explorer is the shell):** the config menus used classic Win32
   panels instead of `ms-settings:` — `control.exe` + `sysdm.cpl`, `mmsys.cpl`, `ncpa.cpl`,
   `timedate.cpl`, `intl.cpl`, `appwiz.cpl`, `powercfg.cpl`, `main.cpl`, `firewall.cpl`,
   `/name Microsoft.NetworkAndSharingCenter`, `/name Microsoft.UserAccounts`, `sndvol.exe`,
