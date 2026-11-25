@@ -499,6 +499,17 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   place when tasks are added/removed (`TaskButton::SetTarget/StepAnimation`, timer in
   `Taskbar`). The thumbnail's own `ThumbnailAnimate` and the popup `ShowAnimation*` settings
   are theme-only.
+- **Animations paced by the display (`ModuleKit/FrameClock`):** every animation (window
+  entry `ShowAnimation*`, `SetAnimation` moves, the taskbar slide, the VWM transition) steps
+  once per refresh. While anything is subscribed, a thread waits on `DwmFlush()` and posts
+  the registered message `LiteStepTNG.FrameTick` (`FrameClock::Message()`); a window has at
+  most one tick queued and must `FrameClock::Ack` it, so a busy UI thread drops frames
+  instead of queueing them. No subscribers = no thread. `Window::RequestFrames/StopFrames`
+  forward ticks to a `MessageHandler`; `LSModule::DeInitalize` stops the clock. New
+  animations should use this, not `SetTimer` (rounded to ~15.6 ms), and measure progress
+  with `StopWatch` (QPC), not `GetTickCount64` (same 15.6 ms steps). Before, moves repainted
+  in a loop blocked on vsync inside `EndDraw`. Measured on a 74 Hz monitor: 13.3–13.5 ms
+  per step, nothing posted once the animation ends.
 - **StartMenu `.icon=` parsing:** `StartMenu/ModuleEntry.cpp` now parses a leading
   `.icon="file,idx"` token on menu entries (previously only nPopup did), passing the icon to
   Command/Folder items.
