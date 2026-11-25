@@ -117,6 +117,7 @@
     <ClInclude Include="FolderPopup.hpp" />
     <ClInclude Include="IconCache.hpp" />
     <ClInclude Include="InfoItem.hpp" />
+    <ClInclude Include="LoadingItem.hpp" />
     <ClInclude Include="PopupSettings.hpp" />
     <ClInclude Include="Popup.hpp" />
     <ClInclude Include="PopupItem.hpp" />
@@ -133,6 +134,7 @@
     <ClCompile Include="FolderPopup.cpp" />
     <ClCompile Include="IconCache.cpp" />
     <ClCompile Include="InfoItem.cpp" />
+    <ClCompile Include="LoadingItem.cpp" />
     <ClCompile Include="ModuleEntry.cpp" />
     <ClCompile Include="Popup.cpp" />
     <ClCompile Include="PopupItem.cpp" />

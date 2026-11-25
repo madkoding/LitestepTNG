@@ -25,6 +25,9 @@
     <ClInclude Include="InfoItem.hpp">
       <Filter>Items</Filter>
     </ClInclude>
+    <ClInclude Include="LoadingItem.hpp">
+      <Filter>Items</Filter>
+    </ClInclude>
     <ClInclude Include="PopupItem.hpp">
       <Filter>Items</Filter>
     </ClInclude>
@@ -63,6 +66,9 @@
       <Filter>Items</Filter>
     </ClCompile>
     <ClCompile Include="InfoItem.cpp">
+      <Filter>Items</Filter>
+    </ClCompile>
+    <ClCompile Include="LoadingItem.cpp">
       <Filter>Items</Filter>
     </ClCompile>
     <ClCompile Include="PopupItem.cpp">

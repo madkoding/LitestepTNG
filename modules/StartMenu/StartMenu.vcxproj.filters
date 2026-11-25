@@ -11,6 +11,7 @@
     <ClCompile Include="..\Popup\ContentLoader.cpp" />
     <ClCompile Include="..\Popup\FolderItem.cpp" />
     <ClCompile Include="..\Popup\InfoItem.cpp" />
+    <ClCompile Include="..\Popup\LoadingItem.cpp" />
     <ClCompile Include="..\Popup\IconCache.cpp" />
     <ClCompile Include="..\Popup\Popup.cpp" />
     <ClCompile Include="..\Popup\PopupItem.cpp" />

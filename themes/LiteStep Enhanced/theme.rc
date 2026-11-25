@@ -707,6 +707,8 @@ MMMenuInfoItemTextAlign Center
 MMMenuInfoItemTextVerticalAlign Middle
 MMMenuInfoItemTextOffsetLeft 38
 MMMenuInfoItemTextOffsetRight 6
+; Fila que muestran los popups de carpetas mientras se leen (con un spinner).
+MMMenuLoadingText "CARGANDO"
 
 ; Separador = popupseperator.png: cierra un panel, hueco oscuro, abre el siguiente
 MMMenuSeparatorItemHeight 18

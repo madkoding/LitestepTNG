@@ -11,7 +11,7 @@
 #include "ContentLoader.hpp"
 #include "CommandItem.hpp"
 #include "FolderItem.hpp"
-#include "InfoItem.hpp"
+#include "LoadingItem.hpp"
 #include <Shlwapi.h>
 #include <ShlObj.h>
 #include <shellapi.h>
@@ -158,7 +158,7 @@ bool ContentPopup::StartLoading()
     this->loading = true;
     WCHAR text[256];
     mSettings->GetString(L"LoadingText", text, _countof(text), L"Loading...");
-    this->loadingRow = new InfoItem(this, text);
+    this->loadingRow = new LoadingItem(this, text);
     AddItem(this->loadingRow);
     return true;
 }
