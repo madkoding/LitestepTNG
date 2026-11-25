@@ -8,6 +8,7 @@
 #include "Color.h"
 #include "ErrorHandler.h"
 #include "Factories.h"
+#include "FrameClock.hpp"
 #include "LiteStep.h"
 #include "MessageHandler.hpp"
 #include "Window.hpp"
@@ -204,6 +205,7 @@ Window::~Window() {
   }
 
   if (!mIsChild && this->window) {
+    FrameClock::Unsubscribe(this->window);
     DestroyWindow(this->window);
   }
 
@@ -322,7 +324,7 @@ Window::PAINTER Window::AddPrePainter(IPainter* painter)
 
 /// <summary>
 /// Starts the entry animation: makes the window layered and fully transparent,
-/// then a timer fades it in while sliding it into place.
+/// then each display refresh fades it in while sliding it into place.
 /// </summary>
 void Window::BeginShowAnimation() {
   LONG_PTR exStyle = GetWindowLongPtr(this->window, GWL_EXSTYLE);
@@ -335,7 +337,7 @@ void Window::BeginShowAnimation() {
   mShowAnimating = true;
   mShowAnimationClock.Clock();
   StepShowAnimation();
-  SetTimer(this->window, SHOW_ANIMATION_TIMER, 10, nullptr);
+  UpdateFrameSubscription();
 }
 
 
@@ -370,8 +372,8 @@ void Window::StepShowAnimation() {
 /// Finishes the entry animation and restores the window to its normal (non-layered) state.
 /// </summary>
 void Window::EndShowAnimation() {
-  KillTimer(this->window, SHOW_ANIMATION_TIMER);
   mShowAnimating = false;
+  UpdateFrameSubscription();
 
   if (mShowAnimationAddedLayered) {
     SetWindowLongPtr(this->window, GWL_EXSTYLE, GetWindowLongPtr(this->window, GWL_EXSTYLE) & ~WS_EX_LAYERED);
@@ -799,30 +801,20 @@ LRESULT WINAPI Window::HandleMessage(HWND window, UINT msg, WPARAM wParam, LPARA
                 //    return TRUE;
                 //}, 0);
 
-                // Handled specially here for top-level windows, as we must NOT resize
-                // the top-level window between BeginPaint and EndPaint.
-                if (mAnimating)
-                {
-                    Animate();
-                }
             }
 
             // We just painted, don't update
             mNeedsUpdate = false;
 
-            if (inAnimation)
-            {
-                PostMessage(window, WM_ANIMATIONPAINT, 0, 0);
-            }
+            // Animations advance on the next display refresh (OnFrame), not by
+            // repainting in a loop: a top-level move steps there, and a child that
+            // moved during this paint gets the next frame repainted.
+            mChildAnimating = inAnimation;
+            UpdateFrameSubscription();
         }
         return 0;
 
     case WM_TIMER:
-        if (wParam == SHOW_ANIMATION_TIMER)
-        {
-            StepShowAnimation();
-            return 0;
-        }
         {
             UpdateLock updateLock(this);
             map<UINT_PTR, MessageHandler*>::const_iterator iter = timers.find(wParam);
@@ -876,6 +868,12 @@ LRESULT WINAPI Window::HandleMessage(HWND window, UINT msg, WPARAM wParam, LPARA
         {
             //PostMessage(window, WM_PAINT, 0, 0);
         }
+        return 0;
+    }
+
+    if (msg == FrameClock::Message())
+    {
+        OnFrame();
         return 0;
     }
 
@@ -1430,7 +1428,120 @@ void Window::SetAnimation(Distance x, Distance y, Distance width, Distance heigh
     mAnimationDuration = duration / 1000.0f;
     mAnimating = true;
 
+    if (!mIsChild)
+    {
+        UpdateFrameSubscription();
+    }
     Repaint();
+}
+
+
+/// <summary>
+/// Sends FrameClock::Message() to the handler once per display refresh.
+/// </summary>
+void Window::RequestFrames(MessageHandler *handler)
+{
+    if (mIsChild)
+    {
+        if (mParent)
+        {
+            mParent->RequestFrames(handler);
+        }
+        return;
+    }
+    mFrameHandlers.insert(handler);
+    UpdateFrameSubscription();
+}
+
+
+/// <summary>
+/// Stops the frames requested by the handler.
+/// </summary>
+void Window::StopFrames(MessageHandler *handler)
+{
+    if (mIsChild)
+    {
+        if (mParent)
+        {
+            mParent->StopFrames(handler);
+        }
+        return;
+    }
+    mFrameHandlers.erase(handler);
+    UpdateFrameSubscription();
+}
+
+
+/// <summary>
+/// Subscribes the top-level window to FrameClock while anything needs frames, and
+/// unsubscribes it as soon as nothing does, so an idle window gets no ticks.
+/// </summary>
+void Window::UpdateFrameSubscription()
+{
+    if (mIsChild || !this->window)
+    {
+        return;
+    }
+    bool wanted = mShowAnimating || mAnimating || mChildAnimating || !mFrameHandlers.empty();
+    if (wanted != mFrameSubscribed)
+    {
+        mFrameSubscribed = wanted;
+        if (wanted)
+        {
+            FrameClock::Subscribe(this->window);
+        }
+        else
+        {
+            FrameClock::Unsubscribe(this->window);
+        }
+    }
+}
+
+
+/// <summary>
+/// One display refresh: advances every animation of this window and its children.
+/// </summary>
+void Window::OnFrame()
+{
+    FrameClock::Ack(this->window);
+    if (mIsChild)
+    {
+        return;
+    }
+
+    if (mShowAnimating)
+    {
+        StepShowAnimation();
+    }
+    if (mAnimating)
+    {
+        Animate();
+    }
+    if (mChildAnimating)
+    {
+        // The children step inside Paint, and the paint updates mChildAnimating. A hidden
+        // window gets no WM_PAINT, so it would keep the clock running for nothing.
+        if (IsWindowVisible(this->window))
+        {
+            Repaint();
+        }
+        else
+        {
+            mChildAnimating = false;
+        }
+    }
+
+    // A handler may stop its frames from inside the call.
+    std::set<MessageHandler*> handlers(mFrameHandlers);
+    for (MessageHandler *handler : handlers)
+    {
+        if (mFrameHandlers.count(handler))
+        {
+            handler->HandleMessage(this->window, FrameClock::Message(), 0, 0, this);
+        }
+    }
+
+    UpdateFrameSubscription();
 }
 
 

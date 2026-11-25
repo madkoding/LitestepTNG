@@ -6,6 +6,7 @@
 //-------------------------------------------------------------------------------------------------
 #include "ErrorHandler.h"
 #include "Factories.h"
+#include "FrameClock.hpp"
 #include "LSModule.hpp"
 #include "Window.hpp"
 
@@ -123,6 +124,9 @@ bool LSModule::Initialize(HWND parent, HINSTANCE instance, PWNDCLASSEX customMes
 /// Deinitalizes
 /// </summary>
 void LSModule::DeInitalize() {
+  // The clock thread runs this module's code: it must be gone before the DLL is unloaded.
+  FrameClock::Shutdown();
+
   // Let go of any factories we allocated.
   Factories::Release();
   CoUninitialize();

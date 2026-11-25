@@ -242,6 +242,13 @@ public:
     // Registers a timer
     UINT_PTR SetCallbackTimer(UINT elapse, MessageHandler* msgHandler);
 
+    // Sends FrameClock::Message() to the handler once per display refresh until StopFrames.
+    // Calling it again for the same handler has no effect.
+    void RequestFrames(MessageHandler *handler);
+
+    // Stops the frames requested by the handler.
+    void StopFrames(MessageHandler *handler);
+
     //
     void SetClickThrough(bool value);
 
@@ -371,14 +378,23 @@ private:
     // If we are currently doing an animation, the position target of the animation.
     Rect mAnimationTarget;
 
-    // Entry (show) animation: fade-in + short slide, driven by a window timer.
-    static const UINT_PTR SHOW_ANIMATION_TIMER = 0x5A0E5A0E;
+    // Entry (show) animation: fade-in + short slide, one step per display refresh.
     void BeginShowAnimation();
     void StepShowAnimation();
     void EndShowAnimation();
     bool mShowAnimating = false;
     bool mShowAnimationAddedLayered = false;
     StopWatch mShowAnimationClock;
+
+    // Display-refresh ticks (FrameClock). Only the top-level window subscribes; children
+    // forward their requests to it.
+    void UpdateFrameSubscription();
+    void OnFrame();
+    // A child animated during the last paint, so the next frame must repaint.
+    bool mChildAnimating = false;
+    // Handlers that asked for frames with RequestFrames.
+    std::set<MessageHandler*> mFrameHandlers;
+    bool mFrameSubscribed = false;
 
     // The children of this Window.
     std::list<Window*> children;
