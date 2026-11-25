@@ -34,6 +34,9 @@
     <ClInclude Include="ContentPopup.hpp">
       <Filter>Popups</Filter>
     </ClInclude>
+    <ClInclude Include="ContentLoader.hpp">
+      <Filter>Popups</Filter>
+    </ClInclude>
     <ClInclude Include="FolderPopup.hpp">
       <Filter>Popups</Filter>
     </ClInclude>
@@ -69,6 +72,9 @@
       <Filter>Items</Filter>
     </ClCompile>
     <ClCompile Include="ContentPopup.cpp">
+      <Filter>Popups</Filter>
+    </ClCompile>
+    <ClCompile Include="ContentLoader.cpp">
       <Filter>Popups</Filter>
     </ClCompile>
     <ClCompile Include="FolderPopup.cpp">

@@ -14,7 +14,7 @@
 /// <summary>
 /// Computes the hash of a particular icon.
 /// </summary>
-IconCache::Hash IconCache::ComputeHash(LPWSTR path, int id)
+IconCache::Hash IconCache::ComputeHash(LPCWSTR path, int id)
 {
     struct
     {

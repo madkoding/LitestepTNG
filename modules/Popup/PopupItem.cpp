@@ -34,6 +34,34 @@ PopupItem::~PopupItem()
 }
 
 
+void PopupItem::SetIcon(HICON icon, UINT32 iconHash)
+{
+    if (icon == nullptr)
+    {
+        return;
+    }
+    if (((Popup*)mParent)->noIcons || mHasIcon)
+    {
+        DestroyIcon(icon);
+        return;
+    }
+
+    mIconHash = iconHash;
+    mHasIcon = true;
+    HICON cached = iconCache.GetIcon(iconHash);
+    if (cached != nullptr)
+    {
+        AddIcon(cached);
+        DestroyIcon(icon);
+    }
+    else
+    {
+        AddIcon(icon);
+        iconCache.StoreIcon(iconHash, icon);
+    }
+}
+
+
 void PopupItem::Position(int x, int y)
 {
     mWindow->Move((float)x, (float)y);

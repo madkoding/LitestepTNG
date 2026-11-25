@@ -74,32 +74,22 @@ private:
     //
     void LoadContent();
 
-    //
-    void LoadShellFolder(GUID folder, bool dontExpandFolders = false);
 
-    //
-    void LoadPath(LPCTSTR path);
 
     // Lists the installed themes; each item runs !ThemeSwitch <name>.
     void LoadThemes();
 
-    // Lists the favorites.
-    void LoadPinned();
 
-    // Lists every installed application, classic and packaged.
-    void LoadApps();
 
-    // Lists the most recently used documents, newest first.
-    void LoadRecent();
 
+    // What to read for this popup (a copy, safe to hand to a worker thread).
+    struct ContentRequest MakeRequest() const;
+    // Creates the items of a load and watches its folders; empties the result.
+    void CreateItems(struct ContentResult &result);
     // Frees the items and stops watching the folders; the next show loads again.
     void Unload();
 
-    //
-    void LoadFromIDList(IShellFolder *targetFolder, PIDLIST_ABSOLUTE idList, bool dontExpandFolders);
 
-    //
-    void LoadSingleItem(IShellFolder *targetFolder, PIDLIST_RELATIVE itemID, bool dontExpandFolders);
 
     // True if the content needs to be reloaded every time the popup is shown.
     bool dynamic;

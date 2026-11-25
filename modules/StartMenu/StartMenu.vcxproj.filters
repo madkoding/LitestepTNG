@@ -8,6 +8,7 @@
     <ClCompile Include="ModuleEntry.cpp" />
     <ClCompile Include="..\Popup\CommandItem.cpp" />
     <ClCompile Include="..\Popup\ContentPopup.cpp" />
+    <ClCompile Include="..\Popup\ContentLoader.cpp" />
     <ClCompile Include="..\Popup\FolderItem.cpp" />
     <ClCompile Include="..\Popup\IconCache.cpp" />
     <ClCompile Include="..\Popup\Popup.cpp" />

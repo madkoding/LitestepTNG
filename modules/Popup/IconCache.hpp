@@ -39,7 +39,7 @@ private:
     CacheMap mIconCache;
 
 public:
-    Hash ComputeHash(LPWSTR path, int id);
+    static Hash ComputeHash(LPCWSTR path, int id);
 
     HICON GetIcon(Hash iconHash);
     void StoreIcon(Hash iconHash, HICON icon);

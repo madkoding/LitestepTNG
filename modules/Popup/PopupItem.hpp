@@ -33,6 +33,10 @@ public:
     int GetHeight();
     bool CompareTo(PopupItem* b);
     void SetIcon(IExtractIconW* extractIcon);
+    // Takes an icon already extracted (by ContentLoader) for the location with this hash.
+    // If the cache already holds that location, the cached icon is used and this one is
+    // destroyed; otherwise this one goes into the cache.
+    void SetIcon(HICON icon, UINT32 iconHash);
     void SetWidth(int width);
     virtual int GetDesiredWidth(int maxWidth) = 0;
     bool CheckMerge(LPCWSTR name);

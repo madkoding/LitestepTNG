@@ -112,6 +112,7 @@
     <ClInclude Include="CommandItem.hpp" />
     <ClInclude Include="ContainerItem.hpp" />
     <ClInclude Include="ContentPopup.hpp" />
+    <ClInclude Include="ContentLoader.hpp" />
     <ClInclude Include="FolderItem.hpp" />
     <ClInclude Include="FolderPopup.hpp" />
     <ClInclude Include="IconCache.hpp" />
@@ -127,6 +128,7 @@
     <ClCompile Include="CommandItem.cpp" />
     <ClCompile Include="ContainerItem.cpp" />
     <ClCompile Include="ContentPopup.cpp" />
+    <ClCompile Include="ContentLoader.cpp" />
     <ClCompile Include="FolderItem.cpp" />
     <ClCompile Include="FolderPopup.cpp" />
     <ClCompile Include="IconCache.cpp" />
