@@ -98,6 +98,13 @@ class ResolveTests(TreeCase):
         t = self.load({'theme.rc': 'Bar\n{\n  *OverlayLabel A B\n}\n'})
         self.assertIn('L *baroverlaylabel 0 = A B', t.dump())
 
+    def test_loadmodule_lines_are_all_kept_in_order(self):
+        a = {'theme.rc': 'LoadModule a.dll\nLoadModule b.dll\n'}
+        b = {'theme.rc': 'LoadModule a.dll\n'}
+        t = rc_effective.load(self.make(a), 'T')
+        self.assertIn('L loadmodule 1 = b.dll', t.dump())
+        self.assertEqual(self.diff_exit(a, b), 1)
+
     def test_if_unsupported(self):
         with self.assertRaises(rc_effective.Unsupported):
             self.load({'theme.rc': 'if 1\nX 1\nendif\n'})

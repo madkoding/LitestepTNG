@@ -13,7 +13,8 @@ modules/ModuleKit/Settings.cpp (<Prefix>Group fallbacks, child prefixes along th
 
 Dump lines, sorted:
     S <name> = <value>        a setting as a module reads it (names lower-case)
-    L <*key> <n> = <line>     the n-th line of a star key (*Popup, *HotKey...), in file order
+    L <*key> <n> = <line>     the n-th line of a star key (*Popup, *HotKey...) or of a key read
+                              line by line (LoadModule), in file order
     U <var>                   a $var$ that nothing defines
 """
 import argparse
@@ -24,6 +25,8 @@ import sys
 WHITESPACE = ' \t\r\n'
 RESERVED = '"\'[];$'
 KEYWORDS = ('if', 'else', 'elseif', 'endif')
+# Plain keys that litestep reads line by line (every occurrence, in order), not first-wins.
+MULTI_KEYS = ('loadmodule', 'netloadmodule')
 MAX_NAME = 240
 
 
@@ -152,7 +155,7 @@ class Tree:
                     target = self._personal
                 self._parse_file(target)
                 continue
-            if name.startswith('*'):
+            if name.startswith('*') or low in MULTI_KEYS:
                 self.stars.setdefault(low, []).append(value)
                 continue
             self._define(name, value)
