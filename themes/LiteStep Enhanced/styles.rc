@@ -1,0 +1,31 @@
+; ==============================================================================
+;  LiteStep Enhanced - styles. A label takes every key of its style it does not set
+;  itself (<Label>Group <Style>, see Settings.cpp); styles build on each other.
+; ==============================================================================
+
+; Invisible but clickable: alpha 1 is enough for the window to get the mouse.
+MMHitAreaColor #01000000
+
+; A panel or button drawn by its image (Image is set per label).
+MMPanelImageGroup MMHitArea
+MMPanelImageBrushType Image
+MMPanelImageImageScalingMode Stretch
+
+; Text in the pixel font, white, vertically centred.
+MMPixelTextGroup MMHitArea
+MMPixelTextFont $MMFont$
+MMPixelTextFontSize 8
+MMPixelTextFontColor $MMInk$
+MMPixelTextTextVerticalAlign Middle
+
+; Pixel text, centred.
+MMCenteredTextGroup MMPixelText
+MMCenteredTextTextAlign Center
+
+; Pixel text, left-aligned.
+MMLeftTextGroup MMPixelText
+MMLeftTextTextAlign Left
+
+; Clock and date (and their shadows, which change colour and offset).
+MMClockFaceGroup MMCenteredText
+MMClockFaceWidth 150

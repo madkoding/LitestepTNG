@@ -14,7 +14,9 @@
 ; ==============================================================================
 
 include "$LiteStepDir$themes\$ThemeName$\general.rc"
-include "$LiteStepDir$themes\$ThemeName$\bar-top.rc"
+include "$LiteStepDir$themes\$ThemeName$\styles.rc"
+include "$LiteStepDir$themes\$ThemeName$\bar-top-left.rc"
+include "$LiteStepDir$themes\$ThemeName$\bar-top-right.rc"
 include "$LiteStepDir$themes\$ThemeName$\bar-bottom.rc"
 include "$LiteStepDir$themes\$ThemeName$\lslnk.rc"
 include "$LiteStepDir$themes\$ThemeName$\popups.rc"

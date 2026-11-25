@@ -1,0 +1,171 @@
+; ==============================================================================
+;  BARRA SUPERIOR  =  fondo semi-transparente + panel izq + username + panel der
+;  Los hijos overlay van CONTIGUOS tras cada panel.
+; ==============================================================================
+
+; --- Fondo superior semi-transparente (deja ver el wallpaper por debajo) ---
+*nLabel MBarBG
+MBarBGGroup MMHitArea
+MBarBGX 0
+MBarBGY 0
+MBarBGWidth 100%
+MBarBGHeight 48
+MBarBGAlwaysOnTop true
+MBarBGOn RightClickUp None !PopupContext
+
+; --- Panel IZQUIERDO: injektion.png (reloj + 1234 + MENU) ---
+*nLabel MBarLeft
+MBarLeftGroup MMPanelImage
+MBarLeftX 0
+MBarLeftY 0
+MBarLeftWidth 630
+MBarLeftHeight 48
+MBarLeftAlwaysOnTop true
+MBarLeftTextAntiAliasMode Aliased
+MBarLeftImage "$MMImg$injektion.png"
+MBarLeftOn RightClickUp None !PopupContext
+; Reloj y fecha centrados en la caja oscura (x 5..159 de injektion.png).
+; La sombra dura del original (negra, +1,+1) se hace con una etiqueta gemela
+; negra desplazada 1px; el motor solo ofrece contorno (FontStroke), no sombra.
+*MBarLeftOverlayLabel MClockTimeSh MClockDateSh MClockTime MClockDate MMenuHit MDeskSel MDesk1 MDesk2 MDesk3 MDesk4 MMeterCPU MMeterGPU MMeterRAM MMeterVRAM
+
+MClockTimeShX 6
+MClockTimeShY 5
+MClockTimeShWidth 150
+MClockTimeShHeight 16
+MClockTimeShColor #00000000
+MClockTimeShFont $MMFont$
+MClockTimeShFontSize 16
+MClockTimeShFontColor #FF000000
+MClockTimeShTextAlign Center
+MClockTimeShTextVerticalAlign Middle
+MClockTimeShText "[Time('%H:%M:%S')]H"
+
+MClockDateShX 6
+MClockDateShY 23
+MClockDateShWidth 150
+MClockDateShHeight 11
+MClockDateShColor #00000000
+MClockDateShFont $MMFontSmall$
+MClockDateShFontSize 8
+MClockDateShFontColor #FF000000
+MClockDateShTextAlign Center
+MClockDateShTextVerticalAlign Middle
+MClockDateShText "[Time('%d. %B %Y')]"
+
+MClockTimeGroup MMHitArea
+MClockTimeX 5
+MClockTimeY 4
+MClockTimeWidth 150
+MClockTimeHeight 16
+MClockTimeFont $MMFont$
+MClockTimeFontSize 16
+MClockTimeFontColor $MMInk$
+MClockTimeTextAlign Center
+MClockTimeTextVerticalAlign Middle
+MClockTimeText "[Time('%H:%M:%S')]H"
+MClockTimeOn LeftClickUp None !Execute [control.exe timedate.cpl]
+
+MClockDateGroup MMClockFace
+MClockDateX 5
+MClockDateY 22
+MClockDateHeight 11
+MClockDateText "[Time('%d. %B %Y')]"
+
+; Boton MENU dibujado en injektion.png: x 293..371 (294..357 en la base), y 0..19
+MMenuHitGroup MMHitArea
+MMenuHitX 294
+MMenuHitY 1
+MMenuHitWidth 64
+MMenuHitHeight 18
+MMenuHitOn LeftClickUp None !PopupContext
+MMenuHitOn RightClickUp None !PopupStartMenu
+
+; Escritorios virtuales (modulo nVWM): los botones 1-4 dibujados en injektion.png
+; ocupan x 157/177/197/217 (15 px) e y 24..36. MDeskSel es la marca del escritorio
+; actual; nVWM la mueve con VWMDesk<N>Command. Clic izquierdo: ir a ese escritorio;
+; clic derecho: enviar alli la ventana activa.
+VWMDesktops 4
+; Efecto al cambiar de escritorio: la imagen del que dejas se desliza un poco hacia
+; su lado y se desvanece. Duracion en ms, distancia en px. false = cambio instantaneo.
+VWMTransition true
+VWMTransitionDuration 200
+VWMTransitionDistance 120
+VWMDesk1Command !nLabelMove MDeskSel 158 25
+VWMDesk2Command !nLabelMove MDeskSel 178 25
+VWMDesk3Command !nLabelMove MDeskSel 198 25
+VWMDesk4Command !nLabelMove MDeskSel 218 25
+
+MDeskSelX 158
+MDeskSelY 25
+MDeskSelWidth 13
+MDeskSelHeight 11
+MDeskSelColor #6034414A
+MDeskSelClickThrough true
+
+MDesk1Group MMHitArea
+MDesk1X 157
+MDesk1Y 24
+MDesk1Width 15
+MDesk1Height 13
+MDesk1On LeftClickUp None !VWMDesk 1
+MDesk1On RightClickUp None !VWMSend 1
+
+MDesk2Group MMHitArea
+MDesk2X 177
+MDesk2Y 24
+MDesk2Width 15
+MDesk2Height 13
+MDesk2On LeftClickUp None !VWMDesk 2
+MDesk2On RightClickUp None !VWMSend 2
+
+MDesk3Group MMHitArea
+MDesk3X 197
+MDesk3Y 24
+MDesk3Width 15
+MDesk3Height 13
+MDesk3On LeftClickUp None !VWMDesk 3
+MDesk3On RightClickUp None !VWMSend 3
+
+MDesk4Group MMHitArea
+MDesk4X 217
+MDesk4Y 24
+MDesk4Width 15
+MDesk4Height 13
+MDesk4On LeftClickUp None !VWMDesk 4
+MDesk4On RightClickUp None !VWMSend 4
+
+; Medidores del sistema en la caja oscura que el original reservaba al "quick launch"
+; (x 180..287, y 1..18 de injektion.png): dos filas de dos. [GPU] y [VRAM] miden la
+; tarjeta grafica con mas memoria dedicada. Clic: Administrador de tareas.
+MMeterCPUGroup MMLeftText
+MMeterCPUX 182
+MMeterCPUY 0
+MMeterCPUWidth 52
+MMeterCPUHeight 10
+MMeterCPUText "CPU [CPU]%"
+MMeterCPUOn LeftClickUp None !Execute [taskmgr.exe]
+
+MMeterGPUGroup MMLeftText
+MMeterGPUX 231
+MMeterGPUY 0
+MMeterGPUWidth 57
+MMeterGPUHeight 10
+MMeterGPUText "GPU [GPU]%"
+MMeterGPUOn LeftClickUp None !Execute [taskmgr.exe]
+
+MMeterRAMGroup MMLeftText
+MMeterRAMX 182
+MMeterRAMY 9
+MMeterRAMWidth 52
+MMeterRAMHeight 10
+MMeterRAMText "RAM [Memory]%"
+MMeterRAMOn LeftClickUp None !Execute [taskmgr.exe]
+
+MMeterVRAMGroup MMLeftText
+MMeterVRAMX 231
+MMeterVRAMY 9
+MMeterVRAMWidth 57
+MMeterVRAMHeight 10
+MMeterVRAMText "VRAM [VRAM]%"
+MMeterVRAMOn LeftClickUp None !Execute [taskmgr.exe]

@@ -1,0 +1,161 @@
+; ==============================================================================
+;  BARRA SUPERIOR (derecha) - reproductor, pista, volumen, linea superior y usuario.
+;  Sigue a bar-top-left.rc: los hijos overlay van CONTIGUOS tras cada panel.
+; ==============================================================================
+
+; --- Panel DERECHO: injektion2.png pegado al borde derecho ---
+*nLabel MBarRight
+MBarRightGroup MMPanelImage
+MBarRightX 100%-394
+MBarRightY 1
+MBarRightWidth 394
+MBarRightHeight 47
+MBarRightAlwaysOnTop true
+MBarRightTextAntiAliasMode Aliased
+MBarRightImage "$MMImg$injektion2.png"
+*MBarRightOverlayLabel MPlayerIcon MHitPrev MHitPlay MHitPause MHitStop MHitNext MNowPlaying MTrack MVolume
+
+; Now playing (Spotify/Tidal/cualquier app) DENTRO de la caja oscura del panel
+; (x 238..387, y 0..16 de injektion2.png); el texto largo se recorta en la caja.
+MNowPlayingGroup MMLeftText
+MNowPlayingX 241
+MNowPlayingY 1
+MNowPlayingWidth 144
+MNowPlayingHeight 15
+MNowPlayingText "[NowPlaying]"
+MNowPlayingOn LeftClickUp None !MediaPlayerLaunch
+
+; Zonas de clic = rectangulos de los botones dibujados en injektion2.png
+; (prev 59, play 84, pause 109, stop 134, next 158; 20 px de ancho, y 0..17).
+; Usan los bangs !Media* de nCore, que hablan con la sesion multimedia de Windows:
+; las teclas multimedia simuladas no llegan a las apps sin explorer.exe.
+; Reproductor: el icono (x 30..50, y 0..16 de injektion2.png, donde el original
+; dibuja el rayo de Winamp) muestra el reproductor elegido. Clic izquierdo lo abre;
+; clic derecho pasa al siguiente: Winamp -> Spotify -> Tidal, solo los instalados.
+; Los botones, el slider TRACK y [NowPlaying] siguen al reproductor elegido.
+;   *MediaPlayer <Nombre> "<ruta>"   varias lineas con el mismo nombre = rutas alternativas
+;   MediaPlayer<Nombre>Command       se ejecuta al elegirlo. Aqui cambia el icono en sus tres
+;                                    estados (normal, Hover, Pressed): si no, al pasar el mouse
+;                                    volveria la imagen por defecto de la etiqueta.
+*MediaPlayer Winamp  "%ProgramFiles(x86)%\Winamp\winamp.exe"
+*MediaPlayer Winamp  "%ProgramFiles%\Winamp\winamp.exe"
+*MediaPlayer Spotify "%APPDATA%\Spotify\Spotify.exe"
+*MediaPlayer Spotify "shell:AppsFolder\SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify"
+*MediaPlayer Tidal   "%LOCALAPPDATA%\TIDAL\TIDAL.exe"
+*MediaPlayer Tidal   "shell:AppsFolder\WiMPMusic.27241E05630EA_kn85bz84x7te4!TIDAL"
+MediaPlayerWinampCommand !Execute [!nSetImage MPlayerIcon "$MMImg$player_winamp.png"] [!nSetImage MPlayerIcon Hover "$MMImg$player_winamp.png"] [!nSetImage MPlayerIcon Pressed "$MMImg$player_winamp.png"]
+MediaPlayerSpotifyCommand !Execute [!nSetImage MPlayerIcon "$MMImg$player_spotify.png"] [!nSetImage MPlayerIcon Hover "$MMImg$player_spotify.png"] [!nSetImage MPlayerIcon Pressed "$MMImg$player_spotify.png"]
+MediaPlayerTidalCommand !Execute [!nSetImage MPlayerIcon "$MMImg$player_tidal.png"] [!nSetImage MPlayerIcon Hover "$MMImg$player_tidal.png"] [!nSetImage MPlayerIcon Pressed "$MMImg$player_tidal.png"]
+
+MPlayerIconGroup MMPanelImage
+MPlayerIconX 30
+MPlayerIconY 0
+MPlayerIconWidth 21
+MPlayerIconHeight 17
+MPlayerIconImage "$MMImg$player_winamp.png"
+MPlayerIconOn LeftClickUp None !MediaPlayerLaunch
+MPlayerIconOn RightClickUp None !MediaPlayerNext
+
+MHitPrevGroup MMHitArea
+MHitPrevX 59
+MHitPrevY 0
+MHitPrevWidth 20
+MHitPrevHeight 18
+MHitPrevOn LeftClickUp None !MediaPrev
+
+MHitPlayGroup MMHitArea
+MHitPlayX 84
+MHitPlayY 0
+MHitPlayWidth 20
+MHitPlayHeight 18
+MHitPlayOn LeftClickUp None !MediaPlay
+
+MHitPauseGroup MMHitArea
+MHitPauseX 109
+MHitPauseY 0
+MHitPauseWidth 20
+MHitPauseHeight 18
+MHitPauseOn LeftClickUp None !MediaPause
+
+MHitStopGroup MMHitArea
+MHitStopX 134
+MHitStopY 0
+MHitStopWidth 20
+MHitStopHeight 18
+MHitStopOn LeftClickUp None !MediaStop
+
+MHitNextGroup MMHitArea
+MHitNextX 158
+MHitNextY 0
+MHitNextWidth 20
+MHitNextHeight 18
+MHitNextOn LeftClickUp None !MediaNext
+
+; Sliders TRACK y VOLUME (nLabel con "Slider"): la etiqueta cubre el interior de la
+; caja dibujada (track x 166..273, volume x 280..387, y 23..34) y el tirador
+; slider_handle.png se mueve por ella. Clic o arrastre para ajustar; rueda en VOLUME.
+MTrackGroup MMHitArea
+MTrackX 166
+MTrackY 23
+MTrackWidth 108
+MTrackHeight 12
+MTrackSlider Track
+MTrackSliderHandle MTrackKnob
+*MTrackOverlayLabel MTrackKnob
+
+MTrackKnobX 0
+MTrackKnobY 0
+MTrackKnobWidth 6
+MTrackKnobHeight 11
+MTrackKnobBrushType Image
+MTrackKnobImage "$MMImg$slider_handle.png"
+MTrackKnobImageScalingMode Stretch
+MTrackKnobClickThrough true
+
+MVolumeGroup MMHitArea
+MVolumeX 280
+MVolumeY 23
+MVolumeWidth 108
+MVolumeHeight 12
+MVolumeSlider Volume
+MVolumeSliderHandle MVolumeKnob
+MVolumeOn WheelUp None !MediaVolume +5
+MVolumeOn WheelDown None !MediaVolume -5
+*MVolumeOverlayLabel MVolumeKnob
+
+MVolumeKnobX 0
+MVolumeKnobY 0
+MVolumeKnobWidth 6
+MVolumeKnobHeight 11
+MVolumeKnobBrushType Image
+MVolumeKnobImage "$MMImg$slider_handle.png"
+MVolumeKnobImageScalingMode Stretch
+MVolumeKnobClickThrough true
+
+; --- Linea negra de 1px sobre el panel derecho: injektion2.png mide 47px y va
+;     en Y=1; en el original la fila 0 es negra, no se ve el fondo ---
+*nLabel MBarRightTop
+MBarRightTopX 100%-394
+MBarRightTopY 0
+MBarRightTopWidth 394
+MBarRightTopHeight 1
+MBarRightTopAlwaysOnTop true
+MBarRightTopColor #FF000000
+
+; --- Nombre de usuario centrado sobre la franja clara (injektion3.png) ---
+*nLabel MUser
+MUserGroup MMPanelImage
+MUserX 630
+MUserY 0
+MUserWidth 100%-1024
+MUserHeight 15
+MUserAlwaysOnTop true
+MUserTextAntiAliasMode Aliased
+MUserImage "$MMImg$injektion3.png"
+MUserFont $MMFont$
+MUserFontSize 8
+MUserFontColor $MMUser$
+MUserTextAlign Center
+MUserTextVerticalAlign Middle
+MUserText "$USERNAME$'S DESKTOP"
+MUserOn RightClickUp None !PopupContext
