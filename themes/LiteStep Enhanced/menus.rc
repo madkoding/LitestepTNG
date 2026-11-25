@@ -1,52 +1,35 @@
-; ------------------------------------------------------------------------------
+; ==============================================================================
+;  LiteStep Enhanced - menus. The entries shared by every theme come from config\menus\
+;  (text and command there; the icons are this theme's, set by the Icon* variables).
+; ==============================================================================
+IconExplorer C:\Windows\explorer.exe,0
+IconTerminal C:\Windows\System32\cmd.exe,0
+IconTaskManager C:\Windows\System32\taskmgr.exe,0
+IconLock C:\Windows\System32\shell32.dll,47
+IconRestart C:\Windows\System32\shell32.dll,238
+IconShutdown C:\Windows\System32\shell32.dll,27
+
+; --- Menu de inicio (clic derecho en MENU, clic central en el escritorio) ---
 *PopupStartMenu .icon="C:\Windows\System32\shell32.dll,19" "PROGRAMAS" !PopupPrograms
 *PopupStartMenu .icon="C:\Windows\System32\shell32.dll,21" "RECIENTES" !PopupRecentDocuments
 *PopupStartMenu .icon="C:\Windows\System32\imageres.dll,104" "EQUIPO" !PopupMyComputer
 *PopupStartMenu !Separator
-*PopupStartMenu .icon="C:\Windows\explorer.exe,0" "EXPLORADOR" !Execute [explorer.exe]
-*PopupStartMenu .icon="C:\Windows\System32\cmd.exe,0" "TERMINAL" !Execute [wt.exe]
-*PopupStartMenu .icon="C:\Windows\System32\taskmgr.exe,0" "ADMINISTRADOR DE TAREAS" !Execute [taskmgr.exe]
+include "$LiteStepDir$config\menus\apps-startmenu.rc"
 *PopupStartMenu .icon="C:\Windows\System32\shell32.dll,25" "EJECUTAR..." !Run
 *PopupStartMenu !Separator
-; Con explorer como shell la app Configuracion (ms-settings:) vuelve a abrir; se mantienen ademas los paneles clasicos Win32.
 *PopupStartMenu "CONFIGURACION" Folder
-*PopupStartMenu "CONFIGURACION (APP DE WINDOWS)" !Execute [ms-settings:]
-*PopupStartMenu "PANTALLA" !Execute [ms-settings:display]
-*PopupStartMenu "BLUETOOTH" !Execute [ms-settings:bluetooth]
-*PopupStartMenu "WINDOWS UPDATE" !Execute [ms-settings:windowsupdate]
-*PopupStartMenu "PANEL DE CONTROL" !Execute [control.exe]
-*PopupStartMenu "SISTEMA" !Execute [control.exe sysdm.cpl]
-*PopupStartMenu "SONIDO" !Execute [control.exe mmsys.cpl]
-*PopupStartMenu "MEZCLADOR DE VOLUMEN" !Execute [sndvol.exe]
-*PopupStartMenu "CONEXIONES DE RED" !Execute [control.exe ncpa.cpl]
-*PopupStartMenu "CENTRO DE REDES" !Execute [control.exe /name Microsoft.NetworkAndSharingCenter]
-*PopupStartMenu "DISPOSITIVOS E IMPRESORAS" !Execute [explorer.exe shell:::{A8A91A66-3A7D-4424-8D24-04E180695C7A}]
-*PopupStartMenu "FONDO DE ESCRITORIO" !Execute [explorer.exe shell:::{ED834ED6-4B5A-4bfe-8F11-A626DCB6A921} -Microsoft.Personalization\pageWallpaper]
-*PopupStartMenu "PROGRAMAS Y CARACTERISTICAS" !Execute [control.exe appwiz.cpl]
-*PopupStartMenu "CUENTAS DE USUARIO" !Execute [control.exe /name Microsoft.UserAccounts]
-*PopupStartMenu "FECHA Y HORA" !Execute [control.exe timedate.cpl]
-*PopupStartMenu "REGION E IDIOMA" !Execute [control.exe intl.cpl]
-*PopupStartMenu "ENERGIA" !Execute [control.exe powercfg.cpl]
-*PopupStartMenu "MOUSE" !Execute [control.exe main.cpl]
-*PopupStartMenu "FIREWALL" !Execute [control.exe firewall.cpl]
-*PopupStartMenu "VARIABLES DE ENTORNO" !Execute [rundll32.exe sysdm.cpl,EditEnvironmentVariables]
+include "$LiteStepDir$config\menus\windows-settings-startmenu.rc"
 *PopupStartMenu ~Folder
 *PopupStartMenu "CAPTURAS" Folder
-*PopupStartMenu "RECORTE DE PANTALLA (WIN+SHIFT+S)" !Execute [ms-screenclip:]
-*PopupStartMenu "HERRAMIENTA RECORTES (FOTO/VIDEO)" !Execute [snippingtool.exe]
-*PopupStartMenu "BARRA DE JUEGOS (GRABAR)" !Execute [explorer.exe ms-gamebar:]
+include "$LiteStepDir$config\menus\capture-startmenu.rc"
 *PopupStartMenu ~Folder
 *PopupStartMenu !Separator
-*PopupStartMenu .icon="C:\Windows\System32\shell32.dll,47" "BLOQUEAR" !Execute [rundll32.exe user32.dll,LockWorkStation]
-*PopupStartMenu .icon="C:\Windows\System32\shell32.dll,238" "REINICIAR" !Execute [shutdown.exe /r /t 0]
-*PopupStartMenu .icon="C:\Windows\System32\shell32.dll,27" "APAGAR" !Execute [shutdown.exe /s /t 0]
+include "$LiteStepDir$config\menus\session-startmenu.rc"
 
+; --- Menu contextual (clic en MENU, clic derecho en el escritorio, Win+X) ---
 *Popup !New !PopupContext
-*Popup .icon="C:\Windows\explorer.exe,0" "EXPLORADOR" !Execute [explorer.exe]
-*Popup .icon="C:\Windows\System32\cmd.exe,0" "TERMINAL" !Execute [wt.exe]
-*Popup .icon="C:\Windows\System32\taskmgr.exe,0" "ADMINISTRADOR DE TAREAS" !Execute [taskmgr.exe]
+include "$LiteStepDir$config\menus\apps.rc"
 *Popup !Separator
-; Con explorer como shell la app Configuracion (ms-settings:) vuelve a abrir; se mantienen ademas los paneles clasicos Win32.
 ; FAVORITOS: lista propia de litestep (carpeta favorites\ junto a litestep.exe).
 ; Clic derecho sobre un programa o documento -> anadir; sobre un favorito -> quitar.
 nPopupPinText "Anadir a favoritos"
@@ -56,55 +39,32 @@ nPopupUnpinText "Quitar de favoritos"
 ; contenido personal, no del tema: se anaden o quitan archivos ahi, sin tocar este fichero.
 *Popup .icon="C:\Windows\System32\joy.cpl,0" "JUEGOS" !PopupFolder:"$LiteStepDir$games"
 *Popup .icon="C:\Windows\System32\shell32.dll,316" "CONFIGURACION DE WINDOWS" Folder
-*Popup "CONFIGURACION (APP DE WINDOWS)" !Execute [ms-settings:]
-*Popup "PANTALLA" !Execute [ms-settings:display]
-*Popup "BLUETOOTH" !Execute [ms-settings:bluetooth]
-*Popup "WINDOWS UPDATE" !Execute [ms-settings:windowsupdate]
-*Popup "PANEL DE CONTROL" !Execute [control.exe]
-*Popup "SISTEMA" !Execute [control.exe sysdm.cpl]
-*Popup "SONIDO" !Execute [control.exe mmsys.cpl]
-*Popup "MEZCLADOR DE VOLUMEN" !Execute [sndvol.exe]
-*Popup "CONEXIONES DE RED" !Execute [control.exe ncpa.cpl]
-*Popup "CENTRO DE REDES" !Execute [control.exe /name Microsoft.NetworkAndSharingCenter]
-*Popup "DISPOSITIVOS E IMPRESORAS" !Execute [explorer.exe shell:::{A8A91A66-3A7D-4424-8D24-04E180695C7A}]
-*Popup "FONDO DE ESCRITORIO" !Execute [explorer.exe shell:::{ED834ED6-4B5A-4bfe-8F11-A626DCB6A921} -Microsoft.Personalization\pageWallpaper]
-*Popup "PROGRAMAS Y CARACTERISTICAS" !Execute [control.exe appwiz.cpl]
-*Popup "CUENTAS DE USUARIO" !Execute [control.exe /name Microsoft.UserAccounts]
-*Popup "FECHA Y HORA" !Execute [control.exe timedate.cpl]
-*Popup "REGION E IDIOMA" !Execute [control.exe intl.cpl]
-*Popup "ENERGIA" !Execute [control.exe powercfg.cpl]
-*Popup "MOUSE" !Execute [control.exe main.cpl]
-*Popup "FIREWALL" !Execute [control.exe firewall.cpl]
-*Popup "VARIABLES DE ENTORNO" !Execute [rundll32.exe sysdm.cpl,EditEnvironmentVariables]
+include "$LiteStepDir$config\menus\windows-settings.rc"
 *Popup ~Folder
 *Popup .icon="C:\Windows\System32\snippingtool.exe,0" "CAPTURAS" Folder
-*Popup "RECORTE DE PANTALLA (WIN+SHIFT+S)" !Execute [ms-screenclip:]
-*Popup "HERRAMIENTA RECORTES (FOTO/VIDEO)" !Execute [snippingtool.exe]
-*Popup "BARRA DE JUEGOS (GRABAR)" !Execute [explorer.exe ms-gamebar:]
+include "$LiteStepDir$config\menus\capture.rc"
 *Popup ~Folder
 *Popup .icon="C:\Windows\System32\shell32.dll,138" "MULTIMEDIA" Folder
-*Popup "ANTERIOR" !MediaPrev
-*Popup "PLAY / PAUSA" !MediaPlayPause
-*Popup "SIGUIENTE" !MediaNext
+include "$LiteStepDir$config\menus\media.rc"
 *Popup ~Folder
 *Popup .icon="C:\Windows\System32\shell32.dll,22" "SHELL" Folder
 *Popup "RECARGAR LITESTEP" !Recycle
 *Popup "REUNIR VENTANAS (ESCRITORIOS)" !VWMGather
-*Popup "EDITAR TEMA" !Execute [notepad.exe "$MMDir$theme.rc"]
+*Popup "EDITAR TEMA" !Execute [explorer.exe "$LiteStepDir$themes\$ThemeName$"]
 *Popup "TEMAS" !PopupThemes
 *Popup ~Folder
 *Popup !Separator
-*Popup .icon="C:\Windows\System32\shell32.dll,27" "APAGAR" !Execute [shutdown.exe /s /t 0]
+*Popup .icon="$IconShutdown$" "APAGAR" !Execute [shutdown.exe /s /t 0]
 *Popup !Separator
 *Popup !Info "FECHA:  [Time('%d . %m . %Y')]"
 *Popup !Info "HORA:  [Time('%H : %M : %S')]"
 *Popup ~New
 
 *Popup !New !PopupTray
-*Popup "CONEXIONES DE RED" !Execute [control.exe ncpa.cpl]
-*Popup "SONIDO" !Execute [control.exe mmsys.cpl]
-*Popup "DISPOSITIVOS E IMPRESORAS" !Execute [explorer.exe shell:::{A8A91A66-3A7D-4424-8D24-04E180695C7A}]
-*Popup "MEZCLADOR DE VOLUMEN" !Execute [sndvol.exe]
+*Popup "CONEXIONES DE RED" !Execute [ms-settings:network-advancedsettings]
+*Popup "SONIDO" !Execute [ms-settings:sound]
+*Popup "DISPOSITIVOS E IMPRESORAS" !Execute [ms-settings:printers]
+*Popup "MEZCLADOR DE VOLUMEN" !Execute [ms-settings:apps-volume]
 *Popup !Separator
 *Popup "ADMINISTRADOR DE TAREAS" !Execute [taskmgr.exe]
 *Popup ~New
@@ -137,7 +97,7 @@ nPopupUnpinText "Quitar de favoritos"
 *Popup "EDGE" !Execute [msedge.exe]
 *Popup "CHROME" !Execute [chrome.exe]
 *Popup "FIREFOX" !Execute [firefox.exe]
-*Popup "CONEXIONES DE RED" !Execute [control.exe ncpa.cpl]
+*Popup "CONEXIONES DE RED" !Execute [ms-settings:network-advancedsettings]
 *Popup ~New
 
 *Popup "TOOLS" !New !PopupLnkTools MMMenuLnk
@@ -145,5 +105,5 @@ nPopupUnpinText "Quitar de favoritos"
 *Popup "ADMINISTRADOR DE TAREAS" !Execute [taskmgr.exe]
 *Popup "PANEL DE CONTROL" !Execute [control.exe]
 *Popup "EXPLORADOR" !Execute [explorer.exe]
-*Popup "EDITAR TEMA" !Execute [notepad.exe "$MMDir$theme.rc"]
+*Popup "EDITAR TEMA" !Execute [explorer.exe "$LiteStepDir$themes\$ThemeName$"]
 *Popup ~New
