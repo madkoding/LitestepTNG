@@ -1,0 +1,12 @@
+; ==============================================================================
+;  Windows-nModules - styles. A label takes every key of its style it does not set
+;  itself (<Label>Group <Style>, see Settings.cpp); styles build on each other.
+; ==============================================================================
+
+; A text button of the top bar (media and desktop arrows).
+NMBarButtonFont "Segoe UI"
+NMBarButtonFontColor #FFE1E8F0
+NMBarButtonTextAlign Center
+NMBarButtonTextVerticalAlign Middle
+NMBarButtonColor #00101820
+NMBarButtonHeight 30
