@@ -18,13 +18,14 @@ namespace Transition {
 
   /// <summary>
   /// Call just before the desktop changes: freezes what is on screen. The picture then
-  /// slides and fades away on its own, driven by a timer on "timerWindow".
+  /// slides and fades away on its own, one step per display refresh (FrameClock ticks
+  /// posted to "timerWindow").
   /// </summary>
   /// <param name="direction">-1: the old desktop leaves to the left, +1: to the right.</param>
   void Begin(HWND timerWindow, int direction);
 
   /// <summary>
-  /// Handles the timer; returns false if the timer was not this effect's.
+  /// Handles one FrameClock tick for timerWindow.
   /// </summary>
-  bool OnTimer(HWND timerWindow, UINT_PTR timer);
+  void OnFrame(HWND timerWindow);
 }

@@ -13,11 +13,12 @@
 #include "../ModuleKit/LiteStep.h"
 
 #include "Transition.h"
+#include "../ModuleKit/FrameClock.hpp"
+#include "../Utilities/StopWatch.hpp"
 
 #include <vector>
 
 static const WCHAR kClassName[] = L"LSVWMTransition";
-static const UINT_PTR kTimer = 0x7A51;
 
 // Time the picture stays untouched first, while the new desktop's windows arrive and
 // paint behind it.
@@ -36,7 +37,8 @@ static bool sEnabled = false;
 static DWORD sDuration = 200;
 static int sDistance = 120;
 static int sDirection = 0;
-static ULONGLONG sStart = 0;
+// High-resolution: GetTickCount64 moves in ~15.6 ms steps, coarser than a frame.
+static StopWatch sClock;
 static HINSTANCE sInstance = nullptr;
 
 
@@ -123,25 +125,23 @@ void Transition::Begin(HWND timerWindow, int direction) {
   sDirection = direction;
   EnumDisplayMonitors(nullptr, nullptr, CaptureMonitor, 0);
   if (!sSnapshots.empty()) {
-    sStart = GetTickCount64();
-    SetTimer(timerWindow, kTimer, 10, nullptr);
+    sClock.Clock();
+    FrameClock::Subscribe(timerWindow);
   }
 }
 
 
-bool Transition::OnTimer(HWND timerWindow, UINT_PTR timer) {
-  if (timer != kTimer) {
-    return false;
-  }
+void Transition::OnFrame(HWND timerWindow) {
+  FrameClock::Ack(timerWindow);
 
-  ULONGLONG elapsed = GetTickCount64() - sStart;
-  if (sSnapshots.empty() || elapsed >= kHold + sDuration) {
-    KillTimer(timerWindow, kTimer);
+  float elapsed = sClock.GetTime() * 1000.0f;
+  if (sSnapshots.empty() || elapsed >= float(kHold + sDuration)) {
+    FrameClock::Unsubscribe(timerWindow);
     Clear();
-    return true;
+    return;
   }
-  if (elapsed < kHold) {
-    return true;
+  if (elapsed < float(kHold)) {
+    return;
   }
 
   // Ease out: quick at first, settling at the end.
@@ -162,5 +162,4 @@ bool Transition::OnTimer(HWND timerWindow, UINT_PTR timer) {
     POINT position = { area.left + offset, area.top };
     UpdateLayeredWindow(snapshot.window, nullptr, &position, nullptr, nullptr, nullptr, 0, &blend, ULW_ALPHA);
   }
-  return true;
 }

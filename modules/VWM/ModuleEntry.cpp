@@ -28,6 +28,7 @@
 #include "../Utilities/WindowActivation.h"
 
 #include "Transition.h"
+#include "../ModuleKit/FrameClock.hpp"
 #include "Version.h"
 
 #include <dwmapi.h>
@@ -356,6 +357,10 @@ EXPORT_CDECL(void) quitModule(HINSTANCE /* instance */) {
 /// <param name="lParam">lParam</param>
 LRESULT WINAPI LSMessageHandler(HWND window, UINT message, WPARAM wParam, LPARAM lParam) {
   using LiteStep::GetLitestepWnd;
+  if (message == FrameClock::Message()) {
+    Transition::OnFrame(window);
+    return 0;
+  }
   switch(message) {
   case WM_CREATE:
     SendMessage(GetLitestepWnd(), LM_REGISTERMESSAGE, (WPARAM)window, (LPARAM)gLSMessages);
@@ -374,12 +379,6 @@ LRESULT WINAPI LSMessageHandler(HWND window, UINT message, WPARAM wParam, LPARAM
       }
     }
     return 0;
-
-  case WM_TIMER:
-    if (Transition::OnTimer(window, wParam)) {
-      return 0;
-    }
-    break;
 
   case LM_REFRESH:
     return 0;
