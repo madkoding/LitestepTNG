@@ -12,6 +12,7 @@
 #include "Taskbar.hpp"
 #include "../Utilities/Math.h"
 #include "../ModuleKit/DWMColorVal.hpp"
+#include "../ModuleKit/FrameClock.hpp"
 
 #include <algorithm>
 
@@ -47,9 +48,9 @@ Taskbar::Taskbar(LPCTSTR name) : Drawable(name) {
 /// Destructor
 /// </summary>
 Taskbar::~Taskbar() {
-  if (mAnimationTimer != 0) {
-    mWindow->ClearCallbackTimer(mAnimationTimer);
-    mAnimationTimer = 0;
+  if (mAnimationRunning) {
+    mWindow->StopFrames(this);
+    mAnimationRunning = false;
   }
   // Remove all buttons
   mButtonList.clear();
@@ -257,9 +258,10 @@ void Taskbar::Relayout() {
 
   if (animate) {
     // (Re)start the clock; buttons already moving continue from where they are.
-    mAnimationStart = GetTickCount64();
-    if (mAnimationTimer == 0) {
-      mAnimationTimer = mWindow->SetCallbackTimer(15, this);
+    mAnimationClock.Clock();
+    if (!mAnimationRunning) {
+      mAnimationRunning = true;
+      mWindow->RequestFrames(this);
     }
   }
 
@@ -276,10 +278,10 @@ LRESULT WINAPI Taskbar::HandleMessage(HWND window, UINT message, WPARAM wParam, 
     Relayout();
     return 0;
 
-  case WM_TIMER:
-    if (wParam == mAnimationTimer && mAnimationTimer != 0) {
+  default:
+    if (message == FrameClock::Message() && mAnimationRunning) {
       float t = mAnimationDuration > 0
-        ? float(GetTickCount64() - mAnimationStart) / float(mAnimationDuration) : 1.0f;
+        ? mAnimationClock.GetTime() * 1000.0f / float(mAnimationDuration) : 1.0f;
       if (t > 1.0f) t = 1.0f;
       // Ease-out cubic: fast at first, settling gently into place.
       float eased = 1.0f - (1.0f - t) * (1.0f - t) * (1.0f - t);
@@ -290,8 +292,8 @@ LRESULT WINAPI Taskbar::HandleMessage(HWND window, UINT message, WPARAM wParam, 
         }
       }
       if (t >= 1.0f) {
-        mWindow->ClearCallbackTimer(mAnimationTimer);
-        mAnimationTimer = 0;
+        mAnimationRunning = false;
+        mWindow->StopFrames(this);
       }
       this->Repaint();
       return 0;

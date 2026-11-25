@@ -100,7 +100,9 @@ private:
     // Layout animation ("AnimationDuration", ms; 0 = buttons jump to their place).
     // When tasks are added or removed the buttons slide to their new positions.
     int mAnimationDuration = 0;
-    UINT_PTR mAnimationTimer = 0;
-    ULONGLONG mAnimationStart = 0;
+    // True while the buttons are sliding (frames requested from the window).
+    bool mAnimationRunning = false;
+    // High-resolution: GetTickCount64 moves in ~15.6 ms steps, coarser than a frame.
+    StopWatch mAnimationClock;
 };
 
