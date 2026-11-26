@@ -6,13 +6,13 @@ IconLock
 IconLogoff
 IconRestart
 IconShutdown
-*PopupStartMenu "Programas" !PopupPrograms
-*PopupStartMenu "Recientes" !PopupRecentDocuments
-*PopupStartMenu "Equipo" !PopupMyComputer
+*PopupStartMenu "$TxtPrograms$" !PopupPrograms
+*PopupStartMenu "$TxtRecent$" !PopupRecentDocuments
+*PopupStartMenu "$TxtComputer$" !PopupMyComputer
 *PopupStartMenu !Separator
 include "$LiteStepDir$config\menus\apps-startmenu.rc"
-*PopupStartMenu "Configuración" !Execute [ms-settings:]
-*PopupStartMenu "Ejecutar..." !Run
+*PopupStartMenu "$TxtSettings$" !Execute [ms-settings:]
+*PopupStartMenu "$TxtRun$" !Run
 *PopupStartMenu !Separator
 include "$LiteStepDir$config\menus\session-startmenu.rc"
 
@@ -22,32 +22,32 @@ include "$LiteStepDir$config\menus\session-startmenu.rc"
 *Popup !New !PopupContext
 *Popup !Info "LiteStep"
 include "$LiteStepDir$config\menus\apps.rc"
-*Popup "Configuración" !Execute [ms-settings:]
+*Popup "$TxtSettings$" !Execute [ms-settings:]
 *Popup !Separator
-*Popup "Programas" !PopupPrograms MenuIcons
-*Popup "Personalizar fondo" !Execute [ms-settings:personalization-background]
-*Popup "Pantalla" !Execute [ms-settings:display]
+*Popup "$TxtPrograms$" !PopupPrograms MenuIcons
+*Popup "$TxtDesktopBackground$" !Execute [ms-settings:personalization-background]
+*Popup "$TxtDisplay$" !Execute [ms-settings:display]
 *Popup !Separator
-*Popup "Recargar LiteStep" !Recycle
-*Popup "Editar tema" !Execute [explorer.exe "$LiteStepDir$themes\$ThemeName$"]
-*Popup "Temas" !PopupThemes
+*Popup "$TxtRecycleLiteStep$" !Recycle
+*Popup "$TxtEditTheme$" !Execute [explorer.exe "$LiteStepDir$themes\$ThemeName$"]
+*Popup "$TxtThemes$" !PopupThemes
 *Popup ~New
 
 *Popup !New !PopupTray
 *Popup !Separator
-*Popup "Red e Internet" !Execute [ms-settings:network]
-*Popup "Sonido" !Execute [ms-settings:sound]
-*Popup "Bluetooth" !Execute [ms-settings:bluetooth]
+*Popup "$TxtNetwork$" !Execute [ms-settings:network]
+*Popup "$TxtSound$" !Execute [ms-settings:sound]
+*Popup "$TxtBluetooth$" !Execute [ms-settings:bluetooth]
 *Popup !Separator
-*Popup "Administrador de tareas" !Execute [taskmgr.exe]
+*Popup "$TxtTaskManager$" !Execute [taskmgr.exe]
 *Popup ~New
 
 
 *Popup !New !PopupPower MenuDown
-*Popup "Bloquear" !Execute [rundll32.exe user32.dll,LockWorkStation]
-*Popup "Suspender" !Execute [rundll32.exe powrprof.dll,SetSuspendState 0,1,0]
-*Popup "Cerrar sesión" !Logoff
+*Popup "$TxtLock$" !Execute [rundll32.exe user32.dll,LockWorkStation]
+*Popup "$TxtSleep$" !Execute [rundll32.exe powrprof.dll,SetSuspendState 0,1,0]
+*Popup "$TxtSignOut$" !Logoff
 *Popup !Separator
-*Popup "Reiniciar" !Execute [shutdown.exe /r /t 0]
-*Popup "Apagar" !Execute [shutdown.exe /s /t 0]
+*Popup "$TxtRestart$" !Execute [shutdown.exe /r /t 0]
+*Popup "$TxtShutDown$" !Execute [shutdown.exe /s /t 0]
 *Popup ~New

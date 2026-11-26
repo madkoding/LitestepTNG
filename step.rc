@@ -14,3 +14,6 @@ Language $SystemLanguage$
 include "$LiteStepDir$lang\$Language$.rc"
 include "$LiteStepDir$lang\en.rc"
 include "$LiteStepDir$themes\$ThemeName$\theme.rc"
+; Textos que los modulos muestran por su cuenta, en el idioma de la sesion. Son valores por
+; defecto: el tema puede definirlos antes.
+include "$LiteStepDir$config\texts.rc"

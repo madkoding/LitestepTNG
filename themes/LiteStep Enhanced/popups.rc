@@ -107,7 +107,7 @@ MMMenuInfoItemTextVerticalAlign Middle
 MMMenuInfoItemTextOffsetLeft 38
 MMMenuInfoItemTextOffsetRight 6
 ; Fila que muestran los popups de carpetas mientras se leen (con un spinner).
-MMMenuLoadingText "CARGANDO"
+MMMenuLoadingText "$TxtLoading$"
 
 ; Separador = popupseperator.png: cierra un panel, hueco oscuro, abre el siguiente
 MMMenuSeparatorItemHeight 18
@@ -137,6 +137,6 @@ MMMenuIconsFolderItemTextOffsetLeft 38
 
 nPopupGroup MMMenu
 PopupStartMenuGroup MMMenu
-PopupStartMenuProgramasGroup MMMenuIcons
-PopupStartMenuRecientesGroup MMMenuIcons
-PopupStartMenuEquipoGroup MMMenuIcons
+PopupStartMenuProgramsGroup MMMenuIcons
+PopupStartMenuRecentGroup MMMenuIcons
+PopupStartMenuComputerGroup MMMenuIcons

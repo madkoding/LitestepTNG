@@ -152,5 +152,6 @@ MUserFontSize 8
 MUserFontColor $MMUser$
 MUserTextAlign Center
 MUserTextVerticalAlign Middle
-MUserText "$USERNAME$'S DESKTOP"
+; Sin texto: la franja queda como fondo de la barra.
+MUserText ""
 MUserOn RightClickUp None !PopupContext

@@ -1,0 +1,12 @@
+; ==============================================================================
+;  config\texts.rc  -  texts the modules show on their own, in the session's language.
+;  step.rc includes it AFTER the theme: these are defaults; a theme that sets one of
+;  these keys (or a style its popups use) keeps its own value (the first definition wins).
+;  Owned by the repo: deploy and the installer overwrite it.
+; ==============================================================================
+; Favorites (right-click on a program or a favorite inside a popup)
+nPopupPinText "$TxtPinFavorite$"
+nPopupUnpinText "$TxtUnpinFavorite$"
+; The row a folder popup shows while it is being read
+nPopupLoadingText "$TxtLoading$"
+PopupStartMenuLoadingText "$TxtLoading$"

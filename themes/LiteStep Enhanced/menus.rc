@@ -11,17 +11,17 @@ IconRestart "C:\Windows\System32\shell32.dll,238"
 IconShutdown "C:\Windows\System32\shell32.dll,27"
 
 ; --- Menu de inicio (clic derecho en MENU, clic central en el escritorio) ---
-*PopupStartMenu .icon="C:\Windows\System32\shell32.dll,19" "PROGRAMAS" !PopupPrograms
-*PopupStartMenu .icon="C:\Windows\System32\shell32.dll,21" "RECIENTES" !PopupRecentDocuments
-*PopupStartMenu .icon="C:\Windows\System32\imageres.dll,104" "EQUIPO" !PopupMyComputer
+*PopupStartMenu .icon="C:\Windows\System32\shell32.dll,19" "$TxtPrograms$" !PopupPrograms
+*PopupStartMenu .icon="C:\Windows\System32\shell32.dll,21" "$TxtRecent$" !PopupRecentDocuments
+*PopupStartMenu .icon="C:\Windows\System32\imageres.dll,104" "$TxtComputer$" !PopupMyComputer
 *PopupStartMenu !Separator
 include "$LiteStepDir$config\menus\apps-startmenu.rc"
-*PopupStartMenu .icon="C:\Windows\System32\shell32.dll,25" "EJECUTAR..." !Run
+*PopupStartMenu .icon="C:\Windows\System32\shell32.dll,25" "$TxtRun$" !Run
 *PopupStartMenu !Separator
 ; El listado completo de Configuracion esta en el submenu del menu contextual; aqui basta
 ; la app (StartMenu no anida carpetas: un Folder se mostraria desplegado).
-*PopupStartMenu "Configuración" !Execute [ms-settings:]
-*PopupStartMenu "CAPTURAS" Folder
+*PopupStartMenu "$TxtSettings$" !Execute [ms-settings:]
+*PopupStartMenu "$TxtCapture$" Folder
 include "$LiteStepDir$config\menus\capture-startmenu.rc"
 *PopupStartMenu ~Folder
 *PopupStartMenu !Separator
@@ -33,45 +33,43 @@ include "$LiteStepDir$config\menus\apps.rc"
 *Popup !Separator
 ; FAVORITOS: lista propia de litestep (carpeta favorites\ junto a litestep.exe).
 ; Clic derecho sobre un programa o documento -> anadir; sobre un favorito -> quitar.
-nPopupPinText "Anadir a favoritos"
-nPopupUnpinText "Quitar de favoritos"
-*Popup .icon="C:\Windows\System32\shell32.dll,43" "FAVORITOS" !PopupPinned
+*Popup .icon="C:\Windows\System32\shell32.dll,43" "$TxtFavorites$" !PopupPinned
 ; JUEGOS: los accesos directos (.lnk, .url) de la carpeta games\ junto a step.rc. Es
 ; contenido personal, no del tema: se anaden o quitan archivos ahi, sin tocar este fichero.
-*Popup .icon="C:\Windows\System32\joy.cpl,0" "JUEGOS" !PopupFolder:"$LiteStepDir$games"
-*Popup .icon="C:\Windows\System32\shell32.dll,316" "CONFIGURACION DE WINDOWS" Folder
+*Popup .icon="C:\Windows\System32\joy.cpl,0" "$TxtGames$" !PopupFolder:"$LiteStepDir$games"
+*Popup .icon="C:\Windows\System32\shell32.dll,316" "$TxtWindowsSettings$" Folder
 include "$LiteStepDir$config\menus\windows-settings.rc"
 *Popup ~Folder
-*Popup .icon="C:\Windows\System32\snippingtool.exe,0" "CAPTURAS" Folder
+*Popup .icon="C:\Windows\System32\snippingtool.exe,0" "$TxtCapture$" Folder
 include "$LiteStepDir$config\menus\capture.rc"
 *Popup ~Folder
-*Popup .icon="C:\Windows\System32\shell32.dll,138" "MULTIMEDIA" Folder
+*Popup .icon="C:\Windows\System32\shell32.dll,138" "$TxtMultimedia$" Folder
 include "$LiteStepDir$config\menus\media.rc"
 *Popup ~Folder
-*Popup .icon="C:\Windows\System32\shell32.dll,22" "SHELL" Folder
-*Popup "RECARGAR LITESTEP" !Recycle
-*Popup "REUNIR VENTANAS (ESCRITORIOS)" !VWMGather
-*Popup "EDITAR TEMA" !Execute [explorer.exe "$LiteStepDir$themes\$ThemeName$"]
-*Popup "TEMAS" !PopupThemes
+*Popup .icon="C:\Windows\System32\shell32.dll,22" "$TxtShell$" Folder
+*Popup "$TxtRecycleLiteStep$" !Recycle
+*Popup "$TxtGatherWindows$" !VWMGather
+*Popup "$TxtEditTheme$" !Execute [explorer.exe "$LiteStepDir$themes\$ThemeName$"]
+*Popup "$TxtThemes$" !PopupThemes
 *Popup ~Folder
 *Popup !Separator
-*Popup .icon="$IconShutdown$" "APAGAR" !Execute [shutdown.exe /s /t 0]
+*Popup .icon="$IconShutdown$" "$TxtShutDown$" !Execute [shutdown.exe /s /t 0]
 *Popup !Separator
-*Popup !Info "FECHA:  [Time('%d . %m . %Y')]"
-*Popup !Info "HORA:  [Time('%H : %M : %S')]"
+*Popup !Info "$TxtDateLabel$  [Time('%d . %m . %Y')]"
+*Popup !Info "$TxtTimeLabel$  [Time('%H : %M : %S')]"
 *Popup ~New
 
 *Popup !New !PopupTray
-*Popup "CONEXIONES DE RED" !Execute [ms-settings:network-advancedsettings]
-*Popup "SONIDO" !Execute [ms-settings:sound]
-*Popup "DISPOSITIVOS E IMPRESORAS" !Execute [ms-settings:printers]
-*Popup "MEZCLADOR DE VOLUMEN" !Execute [ms-settings:apps-volume]
+*Popup "$TxtNetworkConnections$" !Execute [ms-settings:network-advancedsettings]
+*Popup "$TxtSound$" !Execute [ms-settings:sound]
+*Popup "$TxtDevicesPrinters$" !Execute [ms-settings:printers]
+*Popup "$TxtVolumeMixer$" !Execute [ms-settings:apps-volume]
 *Popup !Separator
-*Popup "ADMINISTRADOR DE TAREAS" !Execute [taskmgr.exe]
+*Popup "$TxtTaskManager$" !Execute [taskmgr.exe]
 *Popup ~New
 
 ; --- Popups del LSLNKMENU (categorias) ---
-*Popup "OFFICE" !New !PopupLnkOffice MMMenuLnk
+*Popup "$TxtOffice$" !New !PopupLnkOffice MMMenuLnk
 *Popup "WORD" !Execute [winword.exe]
 *Popup "EXCEL" !Execute [excel.exe]
 *Popup "POWERPOINT" !Execute [powerpnt.exe]
@@ -80,31 +78,31 @@ include "$LiteStepDir$config\menus\media.rc"
 *Popup "WORDPAD" !Execute [write.exe]
 *Popup ~New
 
-*Popup "GRAPHIC" !New !PopupLnkGraphic MMMenuLnk
+*Popup "$TxtGraphics$" !New !PopupLnkGraphic MMMenuLnk
 *Popup "PAINT" !Execute [mspaint.exe]
-*Popup "FOTOS" !Execute [ms-photos:]
-*Popup "RECORTES" !Execute [snippingtool.exe]
+*Popup "$TxtPhotos$" !Execute [ms-photos:]
+*Popup "$TxtSnips$" !Execute [snippingtool.exe]
 *Popup "PAINT 3D" !Execute [ms-paint:]
 *Popup ~New
 
-*Popup "MULTIMEDIA" !New !PopupLnkMulti MMMenuLnk
+*Popup "$TxtMultimedia$" !New !PopupLnkMulti MMMenuLnk
 *Popup "SPOTIFY" !Execute [spotify:]
-*Popup "REPRODUCTOR" !Execute [mswindowsmusic:]
-*Popup "GRABADORA DE VOZ" !Execute [ms-callrecording:]
-*Popup "VOLUMEN" !Execute [sndvol.exe]
+*Popup "$TxtPlayer$" !Execute [mswindowsmusic:]
+*Popup "$TxtVoiceRecorder$" !Execute [ms-callrecording:]
+*Popup "$TxtVolume$" !Execute [sndvol.exe]
 *Popup ~New
 
-*Popup "INTERNET" !New !PopupLnkInternet MMMenuLnk
+*Popup "$TxtInternet$" !New !PopupLnkInternet MMMenuLnk
 *Popup "EDGE" !Execute [msedge.exe]
 *Popup "CHROME" !Execute [chrome.exe]
 *Popup "FIREFOX" !Execute [firefox.exe]
-*Popup "CONEXIONES DE RED" !Execute [ms-settings:network-advancedsettings]
+*Popup "$TxtNetworkConnections$" !Execute [ms-settings:network-advancedsettings]
 *Popup ~New
 
-*Popup "TOOLS" !New !PopupLnkTools MMMenuLnk
-*Popup "TERMINAL" !Execute [wt.exe]
-*Popup "ADMINISTRADOR DE TAREAS" !Execute [taskmgr.exe]
-*Popup "PANEL DE CONTROL" !Execute [control.exe]
-*Popup "EXPLORADOR" !Execute [explorer.exe]
-*Popup "EDITAR TEMA" !Execute [explorer.exe "$LiteStepDir$themes\$ThemeName$"]
+*Popup "$TxtTools$" !New !PopupLnkTools MMMenuLnk
+*Popup "$TxtTerminal$" !Execute [wt.exe]
+*Popup "$TxtTaskManager$" !Execute [taskmgr.exe]
+*Popup "$TxtControlPanel$" !Execute [control.exe]
+*Popup "$TxtExplorer$" !Execute [explorer.exe]
+*Popup "$TxtEditTheme$" !Execute [explorer.exe "$LiteStepDir$themes\$ThemeName$"]
 *Popup ~New

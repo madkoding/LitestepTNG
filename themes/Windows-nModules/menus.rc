@@ -22,14 +22,14 @@ PopupStartMenuItemHoverCornerRadius 14
 PopupStartMenuItemHoverTextOffsetLeft 20
 PopupStartMenuItemHoverTextVerticalAlign Middle
 
-*PopupStartMenu "Programs" !PopupPrograms
-*PopupStartMenu "Recent" !PopupRecentDocuments
-*PopupStartMenu "Settings" !Execute [ms-settings:]
-*PopupStartMenu "Network" !PopupNetwork
-*PopupStartMenu "Command Prompt" !Execute [$WINDIR$\System32\cmd.exe]
-*PopupStartMenu "Run" !PopupRun
-*PopupStartMenu "Shutdown" !PopupPower
-*PopupStartMenu "Recycle" !PopupRecycleBin
+*PopupStartMenu "$TxtPrograms$" !PopupPrograms
+*PopupStartMenu "$TxtRecent$" !PopupRecentDocuments
+*PopupStartMenu "$TxtSettings$" !Execute [ms-settings:]
+*PopupStartMenu "$TxtNetworkPlaces$" !PopupNetwork
+*PopupStartMenu "$TxtCommandPrompt$" !Execute [$WINDIR$\System32\cmd.exe]
+*PopupStartMenu "$TxtRun$" !PopupRun
+*PopupStartMenu "$TxtShutDown$" !PopupPower
+*PopupStartMenu "$TxtRecycleBin$" !PopupRecycleBin
 
 ; desktop and context popups
 ; ------------------------------------------------------------------------------
@@ -41,29 +41,29 @@ PopupMinWidth 200
 PopupMaxWidth 360
 PopupNoBevel
 
-*PopupContext "File Explorer" !Execute [$WINDIR$\explorer.exe]
-*PopupContext "Terminal" !Execute [wt.exe]
-*PopupContext "Settings" !Execute [ms-settings:]
+*PopupContext "$TxtExplorer$" !Execute [$WINDIR$\explorer.exe]
+*PopupContext "$TxtTerminal$" !Execute [wt.exe]
+*PopupContext "$TxtSettings$" !Execute [ms-settings:]
 *PopupContext !Separator
-*PopupContext "Task Manager" !Execute [$WINDIR$\System32\Taskmgr.exe]
-*PopupContext "Run..." !PopupRun
+*PopupContext "$TxtTaskManager$" !Execute [$WINDIR$\System32\Taskmgr.exe]
+*PopupContext "$TxtRun$" !PopupRun
 *PopupContext !Separator
-*PopupContext "Restart LiteStep" !Recycle
+*PopupContext "$TxtRecycleLiteStep$" !Recycle
 
-*PopupTray "Notifications" !Execute [ms-actioncenter:]
-*PopupTray "Network & Internet" !Execute [ms-settings:network]
-*PopupTray "Task Manager" !Execute [$WINDIR$\System32\Taskmgr.exe]
+*PopupTray "$TxtNotifications$" !Execute [ms-actioncenter:]
+*PopupTray "$TxtNetwork$" !Execute [ms-settings:network]
+*PopupTray "$TxtTaskManager$" !Execute [$WINDIR$\System32\Taskmgr.exe]
 
-*PopupDesktops "Desktop 1" !VWMGoToDesktop 1
-*PopupDesktops "Desktop 2" !VWMGoToDesktop 2
-*PopupDesktops "Desktop 3" !VWMGoToDesktop 3
+*PopupDesktops "$TxtDesktop$ 1" !VWMGoToDesktop 1
+*PopupDesktops "$TxtDesktop$ 2" !VWMGoToDesktop 2
+*PopupDesktops "$TxtDesktop$ 3" !VWMGoToDesktop 3
 *PopupDesktops !Separator
-*PopupDesktops "New Desktop" !VWMCreateDesktop
-*PopupDesktops "Close Desktop" !VWMDestroyDesktop
+*PopupDesktops "$TxtNewDesktop$" !VWMCreateDesktop
+*PopupDesktops "$TxtCloseDesktop$" !VWMDestroyDesktop
 
 ; retain a lightweight master popup
-*Popup "Start" !Popup
-*Popup "Desktops" !PopupDesktops
-*Popup "Context" !PopupContext
+*Popup "$TxtStart$" !Popup
+*Popup "$TxtDesktops$" !PopupDesktops
+*Popup "$TxtContext$" !PopupContext
 *Popup !Separator
-*Popup "Recycle LiteStep" !Recycle
+*Popup "$TxtRecycleLiteStep$" !Recycle

@@ -22,7 +22,7 @@ PXMemCapText "mem"
 PXClkCapGroup PXGaugeCaption
 PXClkCapX 3
 PXClkCapY 113
-PXClkCapText "time"
+PXClkCapText "$TxtTimeShort$"
 
 ; valores dentro de las cajas celestes
 PXCpuValGroup PXGaugeValue

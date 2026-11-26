@@ -99,8 +99,8 @@ PXMenuIconsFolderItemTextOffsetLeft 24
 
 nPopupGroup PXMenu
 PopupStartMenuGroup PXMenu
-PopupStartMenuProgramasGroup PXMenuIcons
-PopupStartMenuRecientesGroup PXMenuIcons
-PopupStartMenuEquipoGroup PXMenuIcons
+PopupStartMenuProgramsGroup PXMenuIcons
+PopupStartMenuRecentGroup PXMenuIcons
+PopupStartMenuComputerGroup PXMenuIcons
 
 ; ------------------------------------------------------------------------------

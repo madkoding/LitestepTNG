@@ -106,6 +106,29 @@ wstring SanitizePrefixFragment(const wstring &title)
     return fragment;
 }
 
+// The settings prefix of a content entry's popup: named after what it lists, not after its
+// title, which is translated (and may hold no letters a prefix can use, as in Chinese).
+wstring ContentPrefixFragment(ContentPopup::ContentSource source, const wstring &title)
+{
+    switch (source)
+    {
+    case ContentPopup::ContentSource::PROGRAMS:         return L"Programs";
+    case ContentPopup::ContentSource::RECENT_DOCUMENTS: return L"Recent";
+    case ContentPopup::ContentSource::MY_COMPUTER:      return L"Computer";
+    case ContentPopup::ContentSource::NETWORK:          return L"Network";
+    case ContentPopup::ContentSource::CONTROL_PANEL:    return L"ControlPanel";
+    case ContentPopup::ContentSource::RECYCLE_BIN:      return L"RecycleBin";
+    case ContentPopup::ContentSource::START_MENU:       return L"StartMenu";
+    case ContentPopup::ContentSource::ADMIN_TOOLS:      return L"AdminTools";
+    case ContentPopup::ContentSource::PRINTERS:         return L"Printers";
+    case ContentPopup::ContentSource::PINNED:           return L"Favorites";
+    case ContentPopup::ContentSource::APPS:             return L"Apps";
+    case ContentPopup::ContentSource::THEMES:           return L"Themes";
+    default:                                            return SanitizePrefixFragment(title);
+    }
+}
+
+
 struct MenuEntry
 {
     enum class Type
@@ -320,6 +343,10 @@ public:
         : Popup(title, bang, prefix)
         , mPlaceholderText(std::move(placeholder))
     {
+        // The theme's text for it (translated through its lang files), if it has one.
+        WCHAR text[256];
+        mSettings->GetString(L"LoadingText", text, _countof(text), mPlaceholderText.c_str());
+        mPlaceholderText = text;
     }
 
     ~AsyncShellFolderPopup() override
@@ -692,7 +719,7 @@ public:
             case MenuEntry::Type::Content:
             {
                 wstring childPrefix = L"PopupStartMenu";
-                childPrefix += SanitizePrefixFragment(entry.title);
+                childPrefix += ContentPrefixFragment(entry.contentSource, entry.title);
                 std::unique_ptr<Popup> popup;
                 if (entry.contentSource == ContentPopup::ContentSource::NETWORK)
                 {

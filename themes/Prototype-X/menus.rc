@@ -6,43 +6,43 @@ IconLock
 IconLogoff
 IconRestart
 IconShutdown
-*PopupStartMenu "Programas" !PopupPrograms
-*PopupStartMenu "Recientes" !PopupRecentDocuments
-*PopupStartMenu "Equipo" !PopupMyComputer
+*PopupStartMenu "$TxtPrograms$" !PopupPrograms
+*PopupStartMenu "$TxtRecent$" !PopupRecentDocuments
+*PopupStartMenu "$TxtComputer$" !PopupMyComputer
 *PopupStartMenu !Separator
 include "$LiteStepDir$config\menus\apps-startmenu.rc"
-*PopupStartMenu "Configuración" !Execute [ms-settings:]
-*PopupStartMenu "Ejecutar..." !Run
+*PopupStartMenu "$TxtSettings$" !Execute [ms-settings:]
+*PopupStartMenu "$TxtRun$" !Run
 *PopupStartMenu !Separator
 include "$LiteStepDir$config\menus\session-startmenu.rc"
 
 *Popup !New !PopupContext
 *Popup !Info "PrototypeX"
-*Popup "Programas" !PopupPrograms PXMenuIcons
-*Popup "Recientes" !PopupRecentDocuments PXMenuIcons
+*Popup "$TxtPrograms$" !PopupPrograms PXMenuIcons
+*Popup "$TxtRecent$" !PopupRecentDocuments PXMenuIcons
 *Popup !Separator
 include "$LiteStepDir$config\menus\apps.rc"
-*Popup "Configuración" !Execute [ms-settings:]
+*Popup "$TxtSettings$" !Execute [ms-settings:]
 *Popup !Separator
-*Popup "Multimedia" Folder
+*Popup "$TxtMultimedia$" Folder
 include "$LiteStepDir$config\menus\media.rc"
 *Popup ~Folder
-*Popup "Shell" Folder
-*Popup "Recargar LiteStep" !Recycle
-*Popup "Carpeta de LiteStep" !Execute [explorer.exe "$LiteStepDir$"]
-*Popup "Editar tema" !Execute [explorer.exe "$LiteStepDir$themes\$ThemeName$"]
-*Popup "Temas" !PopupThemes
+*Popup "$TxtShell$" Folder
+*Popup "$TxtRecycleLiteStep$" !Recycle
+*Popup "$TxtLiteStepFolder$" !Execute [explorer.exe "$LiteStepDir$"]
+*Popup "$TxtEditTheme$" !Execute [explorer.exe "$LiteStepDir$themes\$ThemeName$"]
+*Popup "$TxtThemes$" !PopupThemes
 *Popup ~Folder
 *Popup !Separator
-*Popup "Bloquear" !Execute [rundll32.exe user32.dll,LockWorkStation]
-*Popup "Apagar" !Execute [shutdown.exe /s /t 0]
+*Popup "$TxtLock$" !Execute [rundll32.exe user32.dll,LockWorkStation]
+*Popup "$TxtShutDown$" !Execute [shutdown.exe /s /t 0]
 *Popup ~New
 
 *Popup !New !PopupTray
-*Popup !Info "Bandeja"
-*Popup "Red e Internet" !Execute [ms-settings:network]
-*Popup "Sonido" !Execute [ms-settings:sound]
-*Popup "Bluetooth" !Execute [ms-settings:bluetooth]
+*Popup !Info "$TxtTray$"
+*Popup "$TxtNetwork$" !Execute [ms-settings:network]
+*Popup "$TxtSound$" !Execute [ms-settings:sound]
+*Popup "$TxtBluetooth$" !Execute [ms-settings:bluetooth]
 *Popup !Separator
-*Popup "Administrador de tareas" !Execute [taskmgr.exe]
+*Popup "$TxtTaskManager$" !Execute [taskmgr.exe]
 *Popup ~New

@@ -72,6 +72,6 @@ MenuIconsFolderItemTextOffsetLeft 36
 
 nPopupGroup MenuStyle
 PopupStartMenuGroup MenuStyle
-PopupStartMenuProgramasGroup MenuIcons
-PopupStartMenuRecientesGroup MenuIcons
-PopupStartMenuEquipoGroup MenuIcons
+PopupStartMenuProgramsGroup MenuIcons
+PopupStartMenuRecentGroup MenuIcons
+PopupStartMenuComputerGroup MenuIcons
