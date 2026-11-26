@@ -138,7 +138,10 @@ MDesk4On RightClickUp None !VWMSend 4
 ; Medidores del sistema en la caja oscura que el original reservaba al "quick launch"
 ; (x 180..287, y 1..18 de injektion.png): dos filas de dos. [GPU] y [VRAM] miden la
 ; tarjeta grafica con mas memoria dedicada. Clic: Administrador de tareas.
+; Los medidores solo llevan letras latinas: conservan la fuente de pixel en todo idioma.
 MMeterCPUGroup MMLeftText
+MMeterCPUFont $MMClockFont$
+MMeterCPUFontSize 8
 MMeterCPUX 182
 MMeterCPUY 0
 MMeterCPUWidth 52
@@ -147,6 +150,8 @@ MMeterCPUText "CPU [CPU]%"
 MMeterCPUOn LeftClickUp None !Execute [taskmgr.exe]
 
 MMeterGPUGroup MMLeftText
+MMeterGPUFont $MMClockFont$
+MMeterGPUFontSize 8
 MMeterGPUX 231
 MMeterGPUY 0
 MMeterGPUWidth 57
@@ -155,6 +160,8 @@ MMeterGPUText "GPU [GPU]%"
 MMeterGPUOn LeftClickUp None !Execute [taskmgr.exe]
 
 MMeterRAMGroup MMLeftText
+MMeterRAMFont $MMClockFont$
+MMeterRAMFontSize 8
 MMeterRAMX 182
 MMeterRAMY 9
 MMeterRAMWidth 52
@@ -163,6 +170,8 @@ MMeterRAMText "RAM [Memory]%"
 MMeterRAMOn LeftClickUp None !Execute [taskmgr.exe]
 
 MMeterVRAMGroup MMLeftText
+MMeterVRAMFont $MMClockFont$
+MMeterVRAMFontSize 8
 MMeterVRAMX 231
 MMeterVRAMY 9
 MMeterVRAMWidth 57

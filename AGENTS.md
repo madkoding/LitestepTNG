@@ -223,7 +223,7 @@ build, matching the original theme's preview screenshot (1024×768; not part of 
 
 ### Layout (matches the preview)
 - **Top bar:** clock+date (`MClockTime`/`MClockDate`), virtual desktops, **MENU** button
-  (`MMenuHit`), username label (`MUser`, purple, `$USERNAME$'S DESKTOP`), now-playing
+  (`MMenuHit`), username strip (`MUser`, injektion3.png; no text since 2026-11-26), now-playing
   (`MNowPlaying`, green, live), media controls (prev/play/stop/next on `injektion2.png`),
   TRACK/VOLUME. Left panel = `injektion.png`, right panel = `injektion2.png`.
 - **Popup menu** (`*Popup` via `!PopupContext`): dark left rail with icons, beveled title,

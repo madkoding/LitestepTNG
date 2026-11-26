@@ -157,7 +157,11 @@ bool ContentPopup::StartLoading()
     this->cancel = stop;
     this->loading = true;
     WCHAR text[256];
-    mSettings->GetString(L"LoadingText", text, _countof(text), L"Loading...");
+    // A popup's own style may set it; otherwise the global text (config\texts.rc, translated)
+    // and only then English. A submenu's settings chain does not reach nPopup by itself.
+    WCHAR fallback[256];
+    LiteStep::GetPrefixedRCString(L"nPopup", L"LoadingText", fallback, L"Loading...", _countof(fallback));
+    mSettings->GetString(L"LoadingText", text, _countof(text), fallback);
     this->loadingRow = new LoadingItem(this, text);
     AddItem(this->loadingRow);
     return true;

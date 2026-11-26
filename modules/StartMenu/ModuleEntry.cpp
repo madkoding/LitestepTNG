@@ -345,7 +345,9 @@ public:
     {
         // The theme's text for it (translated through its lang files), if it has one.
         WCHAR text[256];
-        mSettings->GetString(L"LoadingText", text, _countof(text), mPlaceholderText.c_str());
+        WCHAR fallback[256];
+        LiteStep::GetPrefixedRCString(L"nPopup", L"LoadingText", fallback, mPlaceholderText.c_str(), _countof(fallback));
+        mSettings->GetString(L"LoadingText", text, _countof(text), fallback);
         mPlaceholderText = text;
     }
 

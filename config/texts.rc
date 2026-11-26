@@ -7,6 +7,6 @@
 ; Favorites (right-click on a program or a favorite inside a popup)
 nPopupPinText "$TxtPinFavorite$"
 nPopupUnpinText "$TxtUnpinFavorite$"
-; The row a folder popup shows while it is being read
+; The row a folder popup shows while it is being read (also the default of every submenu,
+; StartMenu's included, whose style does not set its own)
 nPopupLoadingText "$TxtLoading$"
-PopupStartMenuLoadingText "$TxtLoading$"
