@@ -28,7 +28,7 @@ FrameBodyInsetTop 31
 FrameBodyInsetRight 5
 FrameBodyInsetBottom 14
 
-FrameTextAntiAliasMode Aliased
+FrameTextAntiAliasMode $MMTextAA$
 FrameColor #00000000
 
 ; Titulo dentro de la caja blanca de la cabecera.
@@ -38,7 +38,7 @@ FrameTitleWidth 100%-110
 FrameTitleHeight 13
 FrameTitleColor #00000000
 FrameTitleFont $MMFont$
-FrameTitleFontSize 8
+FrameTitleFontSize $MMFontSize$
 FrameTitleFontColor #FF707070
 FrameTitleActiveFontColor #FF000000
 FrameTitleTextAlign Left

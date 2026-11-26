@@ -34,7 +34,7 @@ MClockTimeShY 5
 MClockTimeShWidth 150
 MClockTimeShHeight 16
 MClockTimeShColor #00000000
-MClockTimeShFont $MMFont$
+MClockTimeShFont $MMClockFont$
 MClockTimeShFontSize 16
 MClockTimeShFontColor #FF000000
 MClockTimeShTextAlign Center
@@ -47,7 +47,7 @@ MClockDateShWidth 150
 MClockDateShHeight 11
 MClockDateShColor #00000000
 MClockDateShFont $MMFontSmall$
-MClockDateShFontSize 8
+MClockDateShFontSize $MMFontSize$
 MClockDateShFontColor #FF000000
 MClockDateShTextAlign Center
 MClockDateShTextVerticalAlign Middle
@@ -58,7 +58,7 @@ MClockTimeX 5
 MClockTimeY 4
 MClockTimeWidth 150
 MClockTimeHeight 16
-MClockTimeFont $MMFont$
+MClockTimeFont $MMClockFont$
 MClockTimeFontSize 16
 MClockTimeFontColor $MMInk$
 MClockTimeTextAlign Center

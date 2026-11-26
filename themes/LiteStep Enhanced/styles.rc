@@ -14,7 +14,7 @@ MMPanelImageImageScalingMode Stretch
 ; Text in the pixel font, white, vertically centred.
 MMPixelTextGroup MMHitArea
 MMPixelTextFont $MMFont$
-MMPixelTextFontSize 8
+MMPixelTextFontSize $MMFontSize$
 MMPixelTextFontColor $MMInk$
 MMPixelTextTextVerticalAlign Middle
 

@@ -9,7 +9,7 @@ MTasksY 100%-26
 MTasksWidth 100%
 MTasksHeight 26
 MTasksAlwaysOnTop true
-MTasksTextAntiAliasMode Aliased
+MTasksTextAntiAliasMode $MMTextAA$
 MTasksColor $MMBase$
 MTasksBrushType Image
 MTasksImage "$MMImg$taskbar.png"
@@ -32,7 +32,7 @@ MTasksButtonBrushType Image
 MTasksButtonImage "$MMImg$regtaskmain.png"
 MTasksButtonImageScalingMode Stretch
 MTasksButtonFont $MMFont$
-MTasksButtonFontSize 8
+MTasksButtonFontSize $MMFontSize$
 MTasksButtonFontColor $MMInk$
 MTasksButtonTextAlign Left
 MTasksButtonTextVerticalAlign Middle
@@ -88,9 +88,9 @@ MTrayOn RightClickUp None !PopupTray
 ; Tooltip de los iconos de la bandeja: misma fuente de pixel y colores que el tema
 ; (caja oscura como el reloj, texto blanco, borde negro).
 MTrayTooltipFont $MMFont$
-MTrayTooltipFontSize 8
+MTrayTooltipFontSize $MMFontSize$
 MTrayTooltipFontColor $MMInk$
-MTrayTooltipTextAntiAliasMode Aliased
+MTrayTooltipTextAntiAliasMode $MMTextAA$
 MTrayTooltipColor #FF34414A
 MTrayTooltipOutlineColor #FF000000
 MTrayTooltipOutlineWidth 1

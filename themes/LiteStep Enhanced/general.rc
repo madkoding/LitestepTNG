@@ -11,6 +11,12 @@ MMDir  "$LiteStepDir$themes\$ThemeName$\"
 MMImg  "$LiteStepDir$themes\$ThemeName$\images\"
 MMFont "hooge 05_55"
 MMFontSmall "hooge 05_55"
+; Tamano y suavizado del texto: la fuente de pixel esta hecha para 8 y sin suavizado. Los
+; archivos lang\zh.rc y lang\ja.rc de este tema cambian fuente, tamano y suavizado (se
+; leen antes, y la primera definicion es la que vale). El reloj conserva la de pixel.
+MMFontSize 8
+MMTextAA Aliased
+MMClockFont "hooge 05_55"
 MMInk  #FFFFFFFF
 MMDim  #FFC0C8CC
 MMUser #FF000000

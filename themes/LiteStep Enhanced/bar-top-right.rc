@@ -11,7 +11,7 @@ MBarRightY 1
 MBarRightWidth 394
 MBarRightHeight 47
 MBarRightAlwaysOnTop true
-MBarRightTextAntiAliasMode Aliased
+MBarRightTextAntiAliasMode $MMTextAA$
 MBarRightImage "$MMImg$injektion2.png"
 *MBarRightOverlayLabel MPlayerIcon MHitPrev MHitPlay MHitPause MHitStop MHitNext MNowPlaying MTrack MVolume
 
@@ -145,10 +145,10 @@ MUserY 0
 MUserWidth 100%-1024
 MUserHeight 15
 MUserAlwaysOnTop true
-MUserTextAntiAliasMode Aliased
+MUserTextAntiAliasMode $MMTextAA$
 MUserImage "$MMImg$injektion3.png"
 MUserFont $MMFont$
-MUserFontSize 8
+MUserFontSize $MMFontSize$
 MUserFontColor $MMUser$
 MUserTextAlign Center
 MUserTextVerticalAlign Middle

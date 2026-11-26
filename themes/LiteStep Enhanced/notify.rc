@@ -29,7 +29,7 @@ NotifyBoxWidth 240
 NotifyBoxHeight 80
 ; En el escritorio, no por encima de las ventanas.
 NotifyBoxAlwaysOnTop false
-NotifyBoxTextAntiAliasMode Aliased
+NotifyBoxTextAntiAliasMode $MMTextAA$
 NotifyBoxBrushType Image
 NotifyBoxImage "$MMImg$popupframe.png"
 NotifyBoxImageScalingMode Edges
@@ -49,7 +49,7 @@ NotifyBoxTitleWidth 100%-92
 NotifyBoxTitleHeight 12
 NotifyBoxTitleColor #00000000
 NotifyBoxTitleFont $MMFont$
-NotifyBoxTitleFontSize 8
+NotifyBoxTitleFontSize $MMFontSize$
 NotifyBoxTitleFontColor #FF000000
 NotifyBoxTitleTextAlign Left
 NotifyBoxTitleTextVerticalAlign Middle
@@ -80,7 +80,7 @@ NotifyBoxTextWidth 100%-46
 NotifyBoxTextHeight 100%-39
 NotifyBoxTextColor #00000000
 NotifyBoxTextFont $MMFont$
-NotifyBoxTextFontSize 8
+NotifyBoxTextFontSize $MMFontSize$
 NotifyBoxTextFontColor #FF000000
 NotifyBoxTextTextAlign Left
 NotifyBoxTextTextVerticalAlign Top
@@ -93,7 +93,7 @@ NotifyBoxTimeWidth 100%-62
 NotifyBoxTimeHeight 12
 NotifyBoxTimeColor #00000000
 NotifyBoxTimeFont $MMFont$
-NotifyBoxTimeFontSize 8
+NotifyBoxTimeFontSize $MMFontSize$
 NotifyBoxTimeFontColor #FF000000
 NotifyBoxTimeTextAlign Left
 NotifyBoxTimeTextVerticalAlign Middle

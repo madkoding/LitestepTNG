@@ -1,0 +1,9 @@
+; ==============================================================================
+;  LiteStep Enhanced - 日本語: the pixel font has no CJK glyphs and is made for size 8
+;  without smoothing. Text uses Yu Gothic UI, larger and smoothed; the clock
+;  keeps the pixel font (MMClockFont).
+; ==============================================================================
+MMFont "Yu Gothic UI"
+MMFontSmall "Yu Gothic UI"
+MMFontSize 11
+MMTextAA GrayScale

@@ -29,8 +29,21 @@ def lang_dirs():
 
 
 class LanguageFiles(unittest.TestCase):
+    def test_theme_language_files_only_override_the_theme(self):
+        # A theme's lang\ holds what one language changes in it (fonts for zh/ja): only keys
+        # the theme itself defines, so nothing new appears in that language alone.
+        for d in lang_dirs()[1:]:
+            theme = os.path.dirname(d)
+            own = {}
+            for p in glob.glob(os.path.join(theme, '*.rc')):
+                own.update(settings(p))
+            for path in glob.glob(os.path.join(d, '*.rc')):
+                with self.subTest(file=path):
+                    self.assertIn(os.path.basename(path)[:-3], CODES)
+                    self.assertEqual(sorted(set(settings(path)) - set(own)), [])
+
     def test_every_language_has_every_key(self):
-        for d in lang_dirs():
+        for d in lang_dirs()[:1]:
             en = settings(os.path.join(d, 'en.rc'))
             for code in CODES:
                 path = os.path.join(d, code + '.rc')

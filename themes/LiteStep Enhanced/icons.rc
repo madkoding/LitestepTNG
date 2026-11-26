@@ -29,7 +29,7 @@ MIconsY 48
 MIconsWidth 100%
 MIconsHeight 100%-102
 MIconsColor #00000000
-MIconsTextAntiAliasMode Aliased
+MIconsTextAntiAliasMode $MMTextAA$
 MIconsStart TopRight
 MIconsPrimaryDirection Vertical
 MIconsColumnSpacing 4
@@ -48,7 +48,7 @@ MIconsIconSize 64
 MIconsIconOffsetTop 7
 MIconsIconColor #00000000
 MIconsIconFont $MMFont$
-MIconsIconFontSize 8
+MIconsIconFontSize $MMFontSize$
 MIconsIconFontColor $MMInk$
 MIconsIconFontStrokeColor #FF000000
 MIconsIconFontStrokeWidth 2

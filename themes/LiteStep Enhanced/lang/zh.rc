@@ -1,0 +1,9 @@
+; ==============================================================================
+;  LiteStep Enhanced - 简体中文: the pixel font has no CJK glyphs and is made for size 8
+;  without smoothing. Text uses Microsoft YaHei UI, larger and smoothed; the clock
+;  keeps the pixel font (MMClockFont).
+; ==============================================================================
+MMFont "Microsoft YaHei UI"
+MMFontSmall "Microsoft YaHei UI"
+MMFontSize 11
+MMTextAA GrayScale

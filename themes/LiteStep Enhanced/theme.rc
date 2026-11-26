@@ -13,6 +13,8 @@
 ;  Check a change with tools\rc_effective.py (see AGENTS.md).
 ; ==============================================================================
 
+; Fuentes del idioma, si las necesita (lang\zh.rc, lang\ja.rc); los textos estan en lang\ comun.
+include "$LiteStepDir$themes\$ThemeName$\lang\$Language$.rc"
 include "$LiteStepDir$themes\$ThemeName$\general.rc"
 include "$LiteStepDir$themes\$ThemeName$\styles.rc"
 include "$LiteStepDir$themes\$ThemeName$\bar-top-left.rc"

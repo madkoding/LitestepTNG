@@ -13,7 +13,7 @@ MMMenuImageEdgesRight 20
 MMMenuImageEdgesBottom 18
 MMMenuColor #00000000
 MMMenuFontColor #00000000
-MMMenuTextAntiAliasMode Aliased
+MMMenuTextAntiAliasMode $MMTextAA$
 MMMenuPaddingLeft 0
 MMMenuPaddingTop 18
 MMMenuPaddingRight 0
@@ -38,7 +38,7 @@ MMMenuItemImageEdgesTop 0
 MMMenuItemImageEdgesRight 6
 MMMenuItemImageEdgesBottom 0
 MMMenuItemFont $MMFont$
-MMMenuItemFontSize 8
+MMMenuItemFontSize $MMFontSize$
 MMMenuItemFontColor #FF000000
 MMMenuItemTextOffsetLeft 38
 MMMenuItemTextOffsetRight 6
@@ -64,7 +64,7 @@ MMMenuFolderItemImageEdgesTop 0
 MMMenuFolderItemImageEdgesRight 16
 MMMenuFolderItemImageEdgesBottom 0
 MMMenuFolderItemFont $MMFont$
-MMMenuFolderItemFontSize 8
+MMMenuFolderItemFontSize $MMFontSize$
 MMMenuFolderItemFontColor #FF000000
 MMMenuFolderItemTextOffsetLeft 38
 MMMenuFolderItemTextOffsetRight 22
@@ -100,7 +100,7 @@ MMMenuInfoItemImageEdgesTop 0
 MMMenuInfoItemImageEdgesRight 6
 MMMenuInfoItemImageEdgesBottom 0
 MMMenuInfoItemFont $MMFont$
-MMMenuInfoItemFontSize 8
+MMMenuInfoItemFontSize $MMFontSize$
 MMMenuInfoItemFontColor #FF000000
 MMMenuInfoItemTextAlign Center
 MMMenuInfoItemTextVerticalAlign Middle
@@ -123,7 +123,7 @@ MMMenuSeparatorItemImageEdgesBottom 0
 ; El titulo es el texto propio de la ventana del popup; en MMMenu va oculto.
 MMMenuLnkGroup MMMenu
 MMMenuLnkFont $MMFont$
-MMMenuLnkFontSize 8
+MMMenuLnkFontSize $MMFontSize$
 MMMenuLnkFontColor #FF000000
 MMMenuLnkTextAlign Left
 MMMenuLnkTextVerticalAlign Top
