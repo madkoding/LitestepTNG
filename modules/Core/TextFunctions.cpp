@@ -11,14 +11,45 @@
 #include "GpuMeter.h"
 #include <strsafe.h>
 #include <ctime>
+#include <locale.h>
 #include <string>
+
+
+// Month and day names (%B %A %b %a) in the themes' language ($Language$, see step.rc).
+// nullptr = the C runtime's default, as before.
+static _locale_t sTimeLocale = nullptr;
+
+static void LoadTimeLocale() {
+  static const struct { LPCWSTR code; LPCWSTR locale; } kLocales[] = {
+    { L"en", L"en-US" }, { L"es", L"es-ES" }, { L"pt", L"pt-BR" }, { L"fr", L"fr-FR" },
+    { L"de", L"de-DE" }, { L"it", L"it-IT" }, { L"zh", L"zh-CN" }, { L"ja", L"ja-JP" } };
+  WCHAR language[16];
+  LiteStep::GetPrefixedRCString(L"", L"Language", language, L"en", _countof(language));
+  for (const auto &entry : kLocales) {
+    if (_wcsicmp(language, entry.code) == 0) {
+      sTimeLocale = _wcreate_locale(LC_TIME, entry.locale);
+      break;
+    }
+  }
+}
+
+static void FreeTimeLocale() {
+  if (sTimeLocale != nullptr) {
+    _free_locale(sTimeLocale);
+    sTimeLocale = nullptr;
+  }
+}
 
 
 static size_t __cdecl Time(LPCWSTR /* name */, UCHAR numArgs, LPWSTR *args, LPWSTR dest, size_t cchDest) {
   std::time_t t = std::time(nullptr);
   std::tm now;
   localtime_s(&now, &t);
-  return std::wcsftime(dest, cchDest, numArgs == 0 ? L"%H:%M" : args[0], &now);
+  LPCWSTR format = numArgs == 0 ? L"%H:%M" : args[0];
+  if (sTimeLocale != nullptr) {
+    return _wcsftime_l(dest, cchDest, format, &now, sTimeLocale);
+  }
+  return std::wcsftime(dest, cchDest, format, &now);
 }
 
 
@@ -87,6 +118,7 @@ static size_t __cdecl VramUsedGB(LPCWSTR, UCHAR, LPWSTR*, LPWSTR dest, size_t cc
 }
 
 void TextFunctions::_Register() {
+  LoadTimeLocale();
   RegisterDynamicTextFunction(L"Time", 0, Time, true);
   RegisterDynamicTextFunction(L"Time", 1, Time, true);
   RegisterDynamicTextFunction(L"CPU", 0, Cpu, true);
@@ -116,6 +148,7 @@ void TextFunctions::_Unregister() {
   UnRegisterDynamicTextFunction(L"VRAMUsedGB", 0);
   UnRegisterDynamicTextFunction(L"Time", 0);
   UnRegisterDynamicTextFunction(L"Time", 1);
+  FreeTimeLocale();
   UnRegisterDynamicTextFunction(L"WindowTitle", 1);
   UnRegisterDynamicTextFunction(L"CPU", 0);
   UnRegisterDynamicTextFunction(L"Memory", 0);

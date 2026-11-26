@@ -84,7 +84,10 @@ $themeName = ($select -replace '(?s).*ThemeName\s+"([^"]*)".*', '$1').Trim()
 $themeRc = Join-Path $LiteStepDir "themes\$themeName\theme.rc"
 Check "selected theme '$themeName' has a theme.rc" (Test-Path $themeRc)
 
-$wanted = Select-String -Path $themeRc -Pattern '^\s*LoadModule\s+\$LiteStepDir\$(\S+)' | ForEach-Object { $_.Matches[0].Groups[1].Value }
+# A theme's theme.rc only lists its area files; LoadModule lines live in one of them.
+$themeFiles = Get-ChildItem (Split-Path $themeRc) -Filter *.rc | Select-Object -ExpandProperty FullName
+$wanted = Select-String -Path $themeFiles -Pattern '^\s*LoadModule\s+\$LiteStepDir\$(\S+)' | ForEach-Object { $_.Matches[0].Groups[1].Value }
+Check "theme '$themeName' loads modules" (@($wanted).Count -gt 0)
 $loaded = $litestep.Modules | ForEach-Object { $_.ModuleName }
 foreach ($module in $wanted) { Check "module loaded: $module" ($loaded -contains $module) }
 
