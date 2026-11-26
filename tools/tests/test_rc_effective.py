@@ -91,6 +91,12 @@ class ResolveTests(TreeCase):
             f.write('Language ja\n')
         self.assertEqual(rc_effective.load(root, 'T', personal=personal, system_language='de').resolve('Language'), 'ja')
 
+    def test_regional_language_file_falls_back_to_base(self):
+        # "Language pt-BR": lang\pt-BR.rc does not exist, lang\pt.rc is read instead.
+        t = self.load({'theme.rc': 'Language pt-BR\ninclude "$LiteStepDir$themes\\T\\lang\\$Language$.rc"\n',
+                       'lang/pt.rc': 'TxtX "Olá"\n'})
+        self.assertEqual(t.resolve('TxtX'), '"Olá"')
+
     def test_theme_name_with_a_space(self):
         # theme-select.rc quotes the name; the include must find "themes\My Theme\theme.rc".
         root = self.make({'theme.rc': 'X 1\n'}, theme='My Theme')

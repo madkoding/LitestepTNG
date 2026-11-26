@@ -326,7 +326,9 @@ build, matching the original theme's preview screenshot (1024×768; not part of 
   `zh-*`). `lsapi\lsapiInit.cpp` sets `SystemLanguage` from the first preferred UI language
   (display language, not the regional format); `step.rc` sets `Language $SystemLanguage$`
   after `personal.rc`, so `Language ja` in personal.rc forces one (handy for testing; remove
-  it after).
+  it after). A regional code there (`pt-BR`) works: when an included file such as
+  `lang\pt-BR.rc` does not exist, lsapi reads `lang\pt.rc` (`BaseLanguageFile` in
+  `SettingsFileParser.cpp`; `rc_effective.py` and Core's month names do the same).
 - Texts: `lang\<code>.rc`, one `Txt<Name> "<text>"` per text (76 today), included by step.rc
   before the theme, English after it (a missing text shows in English). Themes and
   `config\menus` write `"$TxtExplorer$"` etc., never literal words; product names

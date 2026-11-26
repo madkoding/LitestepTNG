@@ -136,6 +136,12 @@ class Tree:
             self.order.append(low)
 
     def _parse_file(self, path):
+        if not os.path.isfile(path):
+            # lsapi's BaseLanguageFile: lang\pt-BR.rc missing -> lang\pt.rc.
+            folder, name = os.path.split(path)
+            if '-' in name:
+                stem, ext = os.path.splitext(name)
+                path = os.path.join(folder, stem.split('-', 1)[0] + ext)
         norm = os.path.normcase(os.path.abspath(path))
         if norm in self._including or not os.path.isfile(path):
             return
