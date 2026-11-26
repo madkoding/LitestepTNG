@@ -5,6 +5,6 @@
 ;  Owned by the repo: deploy and the installer overwrite it. Menus cannot be extended
 ;  from personal.rc (it is read before the theme; see AGENTS.md section 5).
 ; ==============================================================================
-*PopupStartMenu "Recorte de pantalla (Win+Shift+S)" !Execute [ms-screenclip:]
-*PopupStartMenu "Herramienta Recortes (foto/vídeo)" !Execute [snippingtool.exe]
-*PopupStartMenu "Barra de juegos (grabar)" !Execute [explorer.exe ms-gamebar:]
+*PopupStartMenu "$TxtScreenSnip$" !Execute [ms-screenclip:]
+*PopupStartMenu "$TxtSnippingTool$" !Execute [snippingtool.exe]
+*PopupStartMenu "$TxtGameBar$" !Execute [explorer.exe ms-gamebar:]

@@ -57,9 +57,11 @@ Copy-Item (Join-Path $Root 'step.rc') $LiteStepDir -Force
 if (-not (Test-Path (Join-Path $LiteStepDir 'theme-select.rc'))) {
     Copy-Item (Join-Path $Root 'theme-select.rc') $LiteStepDir
 }
-# Shared theme configuration (menus, hotkeys, players): owned by the repo, mirrored.
-$null = robocopy (Join-Path $Root 'config') (Join-Path $LiteStepDir 'config') /MIR /NFL /NDL /NJH /NJS /NP
-if ($LASTEXITCODE -ge 8) { throw "robocopy failed for config (code $LASTEXITCODE)" }
+# Shared theme configuration (menus, hotkeys, players) and texts: owned by the repo, mirrored.
+foreach ($shared in 'config', 'lang') {
+    $null = robocopy (Join-Path $Root $shared) (Join-Path $LiteStepDir $shared) /MIR /NFL /NDL /NJH /NJS /NP
+    if ($LASTEXITCODE -ge 8) { throw "robocopy failed for $shared (code $LASTEXITCODE)" }
+}
 $themes = Join-Path $Root 'themes'
 $installed = Get-ChildItem $themes -Directory | Where-Object {
     ($Themes -contains $_.Name) -or (Test-Path (Join-Path $LiteStepDir "themes\$($_.Name)"))

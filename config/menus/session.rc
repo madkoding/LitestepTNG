@@ -5,7 +5,7 @@
 ;  Owned by the repo: deploy and the installer overwrite it. Menus cannot be extended
 ;  from personal.rc (it is read before the theme; see AGENTS.md section 5).
 ; ==============================================================================
-*Popup .icon="$IconLock$" "Bloquear" !Execute [rundll32.exe user32.dll,LockWorkStation]
-*Popup .icon="$IconLogoff$" "Cerrar sesión" !Logoff
-*Popup .icon="$IconRestart$" "Reiniciar" !Execute [shutdown.exe /r /t 0]
-*Popup .icon="$IconShutdown$" "Apagar" !Execute [shutdown.exe /s /t 0]
+*Popup .icon="$IconLock$" "$TxtLock$" !Execute [rundll32.exe user32.dll,LockWorkStation]
+*Popup .icon="$IconLogoff$" "$TxtSignOut$" !Logoff
+*Popup .icon="$IconRestart$" "$TxtRestart$" !Execute [shutdown.exe /r /t 0]
+*Popup .icon="$IconShutdown$" "$TxtShutDown$" !Execute [shutdown.exe /s /t 0]

@@ -5,6 +5,6 @@
 ;  Owned by the repo: deploy and the installer overwrite it. Menus cannot be extended
 ;  from personal.rc (it is read before the theme; see AGENTS.md section 5).
 ; ==============================================================================
-*Popup .icon="$IconExplorer$" "Explorador" !Execute [explorer.exe]
-*Popup .icon="$IconTerminal$" "Terminal" !Execute [wt.exe]
-*Popup .icon="$IconTaskManager$" "Administrador de tareas" !Execute [taskmgr.exe]
+*Popup .icon="$IconExplorer$" "$TxtExplorer$" !Execute [explorer.exe]
+*Popup .icon="$IconTerminal$" "$TxtTerminal$" !Execute [wt.exe]
+*Popup .icon="$IconTaskManager$" "$TxtTaskManager$" !Execute [taskmgr.exe]
