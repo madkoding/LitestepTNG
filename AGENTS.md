@@ -321,6 +321,30 @@ build, matching the original theme's preview screenshot (1024×768; not part of 
   not nearly empty (a wrong theme name makes every include miss on both sides).
   `python -m unittest discover -s tools\tests` runs its tests and the config-menu check.
 
+### Languages (since 2026-11-26)
+- Supported: `en` (default and fallback), `es pt fr de it zh ja` (zh = Simplified for every
+  `zh-*`). `lsapi\lsapiInit.cpp` sets `SystemLanguage` from the first preferred UI language
+  (display language, not the regional format); `step.rc` sets `Language $SystemLanguage$`
+  after `personal.rc`, so `Language ja` in personal.rc forces one (handy for testing; remove
+  it after).
+- Texts: `lang\<code>.rc`, one `Txt<Name> "<text>"` per text (76 today), included by step.rc
+  before the theme, English after it (a missing text shows in English). Themes and
+  `config\menus` write `"$TxtExplorer$"` etc., never literal words; product names
+  (Word, Firefox…) and CPU/GPU/RAM/VRAM are not translated. `config\texts.rc`, included after
+  the theme, gives every theme the modules' own texts (loading row, favourites).
+- Adding a text: a row in every `lang\*.rc` (same keys everywhere — `test_lang.py`). Adding a
+  language: a new `lang\<code>.rc`, the code in `lsapiInit.cpp`'s list, the C runtime locale
+  in `Core\TextFunctions.cpp`, and `CODES` in the test.
+- Clocks: each theme keeps its date format; `[Time]` uses the locale of `$Language$`, so
+  `%B %A %b %a` follow it (Core reads it on load: a language change needs a recycle).
+- Fonts: a theme's `lang\<code>.rc` (only the languages that need one) may override the
+  theme's own keys; LiteStep Enhanced's zh/ja set `MMFont`/`MMFontSmall`/`MMFontSize`/
+  `MMTextAA` (the pixel font has no CJK glyphs). The clock keeps `MMClockFont` and its panel
+  stays aliased. Themes on Segoe UI rely on DirectWrite's font fallback.
+- StartMenu names a content entry's settings after what it lists (`PopupStartMenuPrograms`,
+  `…Recent`, `…Computer`), not after its title, which is translated.
+- zh and ja texts were written by the implementer; have a native speaker review them.
+
 ---
 
 ## 6. Source changes made (and why) — do not regress these
