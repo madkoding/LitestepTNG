@@ -7,4 +7,10 @@ include "$LiteStepDir$theme-select.rc"
 ; Opcional y fuera del repo: ajustes personales. Va ANTES del tema porque la primera
 ; definicion de una clave es la que vale (ver personal.rc.example).
 include "$LiteStepDir$personal.rc"
+; Idioma: el de pantalla de Windows (SystemLanguage, lo detecta litestep), salvo que
+; personal.rc diga otro con "Language <codigo>" (en es pt fr de it zh ja). Los textos que
+; falten en ese idioma salen del ingles, que se lee despues.
+Language $SystemLanguage$
+include "$LiteStepDir$lang\$Language$.rc"
+include "$LiteStepDir$lang\en.rc"
 include "$LiteStepDir$themes\$ThemeName$\theme.rc"

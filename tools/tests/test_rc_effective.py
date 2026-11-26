@@ -81,6 +81,16 @@ class ResolveTests(TreeCase):
         self.assertEqual(t.resolve('LabelText'), 'one')
         self.assertEqual(t.resolve('XIcon'), '.icon="C:\\a b\\c.exe,0"')
 
+    def test_language_from_personal_wins_over_system(self):
+        root = self.make({'theme.rc': 'X 1\n'})
+        with open(os.path.join(root, 'step.rc'), 'w', encoding='utf-8') as f:
+            f.write('include "$LiteStepDir$personal.rc"\nLanguage $SystemLanguage$\n' + STEP)
+        self.assertEqual(rc_effective.load(root, 'T', system_language='de').resolve('Language'), 'de')
+        personal = os.path.join(root, 'p.rc')
+        with open(personal, 'w', encoding='utf-8') as f:
+            f.write('Language ja\n')
+        self.assertEqual(rc_effective.load(root, 'T', personal=personal, system_language='de').resolve('Language'), 'ja')
+
     def test_theme_name_with_a_space(self):
         # theme-select.rc quotes the name; the include must find "themes\My Theme\theme.rc".
         root = self.make({'theme.rc': 'X 1\n'}, theme='My Theme')
@@ -167,10 +177,10 @@ class DumpDiffTests(TreeCase):
 
     def test_moving_keys_into_a_style_is_equivalent(self):
         before = {'theme.rc': 'AFont hooge\nAFontSize 8\nBFont hooge\nBFontSize 8\n'}
-        after = {'theme.rc': 'AGroup S\nBGroup S\nSFont hooge\nSFontSize 8\n'}
+        after = {'theme.rc': 'AGroup PixelStyle\nBGroup PixelStyle\nPixelStyleFont hooge\nPixelStyleFontSize 8\n'}
         a = rc_effective.load(self.make(before), 'T').dump()
         b = rc_effective.load(self.make(after), 'T').dump()
-        exit_code, lines = rc_effective.diff(a, b, ignore_new_names=('s', 'agroup', 'bgroup'))
+        exit_code, lines = rc_effective.diff(a, b, ignore_new_names=('pixelstyle', 'agroup', 'bgroup'))
         self.assertEqual(exit_code, 0, lines)
 
 

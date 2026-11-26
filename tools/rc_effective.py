@@ -103,7 +103,7 @@ def get_token(value):
 
 
 class Tree:
-    def __init__(self, root, theme, personal=None):
+    def __init__(self, root, theme, personal=None, system_language='en'):
         self.root = os.path.abspath(root)
         self.settings = {}      # lower name -> (name, raw value)
         self.order = []         # lower names in definition order
@@ -116,6 +116,9 @@ class Tree:
         self._define('ThemeName', '"%s"' % theme)
         self._define('LiteStepDir', '"%s\\"' % self.root.rstrip('\\/'))
         self._define('USERNAME', '"%s"' % os.environ.get('USERNAME', 'user'))
+        # lsapiInit.cpp: the session's display language (a fixed value here, so dumps do not
+        # depend on the machine; pass --system-language to try another).
+        self._define('SystemLanguage', system_language)
         step = os.path.join(self.root, 'step.rc')
         if personal:
             # step.rc includes personal.rc from the run folder; a given file stands in for it.
@@ -323,8 +326,8 @@ class Tree:
         return sorted(set(root.sub(lambda m: '<root>\\', line) for line in out))
 
 
-def load(root, theme, personal=None):
-    return Tree(root, theme, personal)
+def load(root, theme, personal=None, system_language='en'):
+    return Tree(root, theme, personal, system_language)
 
 
 def _split(lines):
@@ -363,6 +366,7 @@ def main(argv=None):
     d.add_argument('--root', required=True)
     d.add_argument('--theme', required=True)
     d.add_argument('--personal')
+    d.add_argument('--system-language', default='en', help='what lsapi detected (default en)')
     c = sub.add_parser('diff')
     c.add_argument('before')
     c.add_argument('after')
@@ -372,7 +376,7 @@ def main(argv=None):
 
     if args.command == 'dump':
         sys.stdout.reconfigure(encoding='utf-8')
-        for line in load(args.root, args.theme, args.personal).dump():
+        for line in load(args.root, args.theme, args.personal, args.system_language).dump():
             print(line)
         return 0
 

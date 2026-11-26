@@ -205,6 +205,35 @@ void LSAPIInit::setLitestepVars()
         pSM->SetVariable(L"username", wzTemp);
     }
 
+    // The session's display language, as one of the codes the themes are translated to
+    // (lang\<code>.rc); anything else is English. step.rc turns it into $Language$ after
+    // personal.rc, so "Language <code>" there overrides it.
+    {
+        static const wchar_t* const kSupported[] = {
+            L"en", L"es", L"pt", L"fr", L"de", L"it", L"zh", L"ja" };
+        wchar_t wzCode[8] = L"en";
+        wchar_t wzLanguages[256];
+        ULONG ulCount = 0, cchLanguages = _countof(wzLanguages);
+        if (GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &ulCount, wzLanguages, &cchLanguages) && ulCount > 0)
+        {
+            // The first entry, e.g. "es-ES": keep the primary subtag.
+            wchar_t wzPrimary[8] = {};
+            for (size_t i = 0; i + 1 < _countof(wzPrimary) && wzLanguages[i] && wzLanguages[i] != L'-'; ++i)
+            {
+                wzPrimary[i] = (wchar_t)towlower(wzLanguages[i]);
+            }
+            for (const wchar_t* pwzSupported : kSupported)
+            {
+                if (wcscmp(wzPrimary, pwzSupported) == 0)
+                {
+                    StringCchCopyW(wzCode, _countof(wzCode), pwzSupported);
+                    break;
+                }
+            }
+        }
+        pSM->SetVariable(L"SystemLanguage", wzCode);
+    }
+
     pSM->SetVariable(L"nl", L"\n", true);
     pSM->SetVariable(L"cr", L"\r", true);
     pSM->SetVariable(L"dollar", L"$", true);
