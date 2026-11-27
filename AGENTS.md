@@ -8,8 +8,9 @@ don't re-derive what previous sessions already learned.
 ## 1. What this project is
 
 LiteStepTNG is a modern x64 port/evolution of the classic **LiteStep** Windows shell
-replacement, written in **C++14/17** with **Direct2D/DirectWrite** rendering. It can run
-as the Windows shell (replacing `explorer.exe`) or as an overlay.
+replacement, written in **C++14/17** with **Direct2D/DirectWrite** rendering. It runs on
+top of Explorer, which stays the Windows shell (§3); the old mode that replaced
+`explorer.exe` was removed on 2026-11-26.
 
 - **Language/stack:** C++ (MSVC), Direct2D/DirectWrite, Win32, C++/WinRT (for media),
   V8 embedded in the Core module (JS scripting), TagLib (media metadata).
@@ -32,7 +33,7 @@ modules/           the nModules module DLLs (see list below)
   Popup/           nPopup: popup menus (InfoItem, FolderItem, CommandItem, SeparatorItem)
   StartMenu/       start-menu popup variant (reuses Popup's item classes)
   Label/ Clock/    nLabel / clock labels
-  HotKey/ VWM/ Desk/ Icon/ Panels/ Wallpaper/ MediaInfo/ Calendar/ TaskSwitcher/
+  HotKey/ VWM/ Icon/ Panels/ Wallpaper/ MediaInfo/ Calendar/ TaskSwitcher/
   External/        third-party (v8, etc.)
   Notify/          nNotify: Windows notifications as boxes on the desktop
   Frames/          nFrames: skinned frames around other programs' windows (experimental)
@@ -76,10 +77,8 @@ msbuild litestep.sln /p:Configuration=Release /p:Platform=x64 /m /verbosity:mini
 .\tools\deploy.ps1 -Modules Core,VWM  # only those DLLs
 .\tools\deploy.ps1 -ThemesOnly
 ```
-It stops litestep (its DLLs are locked while it runs), copies, and starts it again with
-`-overlay`. Only themes already installed in the target are updated (`-Themes <name>` adds
-one): `Windows-nModules` and `Windows11-Dark` were written for litestep as the Windows shell,
-load `Desk.dll`, and must not be offered in the overlay install.
+It stops litestep (its DLLs are locked while it runs), copies, and starts it again.
+Only themes already installed in the target are updated (`-Themes <name>` adds one).
 
 **The repo is the source of the themes.** Edit `themes\<Name>\theme.rc` here and deploy;
 do not edit the deployed copy in the run folder (older sessions did, and then copied it back).
@@ -99,13 +98,12 @@ In a theme, use `$LiteStepDir$`, `$ThemeName$`, `$USERNAME$` and `%LOCALAPPDATA%
 paths instead of literal ones.
 
 ### Package and CI
-`.\tools\package.ps1 -Version <v>` stages a build plus the themes that work on top of
-Explorer (not `Desk.dll`, not the two shell-mode themes, not `original-2002\` or `drafts\`)
-into `dist\stage` and produces `dist\LiteStepTNG-<v>-x64.zip` and, with Inno Setup 6
+`.\tools\package.ps1 -Version <v>` stages a build plus the themes (not `original-2002\` or
+`drafts\`) into `dist\stage` and produces `dist\LiteStepTNG-<v>-x64.zip` and, with Inno Setup 6
 installed, `dist\LiteStepTNG-<v>-x64-setup.exe` (`installer\LiteStepTNG.iss` only packs the
 staged folder — the list of what ships lives in the script). The installer is per user
 (no admin), installs to `%LOCALAPPDATA%\Programs\LiteStepTNG`, leaves Explorer as the
-shell, optionally adds the `Run` value with `-overlay`, never overwrites
+shell, optionally adds the `Run` value, never overwrites
 `theme-select.rc`, and stops only the LiteStep running from its own folder (`!Quit`
 first, so Explorer's taskbar comes back; kill as a last resort).
 
@@ -126,23 +124,29 @@ back, which moves the user's windows away for a couple of seconds. Exit code = f
 
 ---
 
-## 3. Runtime architecture (IMPORTANT — changed 2026-11-21)
+## 3. Runtime architecture (IMPORTANT — changed 2026-11-21, shell mode removed 2026-11-26)
 
-**Explorer is the Windows shell; litestep runs on top of it in overlay mode.**
+**Explorer is the Windows shell; litestep runs on top of it. There is no other mode.**
 ```
 HKCU\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Shell   (no value; the HKLM default explorer.exe applies)
-HKCU\Software\Microsoft\Windows\CurrentVersion\Run\LiteStep = "<run folder>\litestep.exe" -overlay
+HKCU\Software\Microsoft\Windows\CurrentVersion\Run\LiteStep = "<run folder>\litestep.exe"
 ```
 The earlier setup (litestep as the Winlogon shell, explorer not running) was abandoned
 because too much of Windows depends on Explorer's immersive shell: UWP apps (Settings,
 Calculator), `ms-settings:` links, media-key routing, native virtual desktops. See §8 for
-what was tried. The old value is saved in `winlogon-shell-backup.txt` in the run folder.
+what was tried. On 2026-11-26 the code for it was removed: the start-up prompt, closing
+and restarting Explorer, `SetShellWindow`, the Winlogon prompt, `StartupRunner` (the Run
+keys and Startup folder, which Explorer runs), `ExplorerService`, the logon sound, the
+recovery menu's "Start Explorer as shell", the `LSOverlayMode` / `LSSetAsShell` /
+`LSNoShellWarning` / `LSNoStartup` settings, the `Desk.dll` module and the themes that
+needed it (`Windows11-Dark` was the same as Glass; `Windows-nModules` was ported).
+`-overlay`, `-nostartup`, `-startup`, `-explorer` and `-closeexplorer` are still accepted
+and ignored, so old `Run` values and shortcuts keep working. The tray service stays: it is
+what gives nTray the icons. In safe mode litestep exits at once.
 
 Consequences:
 - **Restart litestep with:** `Stop-Process -Name litestep -Force`, then
-  `Start-Process <run folder>\litestep.exe -ArgumentList '-overlay'`. Nothing respawns
-  it any more. **Always pass `-overlay`**: without it litestep sees Explorer's taskbar and
-  shows a blocking Yes/No/Cancel prompt.
+  `Start-Process <run folder>\litestep.exe`. Nothing respawns it.
 - `litestep.exe !Bang args` (via `Start-Process ... -ArgumentList '!Bang args'`, so the
   command line starts with `!` unquoted) reaches the running instance in this mode and
   is the way to test bangs without touching the mouse.
@@ -159,14 +163,11 @@ Consequences:
   Broadcasting the change makes Explorer recompute its own value immediately (a fight
   litestep loses). AppBars are not usable: `SHAppBarMessage` is answered by litestep's own
   `Shell_TrayWnd` (tray service) and crashed in `shcore.dll`.
-- **Never load `Desk.dll` on top of Explorer.** It does not sit under Explorer's desktop: it
-  takes Explorer's `SHELLDLL_DefView` (the window that paints the wallpaper and the icons)
-  and re-parents it into its own window, giving it back only in `quitModule`. Every
-  restart here kills litestep (`Stop-Process`), so the view is destroyed with it: `Progman`
-  is left without children, the desktop is a flat dark grey on every monitor, and no
-  wallpaper chosen in Windows shows any more. Only restarting explorer.exe repairs it.
-  This happened on 2026-11-23 by switching to Glass / Prototype-X, which loaded it then;
-  no installed theme does now. Check with: does `Progman` have a `SHELLDLL_DefView` child?
+- **Explorer's desktop view must stay Explorer's.** The removed `Desk.dll` took Explorer's
+  `SHELLDLL_DefView` (the window that paints the wallpaper and the icons) and re-parented
+  it into its own window; killing litestep destroyed it, leaving a flat grey desktop until
+  explorer.exe restarted (2026-11-23). Nothing may re-parent that window again. Check with:
+  does a top-level window (normally `Progman`) have a `SHELLDLL_DefView` child?
 - **Desktop clicks:** the desktop is Explorer's. `DesktopRightClick <bang>` /
   `DesktopMiddleClick <bang>` (nHotKey, low-level mouse hook) run a bang for clicks on
   Explorer's desktop; SHIFT+click passes through to Explorer.
@@ -326,7 +327,9 @@ build, matching the original theme's preview screenshot (1024×768; not part of 
   `zh-*`). `lsapi\lsapiInit.cpp` sets `SystemLanguage` from the first preferred UI language
   (display language, not the regional format); `step.rc` sets `Language $SystemLanguage$`
   after `personal.rc`, so `Language ja` in personal.rc forces one (handy for testing; remove
-  it after).
+  it after). A regional code there (`pt-BR`) works: when an included file such as
+  `lang\pt-BR.rc` does not exist, lsapi reads `lang\pt.rc` (`BaseLanguageFile` in
+  `SettingsFileParser.cpp`; `rc_effective.py` and Core's month names do the same).
 - Texts: `lang\<code>.rc`, one `Txt<Name> "<text>"` per text (76 today), included by step.rc
   before the theme, English after it (a missing text shows in English). Themes and
   `config\menus` write `"$TxtExplorer$"` etc., never literal words; product names
@@ -491,6 +494,10 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   so the boxes can replace the banners. To raise a test toast from a script, use the
   AppUserModelID of an app whose notifications are enabled in Windows (e.g. Terminal's). Private messages must stay clear of the `LM_`
   range, which starts at `WM_APP` (32768). Needs `stdcpp17` like Core.
+  Every theme loads it and styles it in its own `notify.rc` (LiteStep Enhanced with the
+  popup frame images, the others with colours, `CornerRadius*` and a Segoe Fluent Icons X,
+  U+E711, as the `Close` part's text). `NotifyTimeFormat` is formatted without the theme's
+  language, so month and day names come out in English: keep it numeric.
 - **Window frames (new module `modules/Frames`, `Frames.dll`, experimental):** covers the
   native title bar of other programs' windows with a skinned one (prefix `Frame`, parts
   `FrameTitle|Min|Max|Close`, `Active*` keys for the foreground window). Nothing is
@@ -637,8 +644,8 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   errors, so Display, Bluetooth and Windows Update have no working entry.
   `litestep.exe !Bang` from a command line does not reach the running instance here
   (its `FindWindow` for the main window fails), so it cannot be used to test bangs.
-  Gotchas: litestep shows a blocking Yes/No/Cancel prompt at startup if an explorer
-  `Shell_TrayWnd` exists; `explorer.exe ms-settings:` launchers linger as stuck processes.
+  Gotcha: `explorer.exe ms-settings:` launchers linger as stuck processes. (Shell mode
+  and its start-up prompt were removed on 2026-11-26, §3.)
 - **Do not synthesize mouse input while the user is at the machine** (they are usually
   using it): a test right-click landed on their browser. Verify with `WindowFromPoint` that
   the target belongs to litestep, and prefer screenshots of what the user already has open.

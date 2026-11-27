@@ -59,13 +59,7 @@ const TCHAR szMainWindowTitle[] = _T("LiteStep");
 
 
 // Litestep Startup Flags (LSF)
-#define LSF_RUN_STARTUPAPPS    0x0001
-#define LSF_FORCE_STARTUPAPPS  0x0002  // ignored unless LSF_RUN_STARTUPAPPS is set
 #define LSF_ALTERNATE_CONFIG   0x0004
-#define LSF_RUN_LITESTEP       0x0008
-#define LSF_RUN_EXPLORER       0x0010
-#define LSF_CLOSE_EXPLORER     0x0020
-#define LSF_OVERLAY_MODE      0x0040
 
 int StartLitestep(HINSTANCE hInst, WORD wStartFlags, LPCTSTR pszAltConfigFile);
 
@@ -76,7 +70,7 @@ public:
     CLiteStep();
     ~CLiteStep();
 
-    HRESULT Start(HINSTANCE hInstance, WORD wStartFlags);
+    HRESULT Start(HINSTANCE hInstance);
     HRESULT Stop();
 
     int Run();
@@ -101,7 +95,6 @@ private:
 
     void _Recycle();
     HRESULT _EnumRevIDs(LSENUMREVIDSPROCW pfnCallback, LPARAM lParam) const;
-    static BOOL _SetShellWindow(HWND hWnd);
 
     // Application instance
     HINSTANCE m_hInstance;
@@ -112,7 +105,6 @@ private:
 
     // Windows
     HWND m_hMainWindow; // = NULL;
-    bool m_bOverlayMode;
 
     // Notifications (Shell Hooks + WTS notifications)
     typedef BOOL (WINAPI* RSHPROC)(HWND, DWORD);
@@ -150,7 +142,7 @@ private:
     FullscreenMonitor* m_pFullscreenMonitor; // = nullptr;
     std::vector<IService*> m_Services;
 
-    HRESULT _InitServices(bool bSetAsShell);
+    HRESULT _InitServices();
     HRESULT _StartServices();
     HRESULT _StopServices();
     void _CleanupServices();

@@ -1,5 +1,7 @@
 ; ------------------------------------------------------------------------------
-; top command bar with media controls, search, and virtual desktops
+; top command bar with media controls, search, and virtual desktops.
+; The media buttons drive the player through Core (!Media*): simulated media keys
+; are routed by Explorer and do not reach every player.
 ; ------------------------------------------------------------------------------
 *nLabel TopBarBackground
 TopBarBackgroundX 0
@@ -16,7 +18,7 @@ MediaPrevY 6
 MediaPrevWidth 36
 MediaPrevFontSize 11
 MediaPrevText <<
-MediaPrevOn LeftClickUp None !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('{MEDIA_PREV_TRACK}')"]
+MediaPrevOn LeftClickUp None !MediaPrev
 
 *nLabel MediaPlayPause
 MediaPlayPauseGroup NMBarButton
@@ -25,7 +27,7 @@ MediaPlayPauseY 6
 MediaPlayPauseWidth 36
 MediaPlayPauseFontSize 11
 MediaPlayPauseText ||
-MediaPlayPauseOn LeftClickUp None !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('{MEDIA_PLAY_PAUSE}')"]
+MediaPlayPauseOn LeftClickUp None !MediaPlayPause
 
 *nLabel MediaNext
 MediaNextGroup NMBarButton
@@ -34,7 +36,7 @@ MediaNextY 6
 MediaNextWidth 36
 MediaNextFontSize 11
 MediaNextText >>
-MediaNextOn LeftClickUp None !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('{MEDIA_NEXT_TRACK}')"]
+MediaNextOn LeftClickUp None !MediaNext
 
 *nLabel MediaTitle
 MediaTitleX 148
@@ -47,8 +49,8 @@ MediaTitleFontSize 14
 MediaTitleFontColor #FFEDF6FF
 MediaTitleTextVerticalAlign Middle
 MediaTitleTextEllipsis true
-MediaTitleText [MusicTrackArtist] - [MusicTrackTitle]
-MediaTitleOn LeftClickUp None !Execute [explorer.exe shell:AppsFolder\SpotifyAB.SpotifyMusic_zpdnekdrzrea0!App]
+MediaTitleText [NowPlaying]
+MediaTitleOn LeftClickUp None !MediaPlayerLaunch
 
 *nLabel SearchLauncher
 SearchLauncherX 580
@@ -61,7 +63,7 @@ SearchLauncherFontSize 13
 SearchLauncherFontColor #FFD0DAE3
 SearchLauncherTextVerticalAlign Middle
 SearchLauncherTextAlign Center
-SearchLauncherText Search the web and apps
+SearchLauncherText "Search the web and apps"
 SearchLauncherOn LeftClickUp None !Execute [explorer.exe "search-ms:"]
 
 *nLabel DesktopPrev
@@ -71,7 +73,7 @@ DesktopPrevY 6
 DesktopPrevWidth 32
 DesktopPrevFontSize 12
 DesktopPrevText <
-DesktopPrevOn LeftClickUp None !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('#^{LEFT}')"]
+DesktopPrevOn LeftClickUp None !VWMPrev
 
 *nLabel DesktopIndicator
 DesktopIndicatorX 796
@@ -84,7 +86,7 @@ DesktopIndicatorFontSize 14
 DesktopIndicatorFontColor #FFEDF6FF
 DesktopIndicatorTextVerticalAlign Middle
 DesktopIndicatorTextAlign Center
-DesktopIndicatorText Desk: [VWMCurrentDesk]
+DesktopIndicatorText "$TxtDesktop$ 1"
 DesktopIndicatorOn LeftClickUp None !PopupDesktops
 
 *nLabel DesktopNext
@@ -94,7 +96,7 @@ DesktopNextY 6
 DesktopNextWidth 32
 DesktopNextFontSize 12
 DesktopNextText >
-DesktopNextOn LeftClickUp None !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('#^{RIGHT}')"]
+DesktopNextOn LeftClickUp None !VWMNext
 
 *nLabel NotificationCenter
 NotificationCenterX 960
@@ -107,6 +109,6 @@ NotificationCenterFontSize 13
 NotificationCenterFontColor #FFD0DAE3
 NotificationCenterTextVerticalAlign Middle
 NotificationCenterTextAlign Center
-NotificationCenterText Notifications
-NotificationCenterOn LeftClickUp None !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('#a')"]
+NotificationCenterText "$TxtNotifications$"
+NotificationCenterOn LeftClickUp None !Execute [ms-actioncenter:]
 NotificationCenterOn RightClickUp None !PopupContext

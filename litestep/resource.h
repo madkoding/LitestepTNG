@@ -6,7 +6,6 @@
 #define IDS_LITESTEP_TITLE_ERROR            2
 #define IDS_LITESTEP_ERROR1                 3
 #define IDS_LITESTEP_ERROR2                 4
-#define IDS_LITESTEP_ERROR3                 5
 #define IDS_LITESTEP_ERROR4                 6
 #define IDS_LITESTEP_ERROR5                 7
 #define IDS_LITESTEP_ERROR6                 8
@@ -32,7 +31,6 @@
 #define IDS_MODULEWRONGARCH32_ERROR         28
 #define IDS_MODULEWRONGARCH64_ERROR         29
 #define IDS_LITESTEP_ABOUTLS                30
-#define IDS_LITESTEP_EXPLORER               31
 #define IDS_RECURSIVEINCLUDE                32
 #define IDI_LS                              101
 #define IDB_LS                              102

@@ -40,6 +40,6 @@ Write-Host "Theme selected: $Theme"
 if (-not $NoRestart) {
     Stop-Process -Name litestep -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 2
-    Start-Process (Join-Path $LiteStepDir 'litestep.exe') -ArgumentList '-overlay'
+    Start-Process (Join-Path $LiteStepDir 'litestep.exe')
     Write-Host 'LiteStep restarted.'
 }

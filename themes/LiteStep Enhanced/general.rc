@@ -22,7 +22,7 @@ MMDim  #FFC0C8CC
 MMUser #FF000000
 MMBase #FF000000
 
-; LiteStep corre SOBRE explorer (litestep.exe -overlay): explorer sigue siendo el shell
+; LiteStep corre SOBRE explorer: explorer sigue siendo el shell
 ; de Windows y nCore mantiene oculta su barra de tareas. Es el comportamiento por
 ; defecto en todos los temas; con false se deja ver la barra de Windows.
 HideExplorerTaskbar true
@@ -38,7 +38,6 @@ ReserveScreenBottom 54
 LoadModule $LiteStepDir$Core.dll
 LoadModule $LiteStepDir$VWM.dll
 LoadModule $LiteStepDir$Wallpaper.dll
-; nDesk no se carga sobre explorer: su escritorio queda debajo del de Windows.
 LoadModule $LiteStepDir$Popup.dll
 LoadModule $LiteStepDir$HotKey.dll
 LoadModule $LiteStepDir$SysTray.dll

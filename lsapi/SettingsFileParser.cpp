@@ -31,6 +31,30 @@
 #include <errno.h>
 #include <stdlib.h>
 
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+//
+// BaseLanguageFile
+//
+// The language files are named by the short code (lang\pt.rc), but "Language pt-BR" in
+// personal.rc makes step.rc include lang\pt-BR.rc. Given such a path, writes the path of
+// the base language's file (same folder, the part of the file name before the first '-',
+// same extension) to ptzBase and returns true; returns false for any other path.
+//
+static bool BaseLanguageFile(LPCTSTR ptzPath, LPTSTR ptzBase, size_t cchBase)
+{
+    LPCTSTR ptzName = PathFindFileName(ptzPath);
+    LPCTSTR ptzDash = wcschr(ptzName, L'-');
+    LPCTSTR ptzExt = PathFindExtension(ptzName);
+    if (ptzDash == nullptr || ptzDash == ptzName || ptzDash > ptzExt)
+    {
+        return false;
+    }
+    // Folder + "pt", then ".rc".
+    return SUCCEEDED(StringCchCopyN(ptzBase, cchBase, ptzPath, ptzDash - ptzPath))
+        && SUCCEEDED(StringCchCat(ptzBase, cchBase, ptzExt));
+}
+
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 //
 // FileParser constructor
@@ -86,6 +110,18 @@ void FileParser::ParseFile(LPCTSTR ptzFileName)
         TRACE("Error: Can not get full path for \"%ls\"", tzExpandedPath);
         return;
     }
+
+    // "include lang\pt-BR.rc" with no such file reads lang\pt.rc (see BaseLanguageFile).
+    if (!PathFileExists(m_tzFullPath))
+    {
+        TCHAR tzBase[MAX_PATH_LENGTH];
+        if (BaseLanguageFile(m_tzFullPath, tzBase, _countof(tzBase)) && PathFileExists(tzBase))
+        {
+            Logger::Log(L"Config: \"%ls\" not found, using \"%ls\".", m_tzFullPath, tzBase);
+            StringCchCopy(m_tzFullPath, _countof(m_tzFullPath), tzBase);
+        }
+    }
+
     std::list<TrailItem>::iterator check = std::find(m_trail.begin(), m_trail.end(), TrailItem(0, m_tzFullPath));
     if (check != m_trail.end())
     {

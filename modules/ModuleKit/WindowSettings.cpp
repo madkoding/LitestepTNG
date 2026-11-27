@@ -34,7 +34,8 @@ static SettingMap<D2D1_TEXT_ANTIALIAS_MODE> textAntiAliasModeMap(
 /// Initalizes the class to all default settings.
 /// </summary>
 WindowSettings::WindowSettings()
-    : alwaysOnTop(false)
+    // LiteStep runs on top of Explorer, so its windows stay above Explorer's by default.
+    : alwaysOnTop(true)
     , blurBehind(false)
     , clickThrough(false)
     , evaluateText(false)
@@ -50,13 +51,6 @@ WindowSettings::WindowSettings()
     , x(0)
     , y(0)
 {
-    WCHAR overlayMode[2] = { 0 };
-    if (GetEnvironmentVariableW(L"LSOverlayMode", overlayMode, _countof(overlayMode)) > 0 &&
-        overlayMode[0] != L'0')
-    {
-        alwaysOnTop = true;
-    }
-
     *text = L'\0';
 }
 
