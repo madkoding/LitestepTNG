@@ -494,6 +494,10 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   so the boxes can replace the banners. To raise a test toast from a script, use the
   AppUserModelID of an app whose notifications are enabled in Windows (e.g. Terminal's). Private messages must stay clear of the `LM_`
   range, which starts at `WM_APP` (32768). Needs `stdcpp17` like Core.
+  Every theme loads it and styles it in its own `notify.rc` (LiteStep Enhanced with the
+  popup frame images, the others with colours, `CornerRadius*` and a Segoe Fluent Icons X,
+  U+E711, as the `Close` part's text). `NotifyTimeFormat` is formatted without the theme's
+  language, so month and day names come out in English: keep it numeric.
 - **Window frames (new module `modules/Frames`, `Frames.dll`, experimental):** covers the
   native title bar of other programs' windows with a skinned one (prefix `Frame`, parts
   `FrameTitle|Min|Max|Close`, `Active*` keys for the foreground window). Nothing is

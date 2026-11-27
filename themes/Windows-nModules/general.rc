@@ -17,6 +17,7 @@ LoadModule $LiteStepDir$TaskSwitcher.dll
 LoadModule $LiteStepDir$Label.dll
 LoadModule $LiteStepDir$Clock.dll
 LoadModule $LiteStepDir$StartMenu.dll
+LoadModule $LiteStepDir$Notify.dll
 LoadModule $LiteStepDir$VWM.dll
 LoadModule $LiteStepDir$Calendar.dll
 LoadModule $LiteStepDir$Panels.dll

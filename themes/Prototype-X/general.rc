@@ -15,6 +15,7 @@ LoadModule $LiteStepDir$TaskBar.dll
 LoadModule $LiteStepDir$TaskSwitcher.dll
 LoadModule $LiteStepDir$Label.dll
 LoadModule $LiteStepDir$StartMenu.dll
+LoadModule $LiteStepDir$Notify.dll
 
 ; ------------------------------------------------------------------------------
 ;  Escritorio: columna izquierda (44 px) y barra superior (26 px) reservadas
