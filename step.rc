@@ -1,7 +1,7 @@
 ; ==============================================================================
 ;  LiteStep NG - cargador de temas
 ;  El tema activo se elige en theme-select.rc (ThemeName "<carpeta en themes\>")
-;  Temas: Glass, Prototype-X, LiteStep Enhanced
+;  Temas: las carpetas de themes\ que tienen un theme.rc
 ; ==============================================================================
 include "$LiteStepDir$theme-select.rc"
 ; Opcional y fuera del repo: ajustes personales. Va ANTES del tema porque la primera

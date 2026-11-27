@@ -47,9 +47,11 @@ personal.rc.example  template for personal.rc (see "Personal content" in §2)
 themes/<Name>/     one folder per theme: theme.rc lists the theme's area files (source of
                    truth; deployed to the run folder by tools\deploy.ps1 — see §2 and §5)
 config/            look-free pieces themes include: menus\ (programs, Windows settings,
-                   capture, session, media), hotkeys.rc, media-players.rc
-tools/             deploy.ps1, smoke-test.ps1, switch-theme.ps1 (common.ps1 finds the run folder),
-                   rc_effective.py (what a theme configures; see §5), tests\ (python -m unittest)
+                   capture, session, media), hotkeys.rc, media-players.rc, module-map.rc
+                   (classic module names -> nModules; see §5)
+tools/             deploy.ps1, smoke-test.ps1, switch-theme.ps1, install-theme.ps1, theme-plan.ps1
+                   (common.ps1 finds the run folder), rc_effective.py (what a theme configures;
+                   see §5), tests\ (python -m unittest)
 ```
 
 ---
@@ -82,6 +84,33 @@ Only themes already installed in the target are updated (`-Themes <name>` adds o
 
 **The repo is the source of the themes.** Edit `themes\<Name>\theme.rc` here and deploy;
 do not edit the deployed copy in the run folder (older sessions did, and then copied it back).
+Deploy also rewrites the plan (see below) of every theme installed in the run folder, since
+the modules may have changed; a plan that fails is only a warning.
+
+### Install a theme that is not in the repo (since 2026-11-27)
+```powershell
+.\tools\install-theme.ps1 <folder | file.zip> [-Force] [-LiteStepDir <run folder>]
+.\tools\switch-theme.ps1 "<Name>"     # selects it and restarts; -NoRestart to only select
+```
+- `install-theme.ps1` checks the theme (a `theme.rc` at the root of the theme folder, no zip
+  entry that escapes the extraction folder, the name not installed yet, ignoring case, unless
+  `-Force`), copies it to `<run folder>\themes\<Name>`, writes its plan and prints it. It does
+  not select the theme and does not restart LiteStep. A zip is extracted under `%TEMP%`
+  first; only a checked theme reaches the run folder. Exit code 0 = installed, 1 = refused.
+- `<Name>` is the folder name, because `step.rc` builds the theme's paths from it: a folder
+  keeps its name; a zip with one top-level folder is unwrapped to it; a zip with `theme.rc` at
+  its root takes the `name` of its `theme.json`, else the zip's file name. A manifest `name`
+  that differs from the folder is only a warning. `-Force` keeps the installed folder's
+  spelling, so `theme-select.rc` and the plan file still match it.
+- `switch-theme.ps1` builds, writes and prints the plan before it rewrites
+  `theme-select.rc`. Missing modules or fonts are reported but do not stop the switch: the
+  shell runs without them.
+- The plan is `<run folder>\plans\<Theme>.json`, one per theme (a shared file would keep only
+  the last theme deployed). Format, statuses and the downloader's contract are in §5
+  "Theme installation".
+- Nothing here downloads. A classic theme's `*NetLoadModule` lines used to fetch modules from
+  a mirror that no longer exists; now they go through the module map (§5) and what is still
+  missing is only reported.
 
 ### Personal content stays out of the repo
 Nothing that belongs to one person or one computer goes into tracked files: no user names,
@@ -98,8 +127,13 @@ In a theme, use `$LiteStepDir$`, `$ThemeName$`, `$USERNAME$` and `%LOCALAPPDATA%
 paths instead of literal ones.
 
 ### Package and CI
-`.\tools\package.ps1 -Version <v>` stages a build plus the themes (not `original-2002\` or
-`drafts\`) into `dist\stage` and produces `dist\LiteStepTNG-<v>-x64.zip` and, with Inno Setup 6
+`.\tools\package.ps1 -Version <v>` stages a build plus the themes into `dist\stage`. The themes
+are the folders under `themes\` whose `theme.json` has `mode` `overlay` (or no `mode`), in
+ordinal name order; a folder without `theme.json` is skipped with a warning, a `theme.json`
+that is not valid JSON stops the build, and `original-2002\` / `drafts\` inside a theme are
+left out (robocopy `/XD`). Since 2026-11-27 this replaces a hard-coded list; today it
+yields the four themes in the repo. The script still fails when `theme-select.rc` selects a
+theme that does not ship. It produces `dist\LiteStepTNG-<v>-x64.zip` and, with Inno Setup 6
 installed, `dist\LiteStepTNG-<v>-x64-setup.exe` (`installer\LiteStepTNG.iss` only packs the
 staged folder — the list of what ships lives in the script). The installer is per user
 (no admin), installs to `%LOCALAPPDATA%\Programs\LiteStepTNG`, leaves Explorer as the
@@ -400,6 +434,81 @@ build, matching the original theme's preview screenshot (1024×768; not part of 
   not UTF-8. "Equal" means the theme configures exactly the same — check that both dumps are
   not nearly empty (a wrong theme name makes every include miss on both sides).
   `python -m unittest discover -s tools\tests` runs its tests and the config-menu check.
+
+### Theme installation: module map, manifest, plan (since 2026-11-27)
+Spec: `docs\superpowers\specs\2026-11-26-theme-install-design.md`. The user wants a theme
+that names classic modules to load the nModules instead, and room for a later module that
+downloads what a theme still needs. The resolver in litestep is the source of truth; the
+manifest and the plan only describe and report.
+- **Module map.** `config\module-map.rc` holds `*ModuleAlias <classic-name> <Target>` lines
+  (target = DLL name without `.dll`, a folder of `modules\`): `label`, `lsslider` -> Label;
+  `popup`, `popup2`, `lslnkmenu` -> Popup; `taskbar`, `taskbar3` -> TaskBar; `vtray` ->
+  SysTray; `ckvwm` -> VWM; `shortcut`, `shortcut2`, `jdesk` -> Icon. No alias may target
+  `Desk` (§3); `test_module_map.py` checks that, that every target has a project under
+  `modules\`, and that no name appears twice. `geekamp`, `lsxcommand`, `textedit` have no
+  nModule and are reported missing.
+- **First line wins.** `step.rc` includes the map right after `personal.rc`, and the first
+  `*ModuleAlias` for a name wins, so a line in `personal.rc` overrides the map;
+  `*ModuleAlias popup2 popup2` keeps the original. A theme's own `*ModuleAlias` lines come
+  after the map, so they only add names the map lacks. The repo owns the map: deploy and the
+  installer overwrite it.
+- **Name normalisation** (the same in `ModuleResolver.cpp` and `theme-plan.ps1`, pinned by
+  `tools\tests\fixtures\module-names.txt`): file name only (up to the last `\`, `/` or `$`),
+  lower case, no `.dll`, no trailing `-` + text that starts with a digit: `label-1.99` ->
+  `label`, `textedit-2.4l-13` -> `textedit`, `ls-mute` stays. `taskbar3` and `popup2` have no
+  dash, so the map lists both spellings.
+- **Resolution** of one module line: no alias -> loaded as written. The line already names
+  the target (its file name equals the target and its folder is none, the run folder or a
+  `$Variable$`, as in `$LiteStepDir$Popup.dll`) -> as written, so the repo's themes load
+  exactly as before. Else `<run folder>\<Target>.dll` exists -> that is loaded ("nModules
+  win", even when the original DLL is present). Else the original exists -> the original is
+  loaded and logged (fallback: a preference, not a ban). Else the line is skipped and logged.
+  A bare name (`label-1.99`) stands for `<run folder>\label-1.99.dll`. Two lines that resolve
+  to the same file load it once.
+- **Order:** every `LoadModule` line first (so a theme's explicit order, Core first, is never
+  disturbed), then `*NetLoadModule`, then `*NetInstallModule` lines. On the Net lines the
+  second token is the name; any flags after it are ignored.
+- **Classic configuration is not translated.** Swapping the DLL does not make a 2002 theme
+  look right: its `*Label`/`*Popup` lines use keys the nModules do not read. Native themes
+  are the target.
+- **Manifest `themes\<Name>\theme.json`** (optional; every repo theme has one):
+  `name`, `version`, `author`, `mode` (`overlay`, the default, or `shell`),
+  `requires.modules[]` (`name`, `url`, `sha256`) and `requires.fonts[]` (`name`, `url`,
+  `note`). `url` and `sha256` are reserved for the downloader: copied into the plan, never
+  fetched. List only fonts Windows does not ship (LiteStep Enhanced: `hooge 05_55`;
+  Prototype-X: `Exo 2`). With a manifest, its modules come first and the scan of the
+  theme's files (`LoadModule` / `*NetLoadModule` / `*NetInstallModule`, following
+  `include`, expanding `$LiteStepDir$` and `$ThemeName$`) only adds what it forgot, with a
+  warning. Without one (or with invalid JSON, also a warning) the scan is all there is and
+  no fonts are checked. `package.ps1` ships the `overlay` themes.
+- **Plan contract** `<run folder>\plans\<Theme>.json` (UTF-8, rewritten on every install,
+  switch and deploy of that theme):
+  ```json
+  { "theme": "LiteStep Enhanced", "generated": "2026-11-27T12:00:00Z",
+    "items": [
+      { "kind": "module", "name": "label-1.99", "status": "mapped", "resolved": "Label.dll" },
+      { "kind": "module", "name": "Notify", "status": "ok", "resolved": "Notify.dll" },
+      { "kind": "module", "name": "popup2", "status": "ok", "resolved": "popup2.dll",
+        "note": "original used, nModule not installed" },
+      { "kind": "module", "name": "geekamp-1.9.7", "status": "missing", "url": null, "sha256": null },
+      { "kind": "module", "name": "Desk", "status": "blocked", "reason": "takes over Explorer's desktop" },
+      { "kind": "font", "name": "hooge 05_55", "status": "missing", "note": "...", "url": null } ],
+    "warnings": [ "theme.json does not list Label, which the theme loads." ] }
+  ```
+  `name` is the name as the theme wrote it (a `missing` alias target is named after the
+  nModule, with `note: "replaces <name>"`); `generated` is UTC. Statuses: `ok` (the DLL or
+  font is there), `mapped` (replaced by an nModule that is there), `missing` (needed, not
+  there, not mappable), `blocked` (must not load in this mode: `Desk` unless the manifest
+  says `shell`). `items` and `warnings` are always arrays. Fonts count as installed when a
+  family name is in the HKLM or HKCU `...\Fonts` registry key or in
+  `%LOCALAPPDATA%\Microsoft\Windows\Fonts`.
+- **Where the downloader plugs in.** A switch runs: plan -> (future: download the `missing`
+  items) -> write `theme-select.rc` -> restart. The downloader reads only the plan: it acts on
+  `missing` items, writes into the run folder and asks the shell to recycle; it does not need
+  to know about aliases, because the resolver maps names at load time. Fetching, `sha256`
+  checks and extraction are a follow-up; so are refusing an explicit `Desk.dll` at runtime in
+  overlay mode (only the plan blocks it today) and generating the installer's font note from
+  the manifests.
 
 ### Languages (since 2026-11-26)
 - Supported: `en` (default and fallback), `es pt fr de it zh ja` (zh = Simplified for every
@@ -757,6 +866,23 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   with `StopWatch` (QPC), not `GetTickCount64` (same 15.6 ms steps). Before, moves repainted
   in a loop blocked on vsync inside `EndDraw`. Measured on a 74 Hz monitor: 13.3–13.5 ms
   per step, nothing posted once the animation ends.
+- **Classic module names load nModules (litestep, `ModuleResolver.{h,cpp}`,
+  `ModuleManager.cpp`; 2026-11-27):** `ModuleManager::_LoadModules` reads the `*ModuleAlias`
+  lines (`_ReadAliases`, first per name wins), then queues the `LoadModule` lines, then the
+  `*NetLoadModule` and `*NetInstallModule` lines (before, `SettingsFileParser.cpp` only logged
+  those). Every location goes through `_MakeModule` -> `ModuleResolver::Resolve` (rules in §5
+  "Theme installation"); `_QueueModule` drops a second line that resolves to the same file.
+  Each substitution, fallback and skip is written with `Logger::Log` (`Modules: ...`).
+  `ModuleResolver` uses only the standard library, so `tools\tests\module_resolver_test.cpp`
+  builds it with g++ or `zig c++` (`test_module_resolver.py`, skipped without a compiler).
+  `tools\tests\fixtures\theme-classic-demo\` is a scratch theme (`*NetLoadModule label-1.99`)
+  for checking it in a running shell; `smoke-test.ps1` counts aliased modules among the
+  ones it expects loaded.
+  **Known limitation:** every nModule needs Core.dll (nCore). A classic theme has no line for
+  it, and the loader adds no module the theme does not ask for, so such a theme gets a modal
+  "There was a problem connecting to nCore!" from Label (seen while testing; the fixture
+  loads `$LiteStepDir$Core.dll` itself for that reason). Loading Core implicitly when an
+  aliased nModule is loaded is an open follow-up.
 - **StartMenu `.icon=` parsing:** `StartMenu/ModuleEntry.cpp` now parses a leading
   `.icon="file,idx"` token on menu entries (previously only nPopup did), passing the icon to
   Command/Folder items.
@@ -820,6 +946,11 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
 - `modules/Popup/ContentPopup.cpp` has a `TODO(human)` in `FormatThemeTitle` (how to mark
   the active theme in `!PopupThemes`); the lslnk popup title position inside the white
   header box (`MMMenuLnk*` in theme.rc) was not visually verified.
+
+- **Theme installation follow-ups** (§5 "Theme installation", §6 resolver): a classic theme
+  without `LoadModule ...Core.dll` gets nCore's connection error from every nModule; the
+  downloader of `missing` plan items; refusing `Desk.dll` at runtime in overlay mode;
+  translating classic module configuration is a non-goal.
 
 - Full side-by-side screen-vs-preview parity was still being tightened at last session end;
   the structural match is complete (all elements present, placed, and styled). Residual
