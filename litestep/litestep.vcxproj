@@ -126,6 +126,7 @@
     <ClCompile Include="Module.cpp" />
     <ClCompile Include="ModuleManager.cpp" />
     <ClCompile Include="RecoveryMenu.cpp" />
+    <ClCompile Include="StartupRunner.cpp" />
     <ClCompile Include="ShellDesktopTray.cpp" />
     <ClCompile Include="TaskbarListHandler.cpp" />
     <ClCompile Include="TrayNotifyIcon.cpp" />
@@ -153,6 +154,7 @@
     <ClInclude Include="Module.h" />
     <ClInclude Include="ModuleManager.h" />
     <ClInclude Include="RecoveryMenu.h" />
+    <ClInclude Include="StartupRunner.h" />
     <ClInclude Include="ShellDesktopTray.h" />
     <ClInclude Include="TaskbarListHandler.h" />
     <ClInclude Include="COMFactory.h" />

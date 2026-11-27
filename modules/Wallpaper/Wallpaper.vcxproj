@@ -139,11 +139,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Bangs.h" />
+    <ClInclude Include="DesktopBackground.h" />
     <ClInclude Include="ThemeWallpaper.h" />
     <ClInclude Include="Version.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Bangs.cpp" />
+    <ClCompile Include="DesktopBackground.cpp" />
     <ClCompile Include="ThemeWallpaper.cpp" />
     <ClCompile Include="ModuleEntry.cpp" />
   </ItemGroup>

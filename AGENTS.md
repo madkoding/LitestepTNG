@@ -124,9 +124,14 @@ back, which moves the user's windows away for a couple of seconds. Exit code = f
 
 ---
 
-## 3. Runtime architecture (IMPORTANT — changed 2026-11-21, shell mode removed 2026-11-26)
+## 3. Runtime architecture (IMPORTANT — changed 2026-11-21 and 2026-11-26)
 
-**Explorer is the Windows shell; litestep runs on top of it. There is no other mode.**
+**Two modes, chosen by who owns the shell window when litestep starts.**
+- **On top of Explorer** (the default, and the setup of this machine): Explorer is the shell,
+  litestep is a program started from the `Run` key. Everything below is about this mode
+  unless it says otherwise.
+- **Session shell** (since 2026-11-26, `tools\set-shell.ps1 LiteStep`): litestep is the
+  Winlogon shell and Explorer does not run. See "Session shell" below.
 ```
 HKCU\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Shell   (no value; the HKLM default explorer.exe applies)
 HKCU\Software\Microsoft\Windows\CurrentVersion\Run\LiteStep = "<run folder>\litestep.exe"
@@ -143,6 +148,33 @@ needed it (`Windows11-Dark` was the same as Glass; `Windows-nModules` was ported
 `-overlay`, `-nostartup`, `-startup`, `-explorer` and `-closeexplorer` are still accepted
 and ignored, so old `Run` values and shortcuts keep working. The tray service stays: it is
 what gives nTray the icons. In safe mode litestep exits at once.
+
+### Session shell (ShellAppRuntime)
+The old shell mode failed because nothing provided Explorer's *immersive shell*: Store
+apps started but their `ApplicationFrameHost` window stayed cloaked (§8). Windows 11 ships
+`ShellAppRuntime.exe` (and `CustomShellHost.exe`), the hosts it uses for kiosk shells. On
+2026-11-26, with Explorer closed, starting `ShellAppRuntime.exe` made it the owner of the
+shell window, and Calculator and Settings opened and showed (activated through
+`IApplicationActivationManager`; with no host at all, activation failed with 0x80040900).
+How litestep uses it (`litestep.cpp`):
+- `GetShellWindow()` is null at start-up => litestep is the session's shell. It starts
+  `LSShellHost` (default `%WINDIR%\System32\ShellAppRuntime.exe`, `""` = none) before
+  anything else and waits up to 10 s for it to own the shell window. litestep never calls
+  `SetShellWindow`: the shell window must be the host's.
+- It then runs the Run keys and Startup folders (`StartupRunner`, back from before the
+  removal), once per session (Explorer's `SessionInfo\<id>\StartupHasBeenRun` marker),
+  skipping any entry that is litestep itself — a second instance closes the first.
+- nWallpaper paints the desktop (`DesktopBackground.cpp`, window class
+  `LSDesktopBackground`) only when no window holds a `SHELLDLL_DefView`. ShellAppRuntime
+  creates a `Progman` of its own, so "is there a Progman" is the wrong test. The window
+  stays at the bottom and runs `DesktopRightClick` / `DesktopMiddleClick`; `OnDesktop`
+  windows (ModuleKit) go right above it.
+- `!Quit` (or `LR_EXPLORER`) stops the host and starts explorer.exe, which then becomes the
+  shell. Sign-out and shut-down do not.
+- Tested without signing out (close Explorer gracefully with message 0x5B4 to its
+  `Shell_TrayWnd`, so Windows does not restart it; then start litestep): host started,
+  background painted, Calculator shown, `!Quit` handed the session back. Not tested yet:
+  a real sign-in, `ms-settings:` links, toasts, media keys, Explorer folder windows.
 
 Consequences:
 - **Restart litestep with:** `Stop-Process -Name litestep -Force`, then

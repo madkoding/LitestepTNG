@@ -86,6 +86,7 @@ EXEOBJS = \
 	litestep\$(OUTPUT)\Module.o \
 	litestep\$(OUTPUT)\ModuleManager.o \
 	litestep\$(OUTPUT)\RecoveryMenu.o \
+	litestep\$(OUTPUT)\StartupRunner.o \
 	litestep\$(OUTPUT)\TrayNotifyIcon.o \
 	litestep\$(OUTPUT)\TrayService.o \
 	litestep\$(OUTPUT)\WinMain.o

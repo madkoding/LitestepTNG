@@ -106,6 +106,14 @@ private:
     // Windows
     HWND m_hMainWindow; // = NULL;
 
+    // Session shell: true when no one owned the shell window at start-up (Windows
+    // started LiteStep as the shell, Explorer is not running).
+    bool m_bSessionShell; // = false
+    bool m_bHandShellToExplorer; // = false; set by a deliberate quit
+    HANDLE m_hShellHost; // = nullptr; ShellAppRuntime.exe, started by _StartShellHost
+    HANDLE _StartShellHost();
+    void _HandShellToExplorer();
+
     // Notifications (Shell Hooks + WTS notifications)
     typedef BOOL (WINAPI* RSHPROC)(HWND, DWORD);
 
