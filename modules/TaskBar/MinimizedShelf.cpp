@@ -84,7 +84,9 @@ void MinimizedShelf::Thumb::Place(const RECT &rect, int padding) {
 
 
 LRESULT WINAPI MinimizedShelf::Thumb::HandleMessage(HWND window, UINT message, WPARAM wParam, LPARAM lParam, LPVOID) {
-  if (message == WM_LBUTTONUP) {
+  // On the press: the release never reaches the thumbnail (something takes the mouse in
+  // between, seen with a log on real clicks), and a posted test click does not show it.
+  if (message == WM_LBUTTONDOWN) {
     // What a task button does for a minimized window (TaskButton::HandleMessage): the window
     // restores itself (some programs, packaged apps and Explorer among them, do not answer
     // a ShowWindow from outside), then it gets the foreground.
