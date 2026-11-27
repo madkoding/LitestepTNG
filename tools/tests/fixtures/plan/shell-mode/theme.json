@@ -1,0 +1,5 @@
+{
+  "name": "shell-mode",
+  "mode": "overlay",
+  "requires": { "modules": [ { "name": "Core" }, { "name": "Desk" } ] }
+}

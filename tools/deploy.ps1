@@ -15,7 +15,9 @@
 #  LiteStep is stopped first (its DLLs are locked while it runs) and started again.
 #  theme-select.rc is only written if the target has none, so the theme selected
 #  there is kept; personal.rc, games\ and favorites\ are never touched. By default
-#  only the themes already installed in the target are updated.
+#  only the themes already installed in the target are updated. Then the plan of
+#  every theme installed there (plans\<Name>.json, tools\theme-plan.ps1) is
+#  rewritten, since the modules may have changed; a plan that fails is a warning.
 # ==============================================================================
 param(
     [string]$LiteStepDir,
@@ -28,6 +30,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'common.ps1')
+. (Join-Path $PSScriptRoot 'theme-plan.ps1')
 $LiteStepDir = Resolve-LiteStepDir $LiteStepDir
 $Root = Split-Path $PSScriptRoot -Parent
 $Bin  = Join-Path $Root "bin\$Configuration"
@@ -63,7 +66,7 @@ foreach ($shared in 'config', 'lang') {
 # Not "$themes": PowerShell names are case-insensitive, so that would overwrite -Themes.
 $themesDir = Join-Path $Root 'themes'
 $installed = Get-ChildItem $themesDir -Directory | Where-Object {
-    ($Themes -contains $_.Name) -or (Test-Path (Join-Path $LiteStepDir "themes\$($_.Name)"))
+    ($Themes -contains $_.Name) -or (Test-Path -LiteralPath (Join-Path $LiteStepDir "themes\$($_.Name)"))
 }
 foreach ($theme in $installed) {
     $null = robocopy $theme.FullName (Join-Path $LiteStepDir "themes\$($theme.Name)") /E /XD original-2002 drafts /NFL /NDL /NJH /NJS /NP
@@ -76,3 +79,17 @@ if (-not $NoRestart) {
     Start-Process (Join-Path $LiteStepDir 'litestep.exe')
     Write-Host 'LiteStep restarted.'
 }
+
+# Plans of every installed theme, repo themes and themes installed by hand alike
+# (after the restart: reading the fonts takes a moment).
+$planned = @()
+# Folders starting with a dot are install-theme.ps1's helper folders, not themes.
+foreach ($dir in Get-ChildItem -LiteralPath (Join-Path $LiteStepDir 'themes') -Directory -ErrorAction SilentlyContinue) {
+    if ($dir.Name.StartsWith('.') -or -not (Test-Path -LiteralPath (Join-Path $dir.FullName 'theme.rc'))) { continue }
+    try {
+        $null = Write-ThemePlan (Get-ThemePlan -ThemeDir $dir.FullName -LiteStepDir $LiteStepDir) $LiteStepDir
+        $planned += $dir.Name
+    }
+    catch { Write-Warning "No plan for theme $($dir.Name): $($_.Exception.Message)" }
+}
+Write-Host "Plans: $($planned -join ', ') -> $(Join-Path $LiteStepDir 'plans')"

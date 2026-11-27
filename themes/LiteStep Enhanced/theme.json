@@ -1,0 +1,26 @@
+{
+  "name": "LiteStep Enhanced",
+  "version": "1.0",
+  "author": "Norman Kaczmarek (original); LiteStepTNG port",
+  "mode": "overlay",
+  "requires": {
+    "modules": [
+      { "name": "Core", "url": null, "sha256": null },
+      { "name": "VWM", "url": null, "sha256": null },
+      { "name": "Wallpaper", "url": null, "sha256": null },
+      { "name": "Popup", "url": null, "sha256": null },
+      { "name": "HotKey", "url": null, "sha256": null },
+      { "name": "SysTray", "url": null, "sha256": null },
+      { "name": "TaskBar", "url": null, "sha256": null },
+      { "name": "TaskSwitcher", "url": null, "sha256": null },
+      { "name": "Label", "url": null, "sha256": null },
+      { "name": "StartMenu", "url": null, "sha256": null },
+      { "name": "Notify", "url": null, "sha256": null },
+      { "name": "Frames", "url": null, "sha256": null },
+      { "name": "Icon", "url": null, "sha256": null }
+    ],
+    "fonts": [
+      { "name": "hooge 05_55", "url": null, "note": "pixel font the theme is drawn for (size 8, aliased)" }
+    ]
+  }
+}

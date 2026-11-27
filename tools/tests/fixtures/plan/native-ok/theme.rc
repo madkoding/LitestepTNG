@@ -1,0 +1,3 @@
+LoadModule $LiteStepDir$Core.dll
+LoadModule $LiteStepDir$Label.dll
+LoadModule $LiteStepDir$Popup.dll

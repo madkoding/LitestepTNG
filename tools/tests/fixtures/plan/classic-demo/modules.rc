@@ -1,0 +1,5 @@
+; *NetInstallModule lines are read after every *NetLoadModule line, whatever the file order.
+*NetInstallModule vtray-1.06
+*NetLoadModule label-1.99
+*NetLoadModule popup2 ; inline comment
+*NetLoadModule geekamp-1.9.7

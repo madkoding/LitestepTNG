@@ -86,6 +86,32 @@ update:
 - `theme-select.rc` — the selected theme.
 - `favorites\` and `games\` — shortcuts shown in the menu.
 
+### Install a theme
+
+The scripts are in the repository's `tools\` folder (they are not part of the release
+files). Point them at the folder LiteStep runs from with `-LiteStepDir`, or the
+`LITESTEP_DIR` environment variable, or just have LiteStep running:
+
+```powershell
+.\tools\install-theme.ps1 C:\Downloads\SomeTheme.zip     # or a folder with a theme.rc
+.\tools\switch-theme.ps1 "SomeTheme"                     # select it and restart LiteStep
+```
+
+`install-theme.ps1` copies the theme to `themes\<Name>` (add `-Force` to replace one that
+is already installed) and prints its plan, also saved as `plans\<Name>.json`: which modules
+and fonts the theme needs and whether each one is **ok**, **mapped** to an nModule,
+**missing** or **blocked**. Nothing is downloaded; missing items are only reported. The
+theme still loads without them, minus whatever needs them: LiteStep skips and logs a missing
+module named the classic way (`*NetLoadModule`) or by an alias, and a 32-bit one (classic
+modules are 32-bit, LiteStepTNG is 64-bit: reported **blocked**). A missing DLL named by a
+`LoadModule` line still stops start-up with LiteStep's error box until it is closed.
+
+Classic themes name modules such as `label-1.99` or `popup2`; LiteStep loads the matching
+nModule instead (`config\module-map.rc`, which `personal.rc` can override), and loads
+`Core.dll` first when the theme does not, since every nModule needs it. Only the module is
+swapped: the classic theme's configuration is not translated, so an old theme will not look
+as it did.
+
 ## Architecture
 
 ```mermaid
@@ -181,7 +207,7 @@ litestep\     the core executable (litestep.exe)
 lsapi\        the LiteStep API (lsapi.dll, lsapi.h)
 modules\      the nModules DLLs and their shared library, ModuleKit
 themes\       one folder per theme, each with a theme.rc
-tools\        deploy, smoke test, theme switch and packaging scripts
+tools\        deploy, smoke test, theme install and switch, and packaging scripts
 installer\    the Inno Setup script
 step.rc       the loader: theme-select.rc, the optional personal.rc, then the theme
 ```
@@ -190,6 +216,8 @@ step.rc       the loader: theme-select.rc, the optional personal.rc, then the th
 
 - Themes are `theme.rc` files for the nModules suite. Use `$LiteStepDir$`, `$ThemeName$`
   and `$USERNAME$` instead of literal paths.
+- A `theme.json` next to `theme.rc` declares what the theme needs (modules, fonts that
+  Windows does not ship) and its mode; see `AGENTS.md` for the fields.
 - The desktop (wallpaper, icons) is Explorer's. A module must never re-parent Explorer's
   desktop view: that is why the old `Desk.dll` was removed.
 - Modules are built against `lsapi\lsapi.h` and link `ModuleKit`.

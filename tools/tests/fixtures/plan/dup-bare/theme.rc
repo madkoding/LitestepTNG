@@ -1,0 +1,4 @@
+; A bare LoadModule Label and *NetLoadModule label-1.99 are the same file: reported once.
+; The second line was mapped, so the shell also loads Core.dll first.
+LoadModule Label
+*NetLoadModule label-1.99

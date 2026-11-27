@@ -1,0 +1,10 @@
+{
+  "name": "native-ok",
+  "version": "1.0",
+  "author": "test",
+  "mode": "overlay",
+  "requires": {
+    "modules": [ { "name": "Core", "url": null, "sha256": null }, { "name": "Label" }, { "name": "Popup" } ],
+    "fonts": []
+  }
+}

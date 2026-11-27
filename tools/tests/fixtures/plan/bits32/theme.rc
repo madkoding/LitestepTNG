@@ -1,0 +1,6 @@
+; geekamp and the classic label are 32-bit DLLs (present.txt "pe32": run-plan.ps1 writes
+; a minimal PE32 header), old64 is a 64-bit one. Label.dll is not installed, so label-1.99
+; falls back to the original, which is 32-bit too. Nothing is mapped: no Core item.
+LoadModule $LiteStepDir$old64.dll
+*NetLoadModule geekamp-1.9.7
+*NetLoadModule label-1.99

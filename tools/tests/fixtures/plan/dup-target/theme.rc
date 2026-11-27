@@ -1,0 +1,4 @@
+; Both lines resolve to Popup.dll: one item, the first one. The second line is mapped,
+; so the shell would load Core.dll first (not installed here: missing).
+LoadModule $LiteStepDir$Popup.dll
+*NetLoadModule popup2-2.0

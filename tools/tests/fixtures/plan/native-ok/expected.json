@@ -1,0 +1,9 @@
+{
+  "theme": "native-ok",
+  "items": [
+    { "kind": "module", "name": "Core", "status": "ok", "resolved": "Core.dll" },
+    { "kind": "module", "name": "Label", "status": "ok", "resolved": "Label.dll" },
+    { "kind": "module", "name": "Popup", "status": "ok", "resolved": "Popup.dll" }
+  ],
+  "warnings": []
+}

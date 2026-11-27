@@ -1,0 +1,11 @@
+{
+  "name": "font-missing",
+  "mode": "overlay",
+  "requires": {
+    "modules": [ { "name": "Core" } ],
+    "fonts": [
+      { "name": "LiteStepTNG Absent Test Font 7Q", "url": "https://example.invalid/font.zip", "note": "made up: never installed" },
+      { "name": "Arial" }
+    ]
+  }
+}

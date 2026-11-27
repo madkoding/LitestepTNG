@@ -68,8 +68,13 @@ english.RunNow=Start LiteStep now
 spanish.RunNow=Iniciar LiteStep ahora
 english.ShortcutComment=LiteStep running on top of Explorer
 spanish.ShortcutComment=LiteStep sobre el Explorador de Windows
-english.FontNote=The LiteStep Enhanced theme is designed for the font "hooge 05_55", which is not included. Without it Windows substitutes another font and the theme's text will look different.
-spanish.FontNote=El tema LiteStep Enhanced está diseñado para la fuente "hooge 05_55", que no se incluye. Sin ella Windows usa otra fuente y el texto del tema se verá distinto.
+; FontNote is written by tools\package.ps1 from the themes' theme.json (requires.fonts).
+#ifdef FontNoteFile
+#include FontNoteFile
+#else
+english.FontNote=
+spanish.FontNote=
+#endif
 
 [Tasks]
 Name: "autostart"; Description: "{cm:AutoStart}"
@@ -135,11 +140,12 @@ end;
 
 procedure InitializeWizard();
 begin
-  WizardForm.TasksList.Hint := CustomMessage('FontNote');
+  if CustomMessage('FontNote') <> '' then
+    WizardForm.TasksList.Hint := CustomMessage('FontNote');
 end;
 
 procedure CurPageChanged(CurPageID: Integer);
 begin
-  if CurPageID = wpFinished then
+  if (CurPageID = wpFinished) and (CustomMessage('FontNote') <> '') then
     WizardForm.FinishedLabel.Caption := WizardForm.FinishedLabel.Caption + #13#10 + #13#10 + CustomMessage('FontNote');
 end;

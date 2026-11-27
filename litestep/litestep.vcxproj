@@ -125,6 +125,7 @@
     <ClCompile Include="MessageManager.cpp" />
     <ClCompile Include="Module.cpp" />
     <ClCompile Include="ModuleManager.cpp" />
+    <ClCompile Include="ModuleResolver.cpp" />
     <ClCompile Include="RecoveryMenu.cpp" />
     <ClCompile Include="ShellDesktopTray.cpp" />
     <ClCompile Include="TaskbarListHandler.cpp" />
@@ -152,6 +153,7 @@
     <ClInclude Include="MessageManager.h" />
     <ClInclude Include="Module.h" />
     <ClInclude Include="ModuleManager.h" />
+    <ClInclude Include="ModuleResolver.h" />
     <ClInclude Include="RecoveryMenu.h" />
     <ClInclude Include="ShellDesktopTray.h" />
     <ClInclude Include="TaskbarListHandler.h" />

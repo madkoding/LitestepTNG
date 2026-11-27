@@ -1,0 +1,5 @@
+{
+  "name": "shell-mode-allowed",
+  "mode": "shell",
+  "requires": { "modules": [ { "name": "Core" }, { "name": "Desk" } ] }
+}

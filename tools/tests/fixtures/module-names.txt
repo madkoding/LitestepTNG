@@ -1,0 +1,17 @@
+; Module names and their normalised form: <input> -> <normalised>.
+; Normalised = file name only (everything up to the last \, / or $ is a directory),
+; lower case, no .dll, no trailing "-" + text that starts with a digit.
+; Shared by the Python test, the C++ loader and the PowerShell installer.
+label-1.99 -> label
+taskbar3-0.305 -> taskbar3
+textedit-2.4l-13 -> textedit
+$LiteStepDir$Popup.dll -> popup
+C:\x\Label.dll -> label
+popup2 -> popup2
+VTRAY-1.06 -> vtray
+geekamp-1.9.7 -> geekamp
+label-1.99.dll -> label
+C:/themes/x/lsslider-0.5.dll -> lsslider
+ckVWM -> ckvwm
+ls-mute -> ls-mute
+lsx-command-1.2 -> lsx-command

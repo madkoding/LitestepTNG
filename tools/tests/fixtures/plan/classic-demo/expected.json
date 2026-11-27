@@ -1,0 +1,11 @@
+{
+  "theme": "classic-demo",
+  "items": [
+    { "kind": "module", "name": "Core", "status": "ok", "resolved": "Core.dll" },
+    { "kind": "module", "name": "label-1.99", "status": "mapped", "resolved": "Label.dll" },
+    { "kind": "module", "name": "popup2", "status": "mapped", "resolved": "Popup.dll" },
+    { "kind": "module", "name": "geekamp-1.9.7", "status": "missing", "url": null, "sha256": null },
+    { "kind": "module", "name": "SysTray", "status": "missing", "note": "replaces vtray-1.06", "url": null, "sha256": null }
+  ],
+  "warnings": []
+}

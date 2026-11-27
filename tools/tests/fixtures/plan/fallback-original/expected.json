@@ -1,0 +1,7 @@
+{
+  "theme": "fallback-original",
+  "items": [
+    { "kind": "module", "name": "label-1.99", "status": "ok", "resolved": "label-1.99.dll", "note": "original used, nModule not installed" }
+  ],
+  "warnings": []
+}

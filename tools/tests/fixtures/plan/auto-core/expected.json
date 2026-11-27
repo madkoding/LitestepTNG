@@ -1,0 +1,8 @@
+{
+  "theme": "auto-core",
+  "items": [
+    { "kind": "module", "name": "Core", "status": "ok", "resolved": "Core.dll", "note": "loaded for the nModules" },
+    { "kind": "module", "name": "label-1.99", "status": "mapped", "resolved": "Label.dll" }
+  ],
+  "warnings": []
+}

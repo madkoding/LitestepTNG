@@ -1,0 +1,4 @@
+; Classic module names: two are mapped, one has no nModule, one maps to a target
+; that is not installed. The *Net lines live in an included file.
+LoadModule "$LiteStepDir$Core.dll"
+include "$LiteStepDir$themes\$ThemeName$\modules.rc"

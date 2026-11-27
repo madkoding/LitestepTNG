@@ -1,0 +1,8 @@
+{
+  "theme": "dup-target",
+  "items": [
+    { "kind": "module", "name": "Core", "status": "missing", "note": "loaded for the nModules", "url": null, "sha256": null },
+    { "kind": "module", "name": "Popup", "status": "ok", "resolved": "Popup.dll" }
+  ],
+  "warnings": []
+}

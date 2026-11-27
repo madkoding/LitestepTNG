@@ -1,0 +1,4 @@
+; Fixture for tools\tests\test_install_theme.py: the smallest installable theme.
+; Label.dll exists in the test's run folder (ok), geekamp does not (missing).
+LoadModule "$LiteStepDir$Label.dll"
+LoadModule "$LiteStepDir$geekamp-1.9.7.dll"
