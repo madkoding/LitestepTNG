@@ -32,6 +32,27 @@ using std::map;
 
 
 /// <summary>
+/// Where an OnDesktop window goes in the stacking order: right above the desktop. With
+/// Explorer that is the bottom (its desktop window is under everything). Without it,
+/// nWallpaper's background window (LSDesktopBackground) holds the bottom, so the window
+/// goes right above that one. Returns nullptr when the window is already there.
+/// </summary>
+static HWND DesktopInsertAfter(HWND self)
+{
+    HWND background = FindWindowW(L"LSDesktopBackground", nullptr);
+    if (background == nullptr)
+    {
+        return HWND_BOTTOM;
+    }
+    HWND above = GetWindow(background, GW_HWNDPREV);
+    if (above == self)
+    {
+        return nullptr;
+    }
+    return above != nullptr ? above : HWND_BOTTOM;
+}
+
+/// <summary>
 /// Constructor used to create a DrawableWindow for a pre-existing window. Used by nDesk.
 /// </summary>
 /// <param name="drawable">Pointer to the drawable which should be updated.</param>
@@ -854,12 +875,18 @@ LRESULT WINAPI Window::HandleMessage(HWND window, UINT msg, WPARAM wParam, LPARA
             }
             else if (mWindowSettings.onDesktop)
             {
-                // Whatever asks for it, the window stays at the bottom: the shell keeps
-                // its own desktop window under everything, so the bottom of the
-                // stacking order is right above the desktop.
+                // Whatever asks for it, the window stays right above the desktop.
                 LPWINDOWPOS windowPos = LPWINDOWPOS(lParam);
-                windowPos->hwndInsertAfter = HWND_BOTTOM;
-                windowPos->flags &= ~SWP_NOZORDER;
+                HWND insertAfter = DesktopInsertAfter(window);
+                if (insertAfter == nullptr)
+                {
+                    windowPos->flags |= SWP_NOZORDER;
+                }
+                else
+                {
+                    windowPos->hwndInsertAfter = insertAfter;
+                    windowPos->flags &= ~SWP_NOZORDER;
+                }
             }
         }
         return 0;
@@ -969,7 +996,11 @@ void Window::Initialize(WindowSettings &windowSettings, IStateRender *stateRende
     // OnDesktop
     if (!mIsChild && mWindowSettings.onDesktop)
     {
-        SetWindowPos(this->window, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+        HWND insertAfter = DesktopInsertAfter(this->window);
+        if (insertAfter != nullptr)
+        {
+            SetWindowPos(this->window, insertAfter, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+        }
     }
 
     // Set the text.
@@ -1831,7 +1862,11 @@ void Window::Show(int nCmdShow)
         }
         else if (mWindowSettings.onDesktop)
         {
-            SetWindowPos(this->window, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+            HWND insertAfter = DesktopInsertAfter(this->window);
+            if (insertAfter != nullptr)
+            {
+                SetWindowPos(this->window, insertAfter, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+            }
         }
     }
     this->visible = true;

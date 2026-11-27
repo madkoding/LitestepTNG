@@ -262,6 +262,9 @@ CLiteStep::CLiteStep()
     m_pTrayService = nullptr;
     m_pFullscreenMonitor = nullptr;
     m_BlockRecycle = 0;
+    m_bSessionShell = false;
+    m_bHandShellToExplorer = false;
+    m_hShellHost = nullptr;
 }
 
 
@@ -305,6 +308,21 @@ HRESULT CLiteStep::Start(HINSTANCE hInstance)
     // Initialize OLE/COM
     hr = OleInitialize(NULL);
 
+    // Nobody owns the shell window: Windows started LiteStep as the session's shell and
+    // Explorer is not running. Explorer's immersive shell is what shows Store apps and
+    // Settings, so a host that provides it is started first (see _StartShellHost).
+    // With Explorer running, LiteStep is a program on top of it and none of this applies.
+    // When the host already owns the shell window, LiteStep was restarted inside such a
+    // session (a recycle by deploy, a crash): it is still the session's shell, and keeps a
+    // handle to the host so that quitting can hand the session to Explorer.
+    m_hShellHost = _FindRunningShellHost();
+    m_bSessionShell = (m_hShellHost != nullptr || GetShellWindow() == nullptr);
+    if (m_bSessionShell && m_hShellHost == nullptr)
+    {
+        Logger::Log(L"No shell window: LiteStep is the session's shell.");
+        m_hShellHost = _StartShellHost();
+    }
+
     if (SUCCEEDED(hr))
     {
         hr = CreateMainWindow();
@@ -339,6 +357,140 @@ HRESULT CLiteStep::Start(HINSTANCE hInstance)
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 //
+// _StartShellHost
+// Starts the program that provides the immersive shell when Explorer does not run.
+// ShellAppRuntime.exe (Windows 11) takes the shell window and hosts Store apps and
+// Settings; tested on 26100/26300 with Explorer closed. LSShellHost names another
+// program, "" starts none. Returns the host's process, or nullptr.
+//
+// The LSShellHost setting, expanded and unquoted ("" = no host).
+static void GetShellHostPath(LPWSTR pwzPath, DWORD cchPath)
+{
+    WCHAR wzHost[MAX_PATH] = { 0 };
+    GetRCStringW(L"LSShellHost", wzHost, L"%WINDIR%\\System32\\ShellAppRuntime.exe", MAX_PATH);
+    ExpandEnvironmentStringsW(wzHost, pwzPath, cchPath);
+    PathUnquoteSpacesW(pwzPath);
+}
+
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+//
+// _FindRunningShellHost
+// The process of the shell host, if it is the one that owns the shell window; else nullptr.
+//
+HANDLE CLiteStep::_FindRunningShellHost()
+{
+    WCHAR wzPath[MAX_PATH] = { 0 };
+    GetShellHostPath(wzPath, MAX_PATH);
+    HWND hShell = GetShellWindow();
+    DWORD dwOwner = 0;
+    if (wzPath[0] == L'\0' || hShell == nullptr || !GetWindowThreadProcessId(hShell, &dwOwner))
+    {
+        return nullptr;
+    }
+
+    HANDLE hProcess = OpenProcess(
+        SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_QUERY_LIMITED_INFORMATION, FALSE, dwOwner);
+    if (hProcess == nullptr)
+    {
+        return nullptr;
+    }
+    WCHAR wzImage[MAX_PATH] = { 0 };
+    DWORD cchImage = MAX_PATH;
+    if (QueryFullProcessImageNameW(hProcess, 0, wzImage, &cchImage) &&
+        _wcsicmp(PathFindFileNameW(wzImage), PathFindFileNameW(wzPath)) == 0)
+    {
+        Logger::Log(L"Shell host \"%ls\" (pid %lu) owns the shell window already.", wzImage, dwOwner);
+        return hProcess;
+    }
+    CloseHandle(hProcess);
+    return nullptr;
+}
+
+
+HANDLE CLiteStep::_StartShellHost()
+{
+    WCHAR wzPath[MAX_PATH] = { 0 };
+    GetShellHostPath(wzPath, MAX_PATH);
+
+    if (wzPath[0] == L'\0')
+    {
+        Logger::Log(L"LSShellHost is empty: no immersive shell host started.");
+        return nullptr;
+    }
+    if (!PathFileExistsW(wzPath))
+    {
+        Logger::Log(L"Shell host \"%ls\" not found: Store apps will not show.", wzPath);
+        return nullptr;
+    }
+
+    SHELLEXECUTEINFOW sei = { sizeof(sei) };
+    sei.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_NO_UI;
+    sei.lpFile = wzPath;
+    sei.nShow = SW_HIDE;
+    if (!ShellExecuteExW(&sei) || sei.hProcess == nullptr)
+    {
+        Logger::Log(L"Could not start shell host \"%ls\" (error=%lu).", wzPath, GetLastError());
+        return nullptr;
+    }
+
+    // Wait (up to 10 s) until it owns the shell window, so nothing LiteStep starts
+    // afterwards can take it first.
+    const DWORD dwHostId = GetProcessId(sei.hProcess);
+    for (int i = 0; i < 100; ++i)
+    {
+        DWORD dwOwner = 0;
+        HWND hShell = GetShellWindow();
+        if (hShell != nullptr && GetWindowThreadProcessId(hShell, &dwOwner) && dwOwner == dwHostId)
+        {
+            Logger::Log(L"Shell host \"%ls\" (pid %lu) owns the shell window.", wzPath, dwHostId);
+            return sei.hProcess;
+        }
+        if (WaitForSingleObject(sei.hProcess, 100) == WAIT_OBJECT_0)
+        {
+            Logger::Log(L"Shell host \"%ls\" exited at start-up.", wzPath);
+            CloseHandle(sei.hProcess);
+            return nullptr;
+        }
+    }
+
+    Logger::Log(L"Shell host \"%ls\" (pid %lu) did not take the shell window in 10 s.", wzPath, dwHostId);
+    return sei.hProcess;
+}
+
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+//
+// _HandShellToExplorer
+// LiteStep was the session's shell and the user quit it: stop the host it started and
+// start Explorer, which then becomes the shell (desktop, taskbar, Start), so the
+// session is never left without one.
+//
+void CLiteStep::_HandShellToExplorer()
+{
+    if (m_hShellHost != nullptr)
+    {
+        TerminateProcess(m_hShellHost, 0);
+        WaitForSingleObject(m_hShellHost, 3000);
+        CloseHandle(m_hShellHost);
+        m_hShellHost = nullptr;
+    }
+
+    WCHAR wzExplorer[MAX_PATH] = { 0 };
+    ExpandEnvironmentStringsW(L"%WINDIR%\\explorer.exe", wzExplorer, MAX_PATH);
+    SHELLEXECUTEINFOW sei = { sizeof(sei) };
+    sei.fMask = SEE_MASK_FLAG_NO_UI;
+    sei.lpFile = wzExplorer;
+    sei.nShow = SW_SHOWNORMAL;
+    if (!ShellExecuteExW(&sei))
+    {
+        Logger::Log(L"Could not start Explorer after quitting (error=%lu).", GetLastError());
+    }
+}
+
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+//
 // Stop
 //
 HRESULT CLiteStep::Stop()
@@ -362,6 +514,17 @@ HRESULT CLiteStep::Stop()
 
         delete m_pRecoveryMenu;
         m_pRecoveryMenu = NULL;
+    }
+
+    if (m_bHandShellToExplorer)
+    {
+        _HandShellToExplorer();
+    }
+    else if (m_hShellHost != nullptr)
+    {
+        // Sign-out or shut-down: the host goes with the session.
+        CloseHandle(m_hShellHost);
+        m_hShellHost = nullptr;
     }
 
     return S_OK;
@@ -827,13 +990,11 @@ LRESULT CLiteStep::InternalWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
                 break;
 
             case LR_QUIT:
+            case LR_EXPLORER:
                 {
-                    PostQuitMessage(0);
-                }
-                break;
-
-            case LR_EXPLORER:  // "start Explorer": Explorer is already the shell
-                {
+                    // As the session's shell, quitting hands the session to Explorer
+                    // (Stop). On top of Explorer there is nothing to hand over.
+                    m_bHandShellToExplorer = m_bSessionShell;
                     PostQuitMessage(0);
                 }
                 break;

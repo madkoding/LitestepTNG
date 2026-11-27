@@ -142,8 +142,14 @@ folder"), not from the repository; the scripts in `tools\` take care of that:
 .\tools\package.ps1 -Version 1.2.3                # zip + installer (Inno Setup 6) in dist\
 ```
 
-LiteStep always runs on top of Explorer, which stays the Windows shell. (`-overlay`, the
+By default LiteStep runs on top of Explorer, which stays the Windows shell. (`-overlay`, the
 switch older versions needed, is still accepted and does nothing.)
+
+On Windows 11 LiteStep can also be the shell itself, with Explorer not running:
+`.\tools\set-shell.ps1 LiteStep` (from the next sign-in; `.\tools\set-shell.ps1 Explorer`
+undoes it). It then starts Windows' own `ShellAppRuntime.exe`, which is what lets Store apps
+and Settings show and which runs the programs that start with Windows, and paints the desktop
+background itself. Quitting LiteStep gives the session back to Explorer. This mode is new.
 
 Every push is built and packaged by GitHub Actions (`.github\workflows\build.yml`);
 pushing a tag `v<version>` publishes a release.
