@@ -15,6 +15,7 @@
 #include "Taskbar.hpp"
 #include "Version.h"
 #include "WindowManager.h"
+#include "MinimizedShelf.hpp"
 
 
 using std::map;
@@ -34,6 +35,51 @@ TaskbarMap gTaskbars;
 // mode we should automatically move the mouse cursor to the center of the
 // window when activated.
 BOOL gActiveWindowTracking = FALSE;
+
+// Minimize and restore events, for the minimized-windows shelf.
+static HWINEVENTHOOK sMinimizeHook = nullptr;
+
+static void CALLBACK MinimizeEvent(HWINEVENTHOOK, DWORD event, HWND window, LONG object, LONG child, DWORD, DWORD)
+{
+    if (!gMinimizedShelf || object != OBJID_WINDOW || child != CHILDID_SELF)
+    {
+        return;
+    }
+    if (event == EVENT_SYSTEM_MINIMIZESTART)
+    {
+        gMinimizedShelf->Add(window);
+    }
+    else
+    {
+        gMinimizedShelf->Remove(window);
+    }
+}
+
+
+/// <summary>
+/// Creates the minimized-windows shelf if the theme turns it on (MinimizedShelfEnabled).
+/// </summary>
+static void StartShelf()
+{
+    if (!Settings(L"MinimizedShelf").GetBool(L"Enabled", false))
+    {
+        return;
+    }
+    gMinimizedShelf.reset(new MinimizedShelf());
+    sMinimizeHook = SetWinEventHook(EVENT_SYSTEM_MINIMIZESTART, EVENT_SYSTEM_MINIMIZEEND, nullptr,
+        MinimizeEvent, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+}
+
+
+static void StopShelf()
+{
+    if (sMinimizeHook != nullptr)
+    {
+        UnhookWinEvent(sMinimizeHook);
+        sMinimizeHook = nullptr;
+    }
+    gMinimizedShelf.reset();
+}
 
 /// <summary>
 /// Called by the LiteStep core when this module is loaded.
@@ -58,6 +104,7 @@ EXPORT_CDECL(int) initModuleW(HWND parent, HINSTANCE instance, LPCWSTR /* path *
 
     // Start the window manager
     WindowManager::Start();
+    StartShelf();
      
     // Register a bang command for creating our test window
     LiteStep::AddBangCommand(L"!nTaskTestWindow", [] (HWND, LPCTSTR) -> void
@@ -77,6 +124,7 @@ void quitModule(HINSTANCE /* hDllInstance */)
     LiteStep::RemoveBangCommand(L"!nTaskTestWindow");
 
     TestWindow::DestroyAll();
+    StopShelf();
     WindowManager::Stop();
     DestroyTaskbars();
     gLSModule.DeInitalize();
@@ -154,13 +202,22 @@ LRESULT WINAPI LSMessageHandler(HWND window, UINT message, WPARAM wParam, LPARAM
 
     case LM_REFRESH:
         {
+            StopShelf();
             WindowManager::Stop();
             DestroyTaskbars();
             WindowManager::Start();
             LoadSettings();
+            StartShelf();
             WindowManager::AddExisting();
         }
         return 0;
+
+    case WM_ADDED_EXISTING:
+        if (gMinimizedShelf)
+        {
+            gMinimizedShelf->Start();
+        }
+        return WindowManager::ShellMessage(window, message, wParam, lParam);
 
     case LM_GETMINRECT:
     case LM_LANGUAGE:
@@ -172,7 +229,6 @@ LRESULT WINAPI LSMessageHandler(HWND window, UINT message, WPARAM wParam, LPARAM
     case LM_WINDOWREPLACING:
     case LM_MONITORCHANGED:
     case NCORE_DISPLAYCHANGE:
-    case WM_ADDED_EXISTING:
     case LM_TASK_SETPROGRESSSTATE:
     case LM_TASK_SETPROGRESSVALUE:
     case LM_TASK_MARKASACTIVE:

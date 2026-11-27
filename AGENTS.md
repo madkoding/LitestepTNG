@@ -664,6 +664,20 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   and slide in when a hidden window is shown) and `<Prefix>HideAnimationDuration|Offset|OffsetX`,
   used by `Window::HideAnimated(done)` (fade and slide out, then hide and call done; without a
   duration it hides at once). Both run on `FrameClock`.
+- **Minimized windows as thumbnails (TaskBar, `MinimizedShelf.cpp`):** with
+  `MinimizedShelfEnabled true` (every theme sets it, in `minimized.rc`) minimized task windows
+  show as DWM thumbnails of their content in a row above the bottom of the work area (an
+  `OnDesktop` window, prefix `MinimizedShelf`, sized to its thumbnails and hidden when empty;
+  `ThumbHeight`, `MaxThumbWidth`, `Spacing`, `Padding`, `MarginLeft/Bottom` plus the usual
+  window keys). DWM keeps a minimized window's last frame, so the thumbnail shows its content.
+  Minimize/restore come from `EVENT_SYSTEM_MINIMIZESTART/END` (out of context); windows
+  minimized earlier are picked up after `AddExisting` and in the maintenance pass; windows
+  parked by nVWM are skipped (minimized ones are never parked). `WindowManager::GetMinRect`
+  answers with the thumbnail's slot, so the minimize animation flies into the row. A click
+  restores the window (`ShowWindowAsync(SW_RESTORE)` + `ForceForeground`). Verified: a
+  minimized Explorer window and a test Notepad showed their content; a posted click restored
+  Notepad and the row shrank back. Windows' own window animations were off on this machine;
+  the user had them turned on (Performance options) on 2026-11-27.
 - **Taskbar animation:** `<Taskbar>AnimationDuration` (ms) slides task buttons to their new
   place when tasks are added/removed (`TaskButton::SetTarget/StepAnimation`, timer in
   `Taskbar`). The thumbnail's own `ThumbnailAnimate` and the popup `ShowAnimation*` settings
