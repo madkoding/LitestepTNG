@@ -23,7 +23,6 @@
 #include "COMService.h"
 #include "DDEService.h"
 #include "DDEStub.h"
-#include "ExplorerService.h"
 #include "FullscreenMonitor.h"
 #include "RecoveryMenu.h"
 #include "TrayService.h"
@@ -35,7 +34,6 @@
 
 // Other
 #include "DataStore.h"
-#include "StartupRunner.h"
 #include "Utility.h"
 #include "../lsapi/lsapiInit.h"
 #include "../lsapi/lsapi.h"
@@ -127,221 +125,6 @@ static void EnsureKnownFolderEnvironment()
     }
 }
 
-static std::wstring NormalizeShellValue(const std::wstring& value)
-{
-    std::wstring normalized = lsapi::StringUtils::TrimCopy(value);
-    if (normalized.empty())
-    {
-        return normalized;
-    }
-
-    normalized = lsapi::StringUtils::TrimQuotesCopy(normalized);
-
-    size_t argumentSeparator = normalized.find_first_of(L" \t");
-    if (argumentSeparator != std::wstring::npos)
-    {
-        normalized = normalized.substr(0, argumentSeparator);
-    }
-
-    wchar_t canonical[MAX_PATH] = { 0 };
-    if (!normalized.empty() && PathCanonicalizeW(canonical, normalized.c_str()))
-    {
-        return canonical;
-    }
-
-    return normalized;
-}
-
-static bool IsCurrentUserShellLiteStep(const std::wstring& exePath)
-{
-    if (exePath.empty())
-    {
-        return false;
-    }
-
-    std::wstring expected = NormalizeShellValue(exePath);
-    if (expected.empty())
-    {
-        return false;
-    }
-
-    HKEY shellKey = nullptr;
-    LONG result = RegOpenKeyExW(HKEY_CURRENT_USER,
-        L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon",
-        0, KEY_READ, &shellKey);
-
-    if (result != ERROR_SUCCESS)
-    {
-        Logger::Log(L"Shell registry key open failed (error=%ld).", result);
-        return false;
-    }
-
-    wchar_t buffer[512] = { 0 };
-    DWORD type = 0;
-    DWORD bufferSize = sizeof(buffer);
-    result = RegQueryValueExW(shellKey, L"Shell", nullptr, &type,
-        reinterpret_cast<LPBYTE>(buffer), &bufferSize);
-    RegCloseKey(shellKey);
-
-    if (result != ERROR_SUCCESS || (type != REG_SZ && type != REG_EXPAND_SZ))
-    {
-        if (result != ERROR_FILE_NOT_FOUND)
-        {
-            Logger::Log(L"Shell registry value query failed (error=%ld).", result);
-        }
-        return false;
-    }
-
-    std::wstring currentValue(buffer);
-    std::wstring normalizedCurrent = NormalizeShellValue(currentValue);
-
-    if (normalizedCurrent.empty())
-    {
-        return false;
-    }
-
-    return (_wcsicmp(normalizedCurrent.c_str(), expected.c_str()) == 0);
-}
-
-static std::wstring FormatWin32ErrorMessage(DWORD errorCode)
-{
-    wchar_t* messageBuffer = nullptr;
-    const DWORD flags = FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
-    const DWORD length = FormatMessageW(flags, nullptr, errorCode, 0,
-        reinterpret_cast<LPWSTR>(&messageBuffer), 0, nullptr);
-
-    std::wstring message;
-
-    if (length != 0 && messageBuffer != nullptr)
-    {
-        message.assign(messageBuffer, length);
-        LocalFree(messageBuffer);
-    }
-
-    if (message.empty())
-    {
-        wchar_t fallback[64];
-        StringCchPrintfW(fallback, _countof(fallback), L"Error %lu", errorCode);
-        message.assign(fallback);
-    }
-
-    return lsapi::StringUtils::TrimCopy(message);
-}
-
-static bool ConfigureShellForCurrentUser(const std::wstring& exePath, std::wstring& errorMessage)
-{
-    std::wstring canonicalPath;
-    wchar_t canonicalBuffer[MAX_PATH] = { 0 };
-    if (PathCanonicalizeW(canonicalBuffer, exePath.c_str()))
-    {
-        canonicalPath.assign(canonicalBuffer);
-    }
-    else
-    {
-        canonicalPath = exePath;
-    }
-
-    std::wstring shellValue = canonicalPath;
-    if (shellValue.find_first_of(L" \t") != std::wstring::npos)
-    {
-        shellValue.insert(shellValue.begin(), L'"');
-        shellValue.push_back(L'"');
-    }
-
-    HKEY shellKey = nullptr;
-    LONG result = RegCreateKeyExW(HKEY_CURRENT_USER,
-        L"Software\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon",
-        0, nullptr, REG_OPTION_NON_VOLATILE, KEY_SET_VALUE, nullptr, &shellKey, nullptr);
-
-    if (result != ERROR_SUCCESS)
-    {
-        errorMessage = FormatWin32ErrorMessage(static_cast<DWORD>(result));
-        return false;
-    }
-
-    const DWORD dataSize = static_cast<DWORD>((shellValue.length() + 1) * sizeof(wchar_t));
-    result = RegSetValueExW(shellKey, L"Shell", 0, REG_SZ,
-        reinterpret_cast<const BYTE*>(shellValue.c_str()), dataSize);
-    RegCloseKey(shellKey);
-
-    if (result != ERROR_SUCCESS)
-    {
-        errorMessage = FormatWin32ErrorMessage(static_cast<DWORD>(result));
-        return false;
-    }
-
-    return true;
-}
-
-static void PromptForShellConfiguration(const std::wstring& exePath)
-{
-    if (exePath.empty())
-    {
-        Logger::Log(L"Executable path unavailable. Skipping shell configuration prompt.");
-        return;
-    }
-
-    if (IsCurrentUserShellLiteStep(exePath))
-    {
-        Logger::Log(L"LiteStep already configured as current user shell. No prompt needed.");
-        return;
-    }
-
-    Logger::Log(L"LiteStep is not the configured shell. Prompting user for confirmation.");
-
-    const wchar_t* promptText =
-        L"LiteStep is not currently configured as the shell for this account.\n\n"
-        L"Would you like to set LiteStep as your shell now?\n"
-        L"You will need to sign out for the change to take effect.";
-
-    const int response = MessageBoxW(nullptr, promptText, L"LiteStep Shell",
-        MB_ICONQUESTION | MB_YESNO | MB_SETFOREGROUND | MB_TOPMOST);
-
-    if (response == IDYES)
-    {
-        std::wstring errorMessage;
-        if (ConfigureShellForCurrentUser(exePath, errorMessage))
-        {
-            Logger::Log(L"Successfully updated current user shell setting.");
-            MessageBoxW(nullptr,
-                L"LiteStep has been set as your shell. Sign out or restart to apply the change.",
-                L"LiteStep Shell",
-                MB_OK | MB_ICONINFORMATION | MB_SETFOREGROUND | MB_TOPMOST);
-        }
-        else
-        {
-            Logger::Log(L"Failed to update shell setting: %ls", errorMessage.c_str());
-            std::wstring message = L"LiteStep could not update the shell setting.\n";
-            if (!errorMessage.empty())
-            {
-                message.append(L"\n");
-                message.append(errorMessage);
-            }
-            MessageBoxW(nullptr, message.c_str(), L"LiteStep Shell",
-                MB_OK | MB_ICONERROR | MB_SETFOREGROUND | MB_TOPMOST);
-        }
-    }
-    else
-    {
-        Logger::Log(L"User declined shell configuration prompt.");
-    }
-}
-//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-//
-// SetWelcomeScreenEvent
-//
-void SetWelcomeScreenEvent()
-{
-    HANDLE hSwitchEvent = OpenEvent(
-        EVENT_MODIFY_STATE, FALSE, _T("ShellDesktopSwitchEvent"));
-
-    if (hSwitchEvent)
-    {
-        VERIFY(SetEvent(hSwitchEvent));
-        VERIFY(CloseHandle(hSwitchEvent));
-    }
-}
-
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 //
 // SetDialogClassIcon
@@ -373,14 +156,6 @@ int StartLitestep(HINSTANCE hInst, WORD wStartFlags, LPCTSTR pszAltConfigFile)
     TCHAR szAppPath[MAX_PATH] = { 0 };
     TCHAR szRcPath[MAX_PATH] = { 0 };
 
-    std::wstring exePathForShellPrompt;
-
-    wchar_t szExePath[MAX_PATH] = { 0 };
-    if (LSGetModuleFileName(NULL, szExePath, COUNTOF(szExePath)))
-    {
-        exePathForShellPrompt.assign(szExePath);
-    }
-
     if (FAILED(GetAppPath(szAppPath, COUNTOF(szAppPath))))
     {
         // something really crappy is going on.
@@ -395,17 +170,6 @@ int StartLitestep(HINSTANCE hInst, WORD wStartFlags, LPCTSTR pszAltConfigFile)
     {
         PathCombine(szRcPath, szAppPath, L"step.rc");
     }
-
-    // Ensure the desktop wallpaper is restored via the system configuration.
-    VERIFY(SystemParametersInfo(
-        SPI_SETDESKWALLPAPER, 0, SETWALLPAPER_DEFAULT, 0));
-
-    //
-    // Close the welcome screen (if required)
-    // This has to be done before the first MessageBox call, otherwise
-    // the box would pop up under that screen
-    //
-    SetWelcomeScreenEvent();
 
     // Change the icon of all dialogs to the LS icon
     SetDialogClassIcon(hInst, LoadIcon(hInst, MAKEINTRESOURCE(IDI_LS)));
@@ -447,18 +211,13 @@ int StartLitestep(HINSTANCE hInst, WORD wStartFlags, LPCTSTR pszAltConfigFile)
     int nReturn = 0;
 
     CLiteStep liteStep;
-    HRESULT hr = liteStep.Start(hInst, wStartFlags);
+    HRESULT hr = liteStep.Start(hInst);
 
     if (SUCCEEDED(hr))
     {
         // if hr == S_FALSE the user aborted during startup
         if (hr == S_OK)
         {
-            if ((wStartFlags & LSF_OVERLAY_MODE) == 0)
-            {
-                PromptForShellConfiguration(exePathForShellPrompt);
-            }
-
             nReturn = liteStep.Run();
             hr = liteStep.Stop();
         }
@@ -489,8 +248,7 @@ int StartLitestep(HINSTANCE hInst, WORD wStartFlags, LPCTSTR pszAltConfigFile)
 CLiteStep::CLiteStep()
 : m_pRecoveryMenu(nullptr),
   m_pRegisterShellHook(nullptr),
-  m_hWtsDll(nullptr),
-  m_bOverlayMode(false)
+  m_hWtsDll(nullptr)
 {
     m_hInstance = nullptr;
     m_hMainWindow = nullptr;
@@ -519,7 +277,7 @@ CLiteStep::~CLiteStep()
 //
 // Start
 //
-HRESULT CLiteStep::Start(HINSTANCE hInstance, WORD wStartFlags)
+HRESULT CLiteStep::Start(HINSTANCE hInstance)
 {
     HRESULT hr = E_FAIL;
 
@@ -546,154 +304,6 @@ HRESULT CLiteStep::Start(HINSTANCE hInstance, WORD wStartFlags)
 
     // Initialize OLE/COM
     hr = OleInitialize(NULL);
-    const bool overlayForcedByArgs = ((wStartFlags & LSF_OVERLAY_MODE) != 0);
-    const bool closeExplorerForced = ((wStartFlags & LSF_CLOSE_EXPLORER) != 0);
-    // GetRCBoolW(key, x) returns x when the key exists and !x when it does not, so it
-    // cannot express "default FALSE". Use GetRCBoolDefW for real defaults.
-    const bool rcOverlayDefault = GetRCBoolDefW(L"LSOverlayMode", FALSE) != FALSE;
-
-    if (rcOverlayDefault && !overlayForcedByArgs && !closeExplorerForced)
-    {
-        wStartFlags |= LSF_OVERLAY_MODE;
-        wStartFlags &= ~LSF_CLOSE_EXPLORER;
-    }
-
-    bool explorerDetected = (FindWindow(L"Shell_TrayWnd", NULL) != NULL);
-
-    if (explorerDetected && !overlayForcedByArgs && !closeExplorerForced)
-    {
-        UINT promptFlags = MB_ICONQUESTION | MB_SYSTEMMODAL |
-            MB_SETFOREGROUND | MB_YESNOCANCEL;
-        promptFlags |= rcOverlayDefault ? MB_DEFBUTTON2 : MB_DEFBUTTON1;
-
-        int promptResult = MessageBox(
-            NULL,
-            L"Explorer is already running as the Windows shell.\n\n"
-            L"Choose Yes to hide Explorer and let LiteStep take over the desktop.\n"
-            L"Choose No to keep Explorer running and overlay LiteStep on top.\n"
-            L"Choose Cancel to stop LiteStep from loading.",
-            L"LiteStep",
-            promptFlags);
-
-        if (promptResult == IDCANCEL)
-        {
-            return S_FALSE;
-        }
-        else if (promptResult == IDYES)
-        {
-            wStartFlags |= LSF_CLOSE_EXPLORER;
-            wStartFlags &= ~LSF_OVERLAY_MODE;
-        }
-        else
-        {
-            wStartFlags |= LSF_OVERLAY_MODE;
-            wStartFlags &= ~LSF_CLOSE_EXPLORER;
-        }
-    }
-
-    m_bOverlayMode = ((wStartFlags & LSF_OVERLAY_MODE) != 0);
-
-    if (m_bOverlayMode)
-    {
-        SetEnvironmentVariable(L"LSOverlayMode", L"1");
-    }
-    else
-    {
-        SetEnvironmentVariable(L"LSOverlayMode", NULL);
-    }
-
-    LSSetVariableW(L"LSOverlayMode", m_bOverlayMode ? L"true" : L"false");
-
-    // Order of precedence: 1) shift key, 2) command line flags, 3) step.rc
-    if ((GetAsyncKeyState(VK_SHIFT) & 0x8000) ||
-        (GetRCBoolW(L"LSNoStartup", TRUE) &&
-        !(wStartFlags & LSF_FORCE_STARTUPAPPS)))
-    {
-        wStartFlags &= ~LSF_RUN_STARTUPAPPS;
-    }
-
-    bool bUnderExplorer = false;
-
-    //
-    // Check for another shell
-    //
-    if (!m_bOverlayMode && explorerDetected &&
-        (wStartFlags & LSF_CLOSE_EXPLORER))
-    {
-        HWND hTrayWindow = FindWindow(L"Shell_TrayWnd", NULL);
-
-        if (hTrayWindow != NULL)
-        {
-            // Determine the name of the current Shell
-            DWORD dwProcessID;
-            GetWindowThreadProcessId(hTrayWindow, &dwProcessID);
-            HANDLE hShellProc = OpenProcess(
-                PROCESS_QUERY_INFORMATION | SYNCHRONIZE,
-                FALSE,
-                dwProcessID
-                );
-
-            if (hShellProc != NULL)
-            {
-                TCHAR szProcessPath[MAX_PATH];
-                LSGetProcessImageFileName(hShellProc, szProcessPath, _countof(szProcessPath));
-                LPCTSTR pszPathName = PathFindFileName(szProcessPath);
-
-                if (_tcsicmp(pszPathName, _T("explorer.exe")) == 0)
-                {
-                    PostMessage(hTrayWindow, 0x5B4, 0, 0);
-
-                    // Wait for the process to exit
-                    if (WaitForSingleObject(hShellProc, 3000) != WAIT_OBJECT_0) // Wait for at most 3 seconds.
-                    {
-                        // At this point, forcibly terminate the proc
-                        TerminateProcess(hShellProc, 0);
-
-                        // Wait another 3 seconds, max
-                        WaitForSingleObject(hShellProc, 3000);
-                    }
-                }
-
-                CloseHandle(hShellProc);
-            }
-        }
-
-        explorerDetected = (FindWindow(L"Shell_TrayWnd", NULL) != NULL);
-    }
-
-    if (m_bOverlayMode)
-    {
-        bUnderExplorer = true;
-    }
-    else if (explorerDetected)
-    {
-        if (GetRCBoolW(L"LSNoShellWarning", FALSE))
-        {
-            RESOURCE_STR(hInstance, IDS_LITESTEP_ERROR3,
-                L"LiteStep is not able to load as the system shell.\n"
-                L"Another shell is already active.\n"
-                L"\n"
-                L"Continuing to load LiteStep will disable specific system\n"
-                L"shell functions of LiteStep and some features will not\n"
-                L"function properly such as icon notifications (systray),\n"
-                L"the desktop and some task managers.\n"
-                L"\n"
-                L"To disable this message, place 'LSNoShellWarning' in\n"
-                L"your step.rc.\n"
-                L"\n"
-                L"Continue to load LiteStep?\n");
-
-            RESOURCE_TITLE(hInstance, IDS_LITESTEP_TITLE_WARNING, L"Warning");
-
-            if (RESOURCE_MSGBOX_F(
-                resourceTitleBuffer, MB_YESNO | MB_ICONEXCLAMATION) == IDNO)
-            {
-                return S_FALSE;
-            }
-        }
-
-        bUnderExplorer = true;
-    }
 
     if (SUCCEEDED(hr))
     {
@@ -705,12 +315,7 @@ HRESULT CLiteStep::Start(HINSTANCE hInstance, WORD wStartFlags)
     //
     if (SUCCEEDED(hr))
     {
-        // Default TRUE: register as the shell window so a bare "explorer.exe" opens a
-        // file window instead of taking over the desktop and taskbar.
-        bool bSetAsShell = !bUnderExplorer && GetRCBoolDefW(L"LSSetAsShell", TRUE) != FALSE;
-        Logger::Log(L"Shell registration: overlay=%d underExplorer=%d setAsShell=%d.",
-            m_bOverlayMode ? 1 : 0, bUnderExplorer ? 1 : 0, bSetAsShell ? 1 : 0);
-        hr = _InitServices(bSetAsShell);
+        hr = _InitServices();
 
         if (SUCCEEDED(hr))
         {
@@ -725,27 +330,6 @@ HRESULT CLiteStep::Start(HINSTANCE hInstance, WORD wStartFlags)
                     hr = _StartManagers();
                 }
             }
-        }
-
-        if (SUCCEEDED(hr))
-        {
-            // Run startup items
-            if (wStartFlags & LSF_RUN_STARTUPAPPS)
-            {
-                BOOL bForceStartup = (wStartFlags & LSF_FORCE_STARTUPAPPS);
-
-                StartupRunner::Run(bForceStartup);
-            }
-
-            // The shell is responsible for playing the startup sound.
-            if (StartupRunner::IsFirstRunThisSession(
-                _T("LogonSoundHasBeenPlayed")))
-            {
-                LSPlaySystemSound(L"WindowsLogon");
-            }
-
-            // Undocumented call: Shell Loading Finished
-            SendMessage(GetDesktopWindow(), WM_USER, 0, 0);
         }
     }
 
@@ -853,11 +437,8 @@ HRESULT CLiteStep::CreateMainWindow()
     //
     // Create main window
     //
-    DWORD dwExStyle = WS_EX_TOOLWINDOW;
-    if (m_bOverlayMode)
-    {
-        dwExStyle |= WS_EX_TOPMOST;
-    }
+    // LiteStep runs on top of Explorer: its windows stay above Explorer's.
+    DWORD dwExStyle = WS_EX_TOOLWINDOW | WS_EX_TOPMOST;
 
     m_hMainWindow = CreateWindowEx(dwExStyle,
         szMainWindowClass, szMainWindowTitle,
@@ -874,11 +455,8 @@ HRESULT CLiteStep::CreateMainWindow()
         // Set our window in LSAPI
         LSAPISetLitestepWindow(m_hMainWindow);
 
-        if (m_bOverlayMode)
-        {
-            SetWindowPos(m_hMainWindow, HWND_TOPMOST, 0, 0, 0, 0,
-                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-        }
+        SetWindowPos(m_hMainWindow, HWND_TOPMOST, 0, 0, 0, 0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
         _RegisterShellNotifications(m_hMainWindow);
 
@@ -1254,9 +832,9 @@ LRESULT CLiteStep::InternalWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
                 }
                 break;
 
-            case LR_EXPLORER:
+            case LR_EXPLORER:  // "start Explorer": Explorer is already the shell
                 {
-                    PostQuitMessage(4);
+                    PostQuitMessage(0);
                 }
                 break;
 
@@ -1559,7 +1137,7 @@ void CLiteStep::_ScheduleUiRecycle(const wchar_t* reason)
     }
 }
 
-HRESULT CLiteStep::_InitServices(bool bSetAsShell)
+HRESULT CLiteStep::_InitServices()
 {
     IService* pService = nullptr;
 
@@ -1601,27 +1179,6 @@ HRESULT CLiteStep::_InitServices(bool bSetAsShell)
         {
             return E_OUTOFMEMORY;
         }
-    }
-
-    //
-    // Explorer service
-    //
-    if (bSetAsShell)
-    {
-#if defined(LS_USE_EXPLORER_SERVICE)
-        pService = new (std::nothrow) ExplorerService();
-
-        if (pService)
-        {
-            m_Services.push_back(pService);
-        }
-        else
-        {
-            return E_OUTOFMEMORY;
-        }
-#else
-        _SetShellWindow(m_hMainWindow);
-#endif
     }
 
     //
@@ -1881,34 +1438,4 @@ HRESULT CLiteStep::_EnumRevIDs(LSENUMREVIDSPROCW pfnCallback, LPARAM lParam) con
     return hr;
 }
 
-
-//
-// _SetShellWindow
-//
-BOOL CLiteStep::_SetShellWindow(HWND hWnd) {
-    typedef BOOL (WINAPI* SETSHELLWINDOWPROC)(HWND);
-
-    SETSHELLWINDOWPROC fnSetShellWindow =
-        (SETSHELLWINDOWPROC)GetProcAddress(
-        GetModuleHandle(_T("USER32.DLL")), "SetShellWindow");
-
-    BOOL bRet = FALSE;
-
-    if (fnSetShellWindow)
-    {
-        HWND hPrevious = GetShellWindow();
-        SetLastError(0);
-        bRet = fnSetShellWindow(hWnd);
-        DWORD dwError = GetLastError();
-        Logger::Log(L"SetShellWindow(%p) -> %d (error=%lu, previous=%p, now=%p).",
-            hWnd, bRet, dwError, hPrevious, GetShellWindow());
-    }
-    else
-    {
-        TRACE("SetShellWindow() not found");
-        Logger::Log(L"SetShellWindow() not found in user32.dll.");
-    }
-
-    return bRet;
-}
 

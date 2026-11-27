@@ -84,7 +84,6 @@ void   LSDeactivateActCtx(HANDLE hActCtx, ULONG_PTR* pulCookie);
 #define LRV_SHUTDOWN_DLG        1
 #define LRV_NO_STEP             2
 #define LRV_LSAPI_FAIL          3
-#define LRV_EXPLORER_START      4
 
 
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

@@ -34,7 +34,6 @@ PopupStartMenuItemHoverTextVerticalAlign Middle
 ; desktop and context popups
 ; ------------------------------------------------------------------------------
 HotlistName "Glassboard"
-*nDeskOn RIGHTUP NONE !PopupContext
 PopupIcons
 PopupAdaptiveWidth
 PopupMinWidth 200
@@ -54,12 +53,11 @@ PopupNoBevel
 *PopupTray "$TxtNetwork$" !Execute [ms-settings:network]
 *PopupTray "$TxtTaskManager$" !Execute [$WINDIR$\System32\Taskmgr.exe]
 
-*PopupDesktops "$TxtDesktop$ 1" !VWMGoToDesktop 1
-*PopupDesktops "$TxtDesktop$ 2" !VWMGoToDesktop 2
-*PopupDesktops "$TxtDesktop$ 3" !VWMGoToDesktop 3
+*PopupDesktops "$TxtDesktop$ 1" !VWMDesk 1
+*PopupDesktops "$TxtDesktop$ 2" !VWMDesk 2
+*PopupDesktops "$TxtDesktop$ 3" !VWMDesk 3
 *PopupDesktops !Separator
-*PopupDesktops "$TxtNewDesktop$" !VWMCreateDesktop
-*PopupDesktops "$TxtCloseDesktop$" !VWMDestroyDesktop
+*PopupDesktops "$TxtGatherWindows$" !VWMGather
 
 ; retain a lightweight master popup
 *Popup "$TxtStart$" !Popup

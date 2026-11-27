@@ -19,8 +19,7 @@ LoadModule $LiteStepDir$StartMenu.dll
 ; ------------------------------------------------------------------------------
 ;  Escritorio: columna izquierda (44 px) y barra superior (26 px) reservadas
 ; ------------------------------------------------------------------------------
-; LiteStep corre sobre Explorer (litestep -overlay): el escritorio es el de Windows. nDesk
-; no se carga: se apropia de la vista de escritorio de Explorer (ver AGENTS.md).
+; LiteStep corre sobre Explorer: el escritorio es el de Windows.
 ; El tema trae su fondo; al pasar a un tema sin fondo propio vuelve el que tenias tu.
 ThemeWallpaper "$PXDir$wallpaper.jpg"
 ThemeWallpaperStyle Fill

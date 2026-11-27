@@ -46,11 +46,11 @@ ClockLabelHeight 54
 ClockLabelAlwaysOnTop true
 ClockLabelColor #00101820
 ClockLabelFont "Segoe UI Semibold"
-ClockLabelFontSize 20
+ClockLabelFontSize 14
 ClockLabelFontColor #FFFFFFFF
 ClockLabelTextVerticalAlign Middle
 ClockLabelTextAlign Center
-ClockLabelText [Time('%a %b %d %H:%M')]
+ClockLabelText "[Time('%a %b %d %H:%M')]"
 ClockLabelOn LeftDoubleClick None !Execute [$WINDIR$\System32\control.exe timedate.cpl]
 
 *nLabel StartButton

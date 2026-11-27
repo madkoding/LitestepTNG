@@ -26,7 +26,7 @@ Download the latest release from the [releases page](../../releases/latest):
   user (no administrator rights), into `%LOCALAPPDATA%\Programs\LiteStepTNG`, and can
   start LiteStep when you sign in. It does not change the Windows shell.
 - **`LiteStepTNG-<version>-x64.zip`** — the same files, to unpack anywhere you can write
-  to. Start it with `litestep.exe -overlay`.
+  to. Start it with `litestep.exe`.
 
 Requirements: Windows 10 version 2004 or newer, or Windows 11, 64-bit.
 
@@ -84,7 +84,7 @@ flowchart TB
     end
 
     subgraph core["LiteStep core"]
-        exe["litestep.exe -overlay<br/>module loader, bangs, tray service"]
+        exe["litestep.exe<br/>module loader, bangs, tray service"]
         lsapi["lsapi.dll<br/>settings, bangs, messages"]
         exe --- lsapi
     end
@@ -142,8 +142,8 @@ folder"), not from the repository; the scripts in `tools\` take care of that:
 .\tools\package.ps1 -Version 1.2.3                # zip + installer (Inno Setup 6) in dist\
 ```
 
-Always start LiteStep with `-overlay`. Without it, LiteStep sees Explorer's taskbar and
-asks what to do.
+LiteStep always runs on top of Explorer, which stays the Windows shell. (`-overlay`, the
+switch older versions needed, is still accepted and does nothing.)
 
 Every push is built and packaged by GitHub Actions (`.github\workflows\build.yml`);
 pushing a tag `v<version>` publishes a release.
@@ -167,8 +167,8 @@ step.rc       the loader: theme-select.rc, the optional personal.rc, then the th
 
 - Themes are `theme.rc` files for the nModules suite. Use `$LiteStepDir$`, `$ThemeName$`
   and `$USERNAME$` instead of literal paths.
-- Do not load `Desk.dll` on top of Explorer: it takes over Explorer's desktop view. It is
-  not included in the releases.
+- The desktop (wallpaper, icons) is Explorer's. A module must never re-parent Explorer's
+  desktop view: that is why the old `Desk.dll` was removed.
 - Modules are built against `lsapi\lsapi.h` and link `ModuleKit`.
 - The core also contains an experimental declarative engine ("Theme Engine V2",
   `litestep\themev2`, files `theme.lsx` / `theme.lsxstyle`). The themes shipped here do

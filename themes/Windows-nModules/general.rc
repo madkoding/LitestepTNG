@@ -9,7 +9,6 @@ SetEnv USERPICTURES "$USERPROFILE$\Pictures"
 ; load core experience modules
 LoadModule $LiteStepDir$Core.dll
 LoadModule $LiteStepDir$Wallpaper.dll
-LoadModule $LiteStepDir$Desk.dll
 LoadModule $LiteStepDir$Popup.dll
 LoadModule $LiteStepDir$HotKey.dll
 LoadModule $LiteStepDir$SysTray.dll
@@ -22,29 +21,34 @@ LoadModule $LiteStepDir$VWM.dll
 LoadModule $LiteStepDir$Calendar.dll
 LoadModule $LiteStepDir$Panels.dll
 
-; wallpaper defaults
-OnStartup !SetWallpaper "$WINDIR$\Web\Wallpaper\Windows\img0.jpg"
-OnStartup !SetWallpaperStyle 10 ; Fill
+; ------------------------------------------------------------------------------
+; desktop: Explorer's. LiteStep runs on top of it, so the wallpaper and the desktop
+; icons are Windows' own. The theme's picture goes up on load and the user's comes
+; back when a theme without one is chosen (Wallpaper module).
+; ------------------------------------------------------------------------------
+ThemeWallpaper "$WINDIR$Web\Wallpaper\Windows\img0.jpg"
+ThemeWallpaperStyle Fill
 
-; desktop rendering behaviour
-nDeskTransitionEffect FadeOut
-nDeskTransitionDuration 450
-nDeskTransitionSquareSize 120
-nDeskInvalidateAllOnUpdate true
-nDeskDontRenderWallpaper false
-*nDeskWorkArea primary 0 42 0 54
-OnStartup !nDeskSetWorkArea primary 0 42 0 54
-OnRefresh !nDeskSetWorkArea primary 0 42 0 54
+; Core hides Windows' taskbar and keeps room for the theme's bars: top 42, bottom 54.
+ReserveScreenTop 42
+ReserveScreenBottom 54
+
 OnStartup !PanelsRefresh
 OnRefresh !PanelsRefresh
 
+; virtual desktops (nVWM); the indicator in the top bar follows the current one
+VWMDesktops 3
+VWMDesk1Command !nLabelSetText DesktopIndicator "$TxtDesktop$ 1"
+VWMDesk2Command !nLabelSetText DesktopIndicator "$TxtDesktop$ 2"
+VWMDesk3Command !nLabelSetText DesktopIndicator "$TxtDesktop$ 3"
+
 ; ------------------------------------------------------------------------------
-; keyboard shortcuts
+; keyboard shortcuts (Win+Tab and Alt+Tab stay Windows')
 ; ------------------------------------------------------------------------------
 *HotKey WIN SPACE !Popup
-*HotKey WIN X !PopupContext
 *HotKey WIN V !PopupDesktops
-*HotKey WINCTRL LEFT !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('#^{LEFT}')"]
-*HotKey WINCTRL RIGHT !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('#^{RIGHT}')"]
-*HotKey WIN TAB !Execute ["$WINDIR$\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -WindowStyle Hidden -Command "(New-Object -ComObject WScript.Shell).SendKeys('#{TAB}')"]
+*HotKey WINCTRL LEFT !VWMPrev
+*HotKey WINCTRL RIGHT !VWMNext
 *HotKey ALT OEM_3 !TaskSwitch
+; desktop clicks (right: context menu, middle: start menu) and the shared hotkeys
+include "$LiteStepDir$config\hotkeys.rc"

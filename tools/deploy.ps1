@@ -12,12 +12,10 @@
 #     .\tools\deploy.ps1 -Themes Glass        # also installs a theme that is not there yet
 #     .\tools\deploy.ps1 -NoRestart           # copy what is not locked, do not restart
 #
-#  LiteStep is stopped first (its DLLs are locked while it runs) and started again
-#  with -overlay. theme-select.rc is only written if the target has none, so the
-#  theme selected there is kept; personal.rc, games\ and favorites\ are never touched. By default only the themes already installed in the
-#  target are updated: some themes in the repo were written for LiteStep as the
-#  Windows shell (they load Desk.dll) and must not appear in an overlay install
-#  just because they exist here.
+#  LiteStep is stopped first (its DLLs are locked while it runs) and started again.
+#  theme-select.rc is only written if the target has none, so the theme selected
+#  there is kept; personal.rc, games\ and favorites\ are never touched. By default
+#  only the themes already installed in the target are updated.
 # ==============================================================================
 param(
     [string]$LiteStepDir,
@@ -62,8 +60,9 @@ foreach ($shared in 'config', 'lang') {
     $null = robocopy (Join-Path $Root $shared) (Join-Path $LiteStepDir $shared) /MIR /NFL /NDL /NJH /NJS /NP
     if ($LASTEXITCODE -ge 8) { throw "robocopy failed for $shared (code $LASTEXITCODE)" }
 }
-$themes = Join-Path $Root 'themes'
-$installed = Get-ChildItem $themes -Directory | Where-Object {
+# Not "$themes": PowerShell names are case-insensitive, so that would overwrite -Themes.
+$themesDir = Join-Path $Root 'themes'
+$installed = Get-ChildItem $themesDir -Directory | Where-Object {
     ($Themes -contains $_.Name) -or (Test-Path (Join-Path $LiteStepDir "themes\$($_.Name)"))
 }
 foreach ($theme in $installed) {
@@ -74,7 +73,6 @@ $global:LASTEXITCODE = 0
 Write-Host "Themes: $($installed.Name -join ', ')"
 
 if (-not $NoRestart) {
-    # Always -overlay: without it LiteStep sees Explorer's taskbar and shows a blocking prompt.
-    Start-Process (Join-Path $LiteStepDir 'litestep.exe') -ArgumentList '-overlay'
+    Start-Process (Join-Path $LiteStepDir 'litestep.exe')
     Write-Host 'LiteStep restarted.'
 }

@@ -99,12 +99,14 @@ function Wait-Until([scriptblock]$condition) {
     foreach ($try in 1..10) { if (& $condition) { return $true }; Start-Sleep -Milliseconds 500 }
     return $false
 }
-$boxes = [Smoke]::Windows('LSNotifyDrawable', 'NotifyBox').Count
-Bang '!NotifyTest "Smoke test" "Title" "Body"'
-Check '!NotifyTest shows a box' (Wait-Until { [Smoke]::Windows('LSNotifyDrawable', 'NotifyBox').Count -gt $boxes })
-$shown = [Smoke]::Windows('LSNotifyDrawable', 'NotifyBox').Count
-Bang '!NotifyClear test'
-Check '!NotifyClear test removes the test box' (Wait-Until { [Smoke]::Windows('LSNotifyDrawable', 'NotifyBox').Count -lt $shown })
+if ($loaded -contains 'Notify.dll') {
+    $boxes = [Smoke]::Windows('LSNotifyDrawable', 'NotifyBox').Count
+    Bang '!NotifyTest "Smoke test" "Title" "Body"'
+    Check '!NotifyTest shows a box' (Wait-Until { [Smoke]::Windows('LSNotifyDrawable', 'NotifyBox').Count -gt $boxes })
+    $shown = [Smoke]::Windows('LSNotifyDrawable', 'NotifyBox').Count
+    Bang '!NotifyClear test'
+    Check '!NotifyClear test removes the test box' (Wait-Until { [Smoke]::Windows('LSNotifyDrawable', 'NotifyBox').Count -lt $shown })
+}
 
 # --- window frames and sending a window to another desktop --------------------------
 $test = Start-Process charmap.exe -PassThru

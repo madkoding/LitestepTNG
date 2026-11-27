@@ -27,20 +27,15 @@ $Stage = Join-Path $Dist 'stage'
 
 if (-not (Test-Path (Join-Path $Bin 'litestep.exe'))) { throw "No build in $Bin. Build litestep.sln first." }
 
-# Themes that work with LiteStep running on top of Explorer, which is how it is
-# installed. Windows-nModules and Windows11-Dark load Desk.dll and are left out.
-$Themes = 'LiteStep Enhanced', 'Glass', 'Prototype-X'
-
-# Desk.dll takes over Explorer's desktop view and must not be loaded on top of
-# Explorer (see AGENTS.md); shipping it would only invite that.
-$ExcludedBinaries = 'Desk.dll'
+# The themes that ship (the repo also keeps reference material and drafts).
+$Themes = 'LiteStep Enhanced', 'Glass', 'Prototype-X', 'Windows-nModules'
 
 if (Test-Path $Dist) { Remove-Item $Dist -Recurse -Force }
 New-Item -ItemType Directory -Force $Stage | Out-Null
 
 # --- binaries ---------------------------------------------------------------
 $binaries = Get-ChildItem $Bin -File |
-    Where-Object { $_.Extension -in '.dll', '.exe' -and $ExcludedBinaries -notcontains $_.Name }
+    Where-Object { $_.Extension -in '.dll', '.exe' }
 $binaries | Copy-Item -Destination $Stage
 if (-not ($binaries.Name -contains 'lsapi.dll' -and $binaries.Name -contains 'Core.dll')) {
     throw 'The build is incomplete: lsapi.dll or Core.dll is missing.'

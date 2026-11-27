@@ -5,7 +5,7 @@
 ;      /DAppVersion=  /DAppNumericVersion=  /DStageDir=  /DOutputDir=  /DRepoUrl=
 ;  This script only packs the staged folder; what ships is decided in package.ps1.
 ;
-;  LiteStep is installed per user and runs ON TOP of Explorer ("-overlay"):
+;  LiteStep is installed per user and runs ON TOP of Explorer (its only mode):
 ;  Explorer stays the Windows shell, nothing is changed in Winlogon, and no
 ;  administrator rights are needed. The folder must be writable by the user,
 ;  because LiteStep keeps the theme selection, personal.rc and the favourites
@@ -80,14 +80,14 @@ Source: "{#StageDir}\*"; DestDir: "{app}"; Excludes: "theme-select.rc"; Flags: i
 Source: "{#StageDir}\theme-select.rc"; DestDir: "{app}"; Flags: onlyifdoesntexist uninsneveruninstall
 
 [Icons]
-Name: "{autoprograms}\LiteStep TNG"; Filename: "{app}\litestep.exe"; Parameters: "-overlay"; WorkingDir: "{app}"; Comment: "{cm:ShortcutComment}"
+Name: "{autoprograms}\LiteStep TNG"; Filename: "{app}\litestep.exe"; WorkingDir: "{app}"; Comment: "{cm:ShortcutComment}"
 
 [Registry]
 ; Explorer is the shell; LiteStep is just a program started at sign-in.
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "LiteStep"; ValueData: """{app}\litestep.exe"" -overlay"; Tasks: autostart; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "LiteStep"; ValueData: """{app}\litestep.exe"""; Tasks: autostart; Flags: uninsdeletevalue
 
 [Run]
-Filename: "{app}\litestep.exe"; Parameters: "-overlay"; WorkingDir: "{app}"; Description: "{cm:RunNow}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\litestep.exe"; WorkingDir: "{app}"; Description: "{cm:RunNow}"; Flags: nowait postinstall skipifsilent
 
 [Code]
 // LiteStep hides Explorer's taskbar and desktop icons while it runs and puts them
