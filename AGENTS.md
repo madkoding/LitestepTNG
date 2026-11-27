@@ -680,6 +680,14 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   + `ForceForeground`). Verified on screen: Explorer and WhatsApp, minimized, each showed its
   content over its own button. Windows' window animations were off on this machine; the user
   had them turned on (Performance options) on 2026-11-27.
+  **Animated:** a thumbnail grows out of its button when its window is minimized and shrinks
+  back into it when the window returns. The window's `ShowAnimation*`/`HideAnimation*`
+  (themes: 220/180 ms, offset 10 toward the button, -10 in Prototype-X whose taskbar is at
+  the top) fade and slide the background; `Thumb::ApplyThumbnail` scales the DWM content
+  (55 % to 100 %, pinned to the button's side) and its opacity on the same curves, driven by
+  `Window::RequestFrames`. A restored window's thumbnail moves to `mClosing` and is deleted
+  by the 120 ms timer once `IsGone()`. The exit starts about 180 ms after the restore:
+  `EVENT_SYSTEM_MINIMIZEEND` arrives when Windows' own restore animation ends.
   **Desktop layers:** the icon group covers the whole desktop and is OnDesktop too, and each
   OnDesktop window used to restack itself right above the desktop, so the icons and the
   thumbnails took turns at the bottom and every other click on a thumbnail landed on the icons

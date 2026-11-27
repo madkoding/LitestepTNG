@@ -4,6 +4,12 @@
 ; ==============================================================================
 MinimizedShelfEnabled true
 MinimizedShelfDesktopLayer 1
+; Grows out of its task button when the window is minimized, shrinks back into it when
+; the window comes back (ms; the offset slides it from/to the button's side).
+MinimizedShelfShowAnimationDuration 220
+MinimizedShelfShowAnimationOffset 10
+MinimizedShelfHideAnimationDuration 180
+MinimizedShelfHideAnimationOffset 10
 MinimizedShelfThumbHeight 120
 MinimizedShelfMaxThumbWidth 220
 MinimizedShelfPadding 6

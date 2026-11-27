@@ -6,7 +6,9 @@
 // small window, right above its button (below it for a taskbar at the top of the screen),
 // that shows the window's content (a DWM thumbnail). The thumbnails follow their buttons when
 // the taskbar lays its buttons out again. Clicking one restores its window, and minimizing
-// animates into it.
+// animates into it. A thumbnail grows out of its button when it appears and shrinks back
+// into it when its window comes back (the window's Show/HideAnimation* settings, which also
+// fade and slide the background).
 //
 // RC (prefix MinimizedShelf):
 //   MinimizedShelfEnabled true|false     default false
@@ -68,25 +70,48 @@ private:
     ~Thumb();
     HWND GetTarget() const { return mTarget; }
     HTHUMBNAIL GetThumbnail() const { return mThumbnail; }
-    // Puts the window at rect (screen) with the content inside the padding.
-    void Place(const RECT &rect, int padding);
+    // Puts the window at rect (screen) with the content inside the padding. atBottom: the
+    // button is below the thumbnail, so the content grows from (and shrinks to) the bottom.
+    void Place(const RECT &rect, int padding, bool atBottom);
+    // Leaves with the exit animation; IsGone() once it is over.
+    void Close();
+    bool IsGone() const { return mGone; }
     LRESULT WINAPI HandleMessage(HWND, UINT, WPARAM, LPARAM, LPVOID) override;
+
+  private:
+    enum class Animation { None, In, Out };
+    void StartAnimation(Animation animation);
+    void StepAnimation();
+    // Sets the DWM thumbnail at a share of its full size and opacity (1 = all of it).
+    void ApplyThumbnail(float shown);
 
   private:
     StateRender<States> mStateRender;
     HWND mTarget;
     HTHUMBNAIL mThumbnail;
     RECT mPlaced;
+    int mPadding;
+    bool mAtBottom;
+    bool mGone;
+    Animation mAnimation;
+    StopWatch mAnimationClock;
+    int mShowDuration;
+    int mHideDuration;
   };
 
   bool Accepts(HWND window) const;
   // The thumbnail's window rectangle (screen) for this window, from its task button.
-  bool ComputeRect(HWND window, HTHUMBNAIL thumbnail, RECT &rect) const;
+  bool ComputeRect(HWND window, HTHUMBNAIL thumbnail, RECT &rect, bool *atBottom = nullptr) const;
+  // Lets a thumbnail leave with its animation instead of deleting it at once.
+  void Retire(std::unique_ptr<Thumb> thumb);
+  // Deletes the thumbnails whose exit animation is over.
+  void SweepClosing();
   void UpdateTimer();
   static void CALLBACK TimerProc(HWND, UINT, UINT_PTR, DWORD);
 
 private:
   std::vector<std::unique_ptr<Thumb>> mThumbs;
+  std::vector<std::unique_ptr<Thumb>> mClosing;
   UINT_PTR mTimer;
   int mThumbHeight;
   int mMaxThumbWidth;
