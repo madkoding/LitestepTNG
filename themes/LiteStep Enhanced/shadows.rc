@@ -34,11 +34,11 @@ MTasksShadow1Blur 24
 MTasksShadow1Opacity 0.55
 
 ; Iconos del escritorio: sombra bajo el dibujo y bajo el nombre (ademas del contorno).
-MIconsIconImageShadowColor #E0000000
+MIconsIconImageShadowColor #F0000000
 MIconsIconImageShadowOffsetX 3
-MIconsIconImageShadowOffsetY 4
-MIconsIconImageShadowBlur 10
+MIconsIconImageShadowOffsetY 6
+MIconsIconImageShadowBlur 18
 MIconsIconTextShadowColor #E0000000
 MIconsIconTextShadowOffsetX 2
 MIconsIconTextShadowOffsetY 2
-MIconsIconTextShadowBlur 5
+MIconsIconTextShadowBlur 7
