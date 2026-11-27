@@ -2,19 +2,21 @@
 // /TaskBar/MinimizedShelf.hpp
 // The nModules Project
 //
-// Minimized windows as thumbnails on the desktop: a row right above the bottom of the work
-// area, left to right, each one the window's own content (a DWM thumbnail). Clicking one
-// restores its window. Minimizing animates into the window's place in the row.
+// Minimized windows as thumbnails over their own task buttons: each minimized window gets a
+// small window, right above its button (below it for a taskbar at the top of the screen),
+// that shows the window's content (a DWM thumbnail). The thumbnails follow their buttons when
+// the taskbar lays its buttons out again. Clicking one restores its window, and minimizing
+// animates into it.
 //
 // RC (prefix MinimizedShelf):
 //   MinimizedShelfEnabled true|false     default false
-//   MinimizedShelfThumbHeight <px>       height of a thumbnail, default 110
-//   MinimizedShelfMaxThumbWidth <px>     default 200
-//   MinimizedShelfSpacing <px>           between thumbnails, default 12
-//   MinimizedShelfPadding <px>           around them, inside the row's background, default 8
-//   MinimizedShelfMarginLeft / MarginBottom <px>   from the work area's corner, default 12
-//   and every window setting (Color, CornerRadius*, ShadowPreset, ...) for the row itself,
-//   which is kept on the desktop (OnDesktop) unless the theme says otherwise.
+//   MinimizedShelfThumbHeight <px>       the most a thumbnail's content may be high, default 110
+//   MinimizedShelfMaxThumbWidth <px>     the most it may be wide, default 220; it is as wide as
+//                                        its button when the button is narrower
+//   MinimizedShelfGap <px>               between the thumbnail and its button, default 6
+//   MinimizedShelfPadding <px>           around the content, inside the background, default 6
+//   and every window setting (Color, CornerRadius*, ShadowPreset, ShowAnimation*...) for the
+//   thumbnails, which are kept on the desktop (OnDesktop) unless the theme says otherwise.
 //-------------------------------------------------------------------------------------------------
 #pragma once
 
@@ -25,7 +27,7 @@
 #include <memory>
 #include <vector>
 
-class MinimizedShelf : public Drawable {
+class MinimizedShelf {
 public:
   enum class States {
     Base,
@@ -36,7 +38,7 @@ public:
   MinimizedShelf();
   ~MinimizedShelf();
 
-  /// <summary>Starts following minimized windows (and shows the ones already minimized).</summary>
+  /// <summary>Shows the windows that are already minimized.</summary>
   void Start();
 
   /// <summary>A window was minimized.</summary>
@@ -48,36 +50,47 @@ public:
   /// <summary>Drops windows that are no longer minimized and picks up any that are.</summary>
   void Refresh();
 
+  /// <summary>Moves the thumbnails to where their buttons are now.</summary>
+  void Reposition();
+
   /// <summary>
-  /// Where the window's thumbnail is, or where it will go if it is being minimized now, in
-  /// screen coordinates: the target of the minimize animation.
+  /// Where the window's thumbnail is, or will be if it is being minimized now, in screen
+  /// coordinates: the target of the minimize animation.
   /// </summary>
   bool GetSlot(HWND window, LPRECT rect);
 
-  LRESULT WINAPI HandleMessage(HWND, UINT, WPARAM, LPARAM, LPVOID) override;
-
 private:
-  struct Item {
-    HWND window;
-    HTHUMBNAIL thumbnail;
-    int width;
+  // One minimized window's thumbnail.
+  class Thumb : public Drawable {
+  public:
+    Thumb(MinimizedShelf *shelf, HWND target);
+    ~Thumb();
+    HWND GetTarget() const { return mTarget; }
+    HTHUMBNAIL GetThumbnail() const { return mThumbnail; }
+    // Puts the window at rect (screen) with the content inside the padding.
+    void Place(const RECT &rect, int padding);
+    LRESULT WINAPI HandleMessage(HWND, UINT, WPARAM, LPARAM, LPVOID) override;
+
+  private:
+    StateRender<States> mStateRender;
+    HWND mTarget;
+    HTHUMBNAIL mThumbnail;
+    RECT mPlaced;
   };
 
   bool Accepts(HWND window) const;
-  int WidthFor(HWND window, HTHUMBNAIL thumbnail) const;
-  // The row's position and size, and each thumbnail's place in it, for these widths.
-  void ComputeLayout(const std::vector<int> &widths, RECT &row, std::vector<RECT> &slots) const;
-  void Layout();
+  // The thumbnail's window rectangle (screen) for this window, from its task button.
+  bool ComputeRect(HWND window, HTHUMBNAIL thumbnail, RECT &rect) const;
+  void UpdateTimer();
+  static void CALLBACK TimerProc(HWND, UINT, UINT_PTR, DWORD);
 
 private:
-  StateRender<States> mStateRender;
-  std::vector<Item> mItems;
+  std::vector<std::unique_ptr<Thumb>> mThumbs;
+  UINT_PTR mTimer;
   int mThumbHeight;
   int mMaxThumbWidth;
-  int mSpacing;
+  int mGap;
   int mPadding;
-  int mMarginLeft;
-  int mMarginBottom;
 };
 
 // The shelf, when the theme turns it on (MinimizedShelfEnabled true).

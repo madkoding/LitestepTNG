@@ -25,7 +25,10 @@ namespace {
   // nVWM marks the windows it has parked on another desktop.
   const WCHAR kParkedProp[] = L"LSVWMDesk";
 
-  const WindowSettings sShelfDefaults([] (WindowSettings &defaults) {
+  // How often the thumbnails check where their buttons are, while there are any (ms).
+  const UINT kRepositionInterval = 120;
+
+  const WindowSettings sThumbDefaults([] (WindowSettings &defaults) {
     // On the desktop, under the windows, like desktop icons.
     defaults.onDesktop = true;
     defaults.alwaysOnTop = false;
@@ -39,28 +42,75 @@ namespace {
 }
 
 
-MinimizedShelf::MinimizedShelf()
-    : Drawable(L"MinimizedShelf") {
-  mStateRender.Load(sInitData, mSettings);
-  mThumbHeight = std::max(16, mSettings->GetInt(L"ThumbHeight", 110));
-  mMaxThumbWidth = std::max(mThumbHeight / 2, mSettings->GetInt(L"MaxThumbWidth", 200));
-  mSpacing = mSettings->GetInt(L"Spacing", 12);
-  mPadding = mSettings->GetInt(L"Padding", 8);
-  mMarginLeft = mSettings->GetInt(L"MarginLeft", 12);
-  mMarginBottom = mSettings->GetInt(L"MarginBottom", 12);
+//-------------------------------------------------------------------------------------------------
+// Thumb
+//-------------------------------------------------------------------------------------------------
 
+MinimizedShelf::Thumb::Thumb(MinimizedShelf *, HWND target)
+    : Drawable(L"MinimizedShelf"), mTarget(target), mThumbnail(nullptr), mPlaced({ 0, 0, 0, 0 }) {
+  mStateRender.Load(sInitData, mSettings);
   WindowSettings windowSettings;
-  windowSettings.Load(mSettings, &sShelfDefaults);
+  windowSettings.Load(mSettings, &sThumbDefaults);
   windowSettings.hidden = true;
   mWindow->Initialize(windowSettings, &mStateRender);
+  DwmRegisterThumbnail(mWindow->GetWindowHandle(), target, &mThumbnail);
+}
+
+
+MinimizedShelf::Thumb::~Thumb() {
+  if (mThumbnail != nullptr) {
+    DwmUnregisterThumbnail(mThumbnail);
+  }
+}
+
+
+void MinimizedShelf::Thumb::Place(const RECT &rect, int padding) {
+  if (!EqualRect(&rect, &mPlaced)) {
+    mPlaced = rect;
+    mWindow->SetPosition(float(rect.left), float(rect.top), float(rect.right - rect.left), float(rect.bottom - rect.top));
+
+    DWM_THUMBNAIL_PROPERTIES properties = {};
+    properties.dwFlags = DWM_TNP_RECTDESTINATION | DWM_TNP_VISIBLE | DWM_TNP_OPACITY | DWM_TNP_SOURCECLIENTAREAONLY;
+    properties.rcDestination = { padding, padding, rect.right - rect.left - padding, rect.bottom - rect.top - padding };
+    properties.fVisible = TRUE;
+    properties.opacity = 255;
+    properties.fSourceClientAreaOnly = FALSE;
+    DwmUpdateThumbnailProperties(mThumbnail, &properties);
+  }
+  if (!mWindow->IsVisible()) {
+    mWindow->Show();
+  }
+}
+
+
+LRESULT WINAPI MinimizedShelf::Thumb::HandleMessage(HWND window, UINT message, WPARAM wParam, LPARAM lParam, LPVOID) {
+  if (message == WM_LBUTTONUP) {
+    ShowWindowAsync(mTarget, SW_RESTORE);
+    WindowActivation::ForceForeground(mTarget);
+  }
+  mEventHandler->HandleMessage(window, message, wParam, lParam);
+  return DefWindowProc(window, message, wParam, lParam);
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// MinimizedShelf
+//-------------------------------------------------------------------------------------------------
+
+MinimizedShelf::MinimizedShelf() : mTimer(0) {
+  Settings settings(L"MinimizedShelf");
+  mThumbHeight = std::max(16, settings.GetInt(L"ThumbHeight", 110));
+  mMaxThumbWidth = std::max(32, settings.GetInt(L"MaxThumbWidth", 220));
+  mGap = settings.GetInt(L"Gap", 6);
+  mPadding = std::max(0, settings.GetInt(L"Padding", 6));
 }
 
 
 MinimizedShelf::~MinimizedShelf() {
-  for (Item &item : mItems) {
-    DwmUnregisterThumbnail(item.thumbnail);
+  if (mTimer != 0) {
+    KillTimer(nullptr, mTimer);
   }
-  mItems.clear();
+  mThumbs.clear();
 }
 
 
@@ -75,98 +125,106 @@ bool MinimizedShelf::Accepts(HWND window) const {
 }
 
 
-int MinimizedShelf::WidthFor(HWND window, HTHUMBNAIL thumbnail) const {
-  // The window's normal (restored) shape: a minimized window's own rectangle is tiny.
+bool MinimizedShelf::ComputeRect(HWND window, HTHUMBNAIL thumbnail, RECT &rect) const {
+  RECT button;
+  if (!WindowManager::GetButtonRect(window, &button)) {
+    return false;
+  }
+
+  // The window's shape: its own content if DWM knows it, else its restored rectangle.
   float aspect = 4.0f / 3.0f;
+  SIZE source = { 0, 0 };
   WINDOWPLACEMENT placement = { sizeof(placement) };
-  if (GetWindowPlacement(window, &placement)) {
+  if (thumbnail != nullptr && SUCCEEDED(DwmQueryThumbnailSourceSize(thumbnail, &source)) &&
+      source.cx > 0 && source.cy > 0) {
+    aspect = float(source.cx) / float(source.cy);
+  } else if (GetWindowPlacement(window, &placement)) {
     const RECT &r = placement.rcNormalPosition;
     if (r.right > r.left && r.bottom > r.top) {
       aspect = float(r.right - r.left) / float(r.bottom - r.top);
     }
   }
-  SIZE source = { 0, 0 };
-  if (thumbnail != nullptr && SUCCEEDED(DwmQueryThumbnailSourceSize(thumbnail, &source)) &&
-      source.cx > 0 && source.cy > 0) {
-    aspect = float(source.cx) / float(source.cy);
+
+  // As wide as the button (within MaxThumbWidth), as high as that width allows (within
+  // ThumbHeight).
+  const int buttonWidth = button.right - button.left;
+  int width = std::min(mMaxThumbWidth, std::max(buttonWidth - 2 * mPadding, mThumbHeight / 2));
+  int height = int(width / aspect + 0.5f);
+  if (height > mThumbHeight) {
+    height = mThumbHeight;
+    width = int(height * aspect + 0.5f);
   }
-  return std::min(mMaxThumbWidth, std::max(mThumbHeight / 2, int(mThumbHeight * aspect + 0.5f)));
+  width += 2 * mPadding;
+  height += 2 * mPadding;
+
+  // Centred on the button, on the desktop's side of the taskbar, on the button's monitor.
+  MONITORINFO monitor = { sizeof(monitor) };
+  GetMonitorInfoW(MonitorFromRect(&button, MONITOR_DEFAULTTONEAREST), &monitor);
+  const int centerX = (button.left + button.right) / 2;
+  const bool taskbarAtBottom = (button.top + button.bottom) / 2 > (monitor.rcMonitor.top + monitor.rcMonitor.bottom) / 2;
+  rect.left = std::max(int(monitor.rcMonitor.left), std::min(centerX - width / 2, int(monitor.rcMonitor.right) - width));
+  rect.right = rect.left + width;
+  if (taskbarAtBottom) {
+    rect.bottom = button.top - mGap;
+    rect.top = rect.bottom - height;
+  } else {
+    rect.top = button.bottom + mGap;
+    rect.bottom = rect.top + height;
+  }
+  return true;
 }
 
 
-void MinimizedShelf::ComputeLayout(const std::vector<int> &widths, RECT &row, std::vector<RECT> &slots) const {
-  RECT area;
-  SystemParametersInfoW(SPI_GETWORKAREA, 0, &area, 0);
-
-  int x = mPadding;
-  slots.clear();
-  for (int width : widths) {
-    slots.push_back({ x, mPadding, x + width, mPadding + mThumbHeight });
-    x += width + mSpacing;
+void MinimizedShelf::Reposition() {
+  for (auto &thumb : mThumbs) {
+    RECT rect;
+    if (ComputeRect(thumb->GetTarget(), thumb->GetThumbnail(), rect)) {
+      thumb->Place(rect, mPadding);
+    } else if (thumb->GetWindow()->IsVisible()) {
+      // Its button is gone (a refresh in progress, a window no taskbar shows): no place.
+      thumb->GetWindow()->Hide();
+    }
   }
-  const int rowWidth = widths.empty() ? 0 : x - mSpacing + mPadding;
-  const int rowHeight = mThumbHeight + 2 * mPadding;
-  row.left = area.left + mMarginLeft;
-  row.bottom = area.bottom - mMarginBottom;
-  row.top = row.bottom - rowHeight;
-  row.right = row.left + rowWidth;
 }
 
 
-void MinimizedShelf::Layout() {
-  if (mItems.empty()) {
-    mWindow->Hide();
-    return;
+void MinimizedShelf::UpdateTimer() {
+  if (!mThumbs.empty() && mTimer == 0) {
+    mTimer = SetTimer(nullptr, 0, kRepositionInterval, TimerProc);
+  } else if (mThumbs.empty() && mTimer != 0) {
+    KillTimer(nullptr, mTimer);
+    mTimer = 0;
   }
+}
 
-  std::vector<int> widths;
-  for (const Item &item : mItems) {
-    widths.push_back(item.width);
-  }
-  RECT row;
-  std::vector<RECT> slots;
-  ComputeLayout(widths, row, slots);
 
-  mWindow->SetPosition(float(row.left), float(row.top), float(row.right - row.left), float(row.bottom - row.top));
-  for (size_t i = 0; i < mItems.size(); ++i) {
-    DWM_THUMBNAIL_PROPERTIES properties = {};
-    properties.dwFlags = DWM_TNP_RECTDESTINATION | DWM_TNP_VISIBLE | DWM_TNP_OPACITY | DWM_TNP_SOURCECLIENTAREAONLY;
-    properties.rcDestination = slots[i];
-    properties.fVisible = TRUE;
-    properties.opacity = 255;
-    properties.fSourceClientAreaOnly = FALSE;
-    DwmUpdateThumbnailProperties(mItems[i].thumbnail, &properties);
-  }
-  if (!mWindow->IsVisible()) {
-    mWindow->Show();
+void CALLBACK MinimizedShelf::TimerProc(HWND, UINT, UINT_PTR, DWORD) {
+  if (gMinimizedShelf) {
+    gMinimizedShelf->Reposition();
   }
 }
 
 
 void MinimizedShelf::Add(HWND window) {
-  for (const Item &item : mItems) {
-    if (item.window == window) {
+  for (const auto &thumb : mThumbs) {
+    if (thumb->GetTarget() == window) {
       return;
     }
   }
   if (!Accepts(window)) {
     return;
   }
-  HTHUMBNAIL thumbnail = nullptr;
-  if (FAILED(DwmRegisterThumbnail(mWindow->GetWindowHandle(), window, &thumbnail))) {
-    return;
-  }
-  mItems.push_back({ window, thumbnail, WidthFor(window, thumbnail) });
-  Layout();
+  mThumbs.emplace_back(new Thumb(this, window));
+  Reposition();
+  UpdateTimer();
 }
 
 
 void MinimizedShelf::Remove(HWND window) {
-  for (auto item = mItems.begin(); item != mItems.end(); ++item) {
-    if (item->window == window) {
-      DwmUnregisterThumbnail(item->thumbnail);
-      mItems.erase(item);
-      Layout();
+  for (auto thumb = mThumbs.begin(); thumb != mThumbs.end(); ++thumb) {
+    if ((*thumb)->GetTarget() == window) {
+      mThumbs.erase(thumb);
+      UpdateTimer();
       return;
     }
   }
@@ -174,19 +232,15 @@ void MinimizedShelf::Remove(HWND window) {
 
 
 void MinimizedShelf::Refresh() {
-  bool changed = false;
-  for (auto item = mItems.begin(); item != mItems.end();) {
-    if (!IsWindow(item->window) || !Accepts(item->window)) {
-      DwmUnregisterThumbnail(item->thumbnail);
-      item = mItems.erase(item);
-      changed = true;
+  for (auto thumb = mThumbs.begin(); thumb != mThumbs.end();) {
+    if (!IsWindow((*thumb)->GetTarget()) || !Accepts((*thumb)->GetTarget())) {
+      thumb = mThumbs.erase(thumb);
     } else {
-      ++item;
+      ++thumb;
     }
   }
 
-  // Minimized windows we have not seen (minimized before LiteStep started, or while a
-  // window was parked on another desktop).
+  // Minimized windows not seen yet (minimized before LiteStep started).
   std::vector<HWND> found;
   EnumWindows([] (HWND window, LPARAM data) -> BOOL {
     if (IsIconic(window)) {
@@ -195,66 +249,27 @@ void MinimizedShelf::Refresh() {
     return TRUE;
   }, LPARAM(&found));
   for (HWND window : found) {
-    bool known = std::any_of(mItems.begin(), mItems.end(), [window] (const Item &item) { return item.window == window; });
-    HTHUMBNAIL thumbnail = nullptr;
-    if (!known && Accepts(window) &&
-        SUCCEEDED(DwmRegisterThumbnail(mWindow->GetWindowHandle(), window, &thumbnail))) {
-      mItems.push_back({ window, thumbnail, WidthFor(window, thumbnail) });
-      changed = true;
+    bool known = std::any_of(mThumbs.begin(), mThumbs.end(),
+      [window] (const std::unique_ptr<Thumb> &thumb) { return thumb->GetTarget() == window; });
+    if (!known && Accepts(window)) {
+      mThumbs.emplace_back(new Thumb(this, window));
     }
   }
 
-  if (changed) {
-    Layout();
-  }
+  Reposition();
+  UpdateTimer();
 }
 
 
 bool MinimizedShelf::GetSlot(HWND window, LPRECT rect) {
-  std::vector<int> widths;
-  size_t index = mItems.size();
-  for (size_t i = 0; i < mItems.size(); ++i) {
-    widths.push_back(mItems[i].width);
-    if (mItems[i].window == window) {
-      index = i;
+  for (const auto &thumb : mThumbs) {
+    if (thumb->GetTarget() == window) {
+      return ComputeRect(window, thumb->GetThumbnail(), *rect);
     }
   }
-  if (index == mItems.size()) {
-    // Being minimized now: it will be the next one in the row.
-    if (IsIconic(window) || !WindowManager::IsTaskbarWindow(window) || GetPropW(window, kParkedProp) != nullptr) {
-      return false;
-    }
-    widths.push_back(WidthFor(window, nullptr));
+  // Being minimized now: where its thumbnail will go.
+  if (IsIconic(window) || !WindowManager::IsTaskbarWindow(window) || GetPropW(window, kParkedProp) != nullptr) {
+    return false;
   }
-  RECT row;
-  std::vector<RECT> slots;
-  ComputeLayout(widths, row, slots);
-  *rect = slots[index];
-  OffsetRect(rect, row.left, row.top);
-  return true;
-}
-
-
-LRESULT WINAPI MinimizedShelf::HandleMessage(HWND window, UINT message, WPARAM wParam, LPARAM lParam, LPVOID) {
-  if (message == WM_LBUTTONUP) {
-    POINT point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
-    std::vector<int> widths;
-    for (const Item &item : mItems) {
-      widths.push_back(item.width);
-    }
-    RECT row;
-    std::vector<RECT> slots;
-    ComputeLayout(widths, row, slots);
-    for (size_t i = 0; i < slots.size(); ++i) {
-      if (PtInRect(&slots[i], point)) {
-        HWND target = mItems[i].window;
-        ShowWindowAsync(target, SW_RESTORE);
-        WindowActivation::ForceForeground(target);
-        break;
-      }
-    }
-  }
-
-  mEventHandler->HandleMessage(window, message, wParam, lParam);
-  return DefWindowProc(window, message, wParam, lParam);
+  return ComputeRect(window, nullptr, *rect);
 }

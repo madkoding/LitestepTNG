@@ -70,6 +70,8 @@ namespace WindowManager
     void RemoveWindow(HWND hWnd);
     void MonitorChanged(HWND hWnd, UINT monitor);
     LRESULT GetMinRect(HWND, LPPOINTS);
+    // The screen rectangle of the window's (first) task button, if it has one.
+    bool GetButtonRect(HWND hWnd, LPRECT rect);
     void UpdateIcon(HWND hWnd);
     void CALLBACK UpdateIconCallback(HWND hWnd, UINT uMsg, ULONG_PTR dwData, LRESULT lResult);
     void SetIcon(HWND, HICON);

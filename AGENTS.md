@@ -665,19 +665,23 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   used by `Window::HideAnimated(done)` (fade and slide out, then hide and call done; without a
   duration it hides at once). Both run on `FrameClock`.
 - **Minimized windows as thumbnails (TaskBar, `MinimizedShelf.cpp`):** with
-  `MinimizedShelfEnabled true` (every theme sets it, in `minimized.rc`) minimized task windows
-  show as DWM thumbnails of their content in a row above the bottom of the work area (an
-  `OnDesktop` window, prefix `MinimizedShelf`, sized to its thumbnails and hidden when empty;
-  `ThumbHeight`, `MaxThumbWidth`, `Spacing`, `Padding`, `MarginLeft/Bottom` plus the usual
-  window keys). DWM keeps a minimized window's last frame, so the thumbnail shows its content.
+  `MinimizedShelfEnabled true` (every theme sets it, in `minimized.rc`) each minimized task
+  window gets a small `OnDesktop` window (prefix `MinimizedShelf`) right above its own task
+  button (below it for a taskbar in the top half of the monitor), showing a DWM thumbnail of
+  its content: DWM keeps a minimized window's last frame. As wide as the button within
+  `MaxThumbWidth`, at most `ThumbHeight` high, `Gap` from the button, `Padding` around the
+  content. A first version put them all in one row above the taskbar; the user wanted each over
+  its task. The thumbnails follow their buttons (a 120 ms timer while any exist, since the
+  taskbar slides its buttons); `WindowManager::GetButtonRect` gives the button.
   Minimize/restore come from `EVENT_SYSTEM_MINIMIZESTART/END` (out of context); windows
   minimized earlier are picked up after `AddExisting` and in the maintenance pass; windows
-  parked by nVWM are skipped (minimized ones are never parked). `WindowManager::GetMinRect`
-  answers with the thumbnail's slot, so the minimize animation flies into the row. A click
-  restores the window (`ShowWindowAsync(SW_RESTORE)` + `ForceForeground`). Verified: a
-  minimized Explorer window and a test Notepad showed their content; a posted click restored
-  Notepad and the row shrank back. Windows' own window animations were off on this machine;
-  the user had them turned on (Performance options) on 2026-11-27.
+  parked by nVWM are skipped. `GetMinRect` answers with the thumbnail's rectangle, so the
+  minimize animation flies into it. A click restores the window (`ShowWindowAsync(SW_RESTORE)`
+  + `ForceForeground`). Verified on screen: Explorer and WhatsApp, minimized, each showed its
+  content over its own button. Windows' window animations were off on this machine; the user
+  had them turned on (Performance options) on 2026-11-27.
+- Build with `/nr:false` when waiting for MSBuild to finish: `/m` leaves worker nodes
+  (`MSBuild.exe`) running for reuse, so "wait until MSBuild exits" never ends.
 - **Taskbar animation:** `<Taskbar>AnimationDuration` (ms) slides task buttons to their new
   place when tasks are added/removed (`TaskButton::SetTarget/StepAnimation`, timer in
   `Taskbar`). The thumbnail's own `ThumbnailAnimate` and the popup `ShowAnimation*` settings

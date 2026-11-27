@@ -1,14 +1,12 @@
 ; ==============================================================================
-;  Minimized windows: a row of thumbnails of their content above the bottom bar
+;  Minimized windows: a thumbnail of their content over their task button
 ;  (TaskBar.dll, MinimizedShelf*). Click one to bring its window back.
 ; ==============================================================================
 MinimizedShelfEnabled true
-MinimizedShelfThumbHeight 110
-MinimizedShelfMaxThumbWidth 200
-MinimizedShelfSpacing 12
-MinimizedShelfPadding 10
-MinimizedShelfMarginLeft 16
-MinimizedShelfMarginBottom 16
+MinimizedShelfThumbHeight 120
+MinimizedShelfMaxThumbWidth 220
+MinimizedShelfPadding 6
+MinimizedShelfGap 8
 MinimizedShelfColor #CC101820
 MinimizedShelfCornerRadiusX 12
 MinimizedShelfCornerRadiusY 12

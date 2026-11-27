@@ -541,6 +541,26 @@ LRESULT WindowManager::GetMinRect(HWND hWnd, LPPOINTS lpPoints)
 
 
 /// <summary>
+/// The screen rectangle of the window's first task button.
+/// </summary>
+bool WindowManager::GetButtonRect(HWND hWnd, LPRECT rect)
+{
+    WindowMap::const_iterator iter = windowMap.find(hWnd);
+    if (iter == windowMap.end() || iter->second.buttons.empty())
+    {
+        return false;
+    }
+    POINTS points[2];
+    iter->second.buttons.front()->GetMinRect(points);
+    rect->left = points[0].x;
+    rect->top = points[0].y;
+    rect->right = points[1].x;
+    rect->bottom = points[1].y;
+    return rect->right > rect->left && rect->bottom > rect->top;
+}
+
+
+/// <summary>
 /// Updates the monitor information for each window.
 /// </summary>
 void WindowManager::UpdateWindowMonitors()

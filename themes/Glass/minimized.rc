@@ -1,14 +1,12 @@
 ; ==============================================================================
-;  Ventanas minimizadas: una fila de miniaturas con su contenido, sobre la barra
-;  inferior (TaskBar.dll, MinimizedShelf*). Clic en una: la ventana vuelve.
+;  Ventanas minimizadas: una miniatura con su contenido sobre el boton de su tarea
+;  (TaskBar.dll, MinimizedShelf*). Clic en una: la ventana vuelve.
 ; ==============================================================================
 MinimizedShelfEnabled true
-MinimizedShelfThumbHeight 110
-MinimizedShelfMaxThumbWidth 200
-MinimizedShelfSpacing 12
-MinimizedShelfPadding 10
-MinimizedShelfMarginLeft 16
-MinimizedShelfMarginBottom 16
+MinimizedShelfThumbHeight 120
+MinimizedShelfMaxThumbWidth 220
+MinimizedShelfPadding 6
+MinimizedShelfGap 8
 MinimizedShelfColor #CC1C1C1C
 MinimizedShelfCornerRadiusX 10
 MinimizedShelfCornerRadiusY 10
