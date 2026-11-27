@@ -433,7 +433,7 @@ void Window::StepShowAnimation() {
   if (mWindowSettings.showAnimationOffset != 0 || mWindowSettings.showAnimationOffsetX != 0) {
     float offsetY = mWindowSettings.showAnimationOffset * (1.0f - eased);
     float offsetX = mWindowSettings.showAnimationOffsetX * (1.0f - eased);
-    SetWindowPos(this->window, nullptr, int(mPosition.x + offsetX + 0.5f), int(mPosition.y + offsetY + 0.5f),
+    SetWindowPos(this->window, nullptr, int(floorf(mPosition.x + offsetX + 0.5f)), int(floorf(mPosition.y + offsetY + 0.5f)),
       0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
   }
   UpdateShadow();
@@ -459,7 +459,7 @@ void Window::EndShowAnimation() {
     SetLayeredWindowAttributes(this->window, 0, 255, LWA_ALPHA);
   }
 
-  SetWindowPos(this->window, nullptr, int(mPosition.x + 0.5f), int(mPosition.y + 0.5f), 0, 0,
+  SetWindowPos(this->window, nullptr, int(floorf(mPosition.x + 0.5f)), int(floorf(mPosition.y + 0.5f)), 0, 0,
     SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
   RedrawWindow(this->window, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
   UpdateShadow();
@@ -1112,8 +1112,8 @@ void Window::StepHideAnimation()
     if (mWindowSettings.hideAnimationOffset != 0 || mWindowSettings.hideAnimationOffsetX != 0)
     {
         SetWindowPos(this->window, nullptr,
-            int(mPosition.x + mWindowSettings.hideAnimationOffsetX * eased + 0.5f),
-            int(mPosition.y + mWindowSettings.hideAnimationOffset * eased + 0.5f),
+            int(floorf(mPosition.x + mWindowSettings.hideAnimationOffsetX * eased + 0.5f)),
+            int(floorf(mPosition.y + mWindowSettings.hideAnimationOffset * eased + 0.5f)),
             0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
     }
     UpdateShadow();
@@ -1137,7 +1137,7 @@ void Window::StepHideAnimation()
         SetLayeredWindowAttributes(this->window, 0, 255, LWA_ALPHA);
     }
     mAnimationOpacity = 1.0f;
-    SetWindowPos(this->window, nullptr, int(mPosition.x + 0.5f), int(mPosition.y + 0.5f), 0, 0,
+    SetWindowPos(this->window, nullptr, int(floorf(mPosition.x + 0.5f)), int(floorf(mPosition.y + 0.5f)), 0, 0,
         SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
 
     std::function<void()> done;
@@ -1996,7 +1996,7 @@ void Window::SetPosition(Distance x, Distance y, Distance width, Distance height
 
   // Position the window and/or set the backarea.
   if (!mIsChild) {
-    SetWindowPos(this->window, 0, int(mPosition.x + 0.5f), int(mPosition.y + 0.5f), int(mSize.width + 0.5f), int(mSize.height + 0.5f), SWP_NOZORDER | SWP_NOACTIVATE);
+    SetWindowPos(this->window, 0, int(floorf(mPosition.x + 0.5f)), int(floorf(mPosition.y + 0.5f)), int(mSize.width + 0.5f), int(mSize.height + 0.5f), SWP_NOZORDER | SWP_NOACTIVATE);
     this->drawingArea = D2D1::RectF(0, 0, mSize.width, mSize.height);
     if (mRenderTarget) {
       VERIFY_HR(mRenderTarget->Resize(D2D1::SizeU(UINT32(mSize.width + 0.5f), UINT32(mSize.height + 0.5f))));

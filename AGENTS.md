@@ -664,6 +664,26 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   and slide in when a hidden window is shown) and `<Prefix>HideAnimationDuration|Offset|OffsetX`,
   used by `Window::HideAnimated(done)` (fade and slide out, then hide and call done; without a
   duration it hides at once). Both run on `FrameClock`.
+- **A taskbar on every monitor (TaskBar, `ModuleEntry.cpp`):** `<Taskbar>EveryMonitor true`
+  (every theme sets it) with more than one monitor keeps the taskbar on the primary
+  monitor's windows (`Monitor 0` unless the theme names one) and creates a copy
+  `<Taskbar>Screen<n>` per other monitor (MonitorInfo numbering, 0 = primary), which lists
+  only that monitor's windows: the old `Monitor` filter, with `LM_MONITORCHANGED` moving a
+  button when its window changes monitor. Before creating a copy the module writes, with
+  `LSSetVariable`, `<copy>Group <Taskbar>` (it inherits every key, Button and Thumbnail
+  children included), `<copy>Monitor <n>` and `<copy>X/Y/Width/Height` in pixels: top-level
+  windows measure percentages against the primary monitor, so the copy's geometry is worked
+  out against its own monitor here (`<Taskbar>ScreenX/ScreenY/ScreenWidth/ScreenHeight`
+  override it; Glass, Windows-nModules and Prototype-X use the full width, since their
+  primary bar leaves room for a start button and a tray). Explorer's secondary taskbars are
+  hidden by nCore, so the other monitors had no taskbar before. With
+  `<Taskbar>ReserveScreen` (default true) a 1 s timer keeps each copy's edge out of its
+  monitor's work area (`SPI_SETWORKAREA` without broadcast, as Core does for the primary;
+  restored with a broadcast on unload). `NCORE_DISPLAYCHANGE` with a different monitor
+  layout rebuilds every taskbar. Window positions are now rounded with `floorf`: `int(x+0.5f)`
+  truncated toward zero, so a bar on a monitor left of the primary started 1 px late.
+  Verified on three monitors: a window moved from the left monitor to the primary left the
+  left copy's bar and appeared on the primary one; the secondary work areas shrank by 26 px.
 - **Minimized windows as thumbnails (TaskBar, `MinimizedShelf.cpp`):** with
   `MinimizedShelfEnabled true` (every theme sets it, in `minimized.rc`) each minimized task
   window gets a small `OnDesktop` window (prefix `MinimizedShelf`) right above its own task

@@ -2,8 +2,11 @@
 ;  BARRA INFERIOR  -  TAREAS (abajo, full width) + BANDEJA (abajo derecha)
 ; ==============================================================================
 *nTaskbar MTasks
-; Sin MTasksMonitor la barra lista las ventanas de TODOS los monitores.
-; Para limitarla a uno: MTasksMonitor primary
+; Con varias pantallas, una copia de la barra en cada una con las ventanas de esa pantalla;
+; esta se queda con las de la principal. Cada copia reserva su borde de la pantalla
+; (MTasksReserveScreen false para no hacerlo). MTasksEveryMonitor false: una sola barra,
+; con las ventanas de todas las pantallas (o de una, con MTasksMonitor primary).
+MTasksEveryMonitor true
 MTasksX 0
 MTasksY 100%-26
 MTasksWidth 100%

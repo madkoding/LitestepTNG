@@ -16,6 +16,13 @@
 #include "Version.h"
 #include "WindowManager.h"
 #include "MinimizedShelf.hpp"
+#include "../ModuleKit/MonitorInfo.hpp"
+
+#include <algorithm>
+#include <set>
+#include <strsafe.h>
+#include <string>
+#include <vector>
 
 
 using std::map;
@@ -59,6 +66,9 @@ static void CALLBACK MinimizeEvent(HWINEVENTHOOK, DWORD event, HWND window, LONG
 /// <summary>
 /// Creates the minimized-windows shelf if the theme turns it on (MinimizedShelfEnabled).
 /// </summary>
+static void StopShelf();
+static void RebuildTaskbars();
+
 static void StartShelf()
 {
     if (!Settings(L"MinimizedShelf").GetBool(L"Enabled", false))
@@ -68,6 +78,221 @@ static void StartShelf()
     gMinimizedShelf.reset(new MinimizedShelf());
     sMinimizeHook = SetWinEventHook(EVENT_SYSTEM_MINIMIZESTART, EVENT_SYSTEM_MINIMIZEEND, nullptr,
         MinimizeEvent, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// A taskbar on every monitor.
+//
+// <Taskbar>EveryMonitor true: with more than one monitor, the taskbar keeps the primary
+// monitor's windows and a copy of it, <Taskbar>Screen<n>, lists the windows of monitor n
+// (MonitorInfo numbering: 0 is the primary). A copy takes every setting of its taskbar
+// through Group, with X/Y/Width/Height worked out against its own monitor (top-level windows
+// otherwise measure percentages against the primary monitor), so "100%-26" is the bottom of
+// each screen; <Taskbar>ScreenX/ScreenY/ScreenWidth/ScreenHeight give the copies a geometry
+// of their own. Explorer's secondary taskbars are hidden by nCore, so without this the other
+// monitors had no taskbar at all.
+// <Taskbar>ReserveScreen true|false (default true): the copies keep their edge of their
+// monitor out of the work area, so maximized windows stop at the bar, as Core does for the
+// primary monitor with ReserveScreen*.
+//-------------------------------------------------------------------------------------------------
+static std::set<std::wstring> sMonitorCopies;       // names of the copies
+static std::vector<RECT> sMonitorLayout;            // the monitors the copies were made for
+struct SavedWorkArea { HMONITOR monitor; RECT workArea; };
+static std::vector<SavedWorkArea> sSavedWorkAreas;  // what the work areas were before us
+static const UINT_PTR TIMER_COPY_WORKAREAS = 0x5EC1;
+static UINT sRebuildMessage = 0;                    // posted when the monitors change
+
+static std::vector<RECT> CurrentMonitorLayout()
+{
+    std::vector<RECT> layout;
+    for (const MonitorInfo::Monitor &monitor : nCore::FetchMonitorInfo().GetMonitors())
+    {
+        layout.push_back(monitor.rect);
+    }
+    return layout;
+}
+
+
+static void SetTaskbarVariable(LPCWSTR name, LPCWSTR key, LPCWSTR value)
+{
+    WCHAR fullKey[MAX_RCCOMMAND];
+    StringCchPrintfW(fullKey, _countof(fullKey), L"%s%s", name, key);
+    LiteStep::LSSetVariable(fullKey, value);
+}
+
+
+static void SetTaskbarPixels(LPCWSTR name, LPCWSTR key, float value)
+{
+    WCHAR text[32];
+    StringCchPrintfW(text, _countof(text), L"%d", int(value + (value < 0 ? -0.5f : 0.5f)));
+    SetTaskbarVariable(name, key, text);
+}
+
+
+/// <summary>
+/// Creates the copy of a taskbar for one monitor.
+/// </summary>
+static void CreateMonitorCopy(LPCWSTR taskbarName, const Settings &settings, UINT monitorIndex)
+{
+    const MonitorInfo::Monitor &monitor = nCore::FetchMonitorInfo().GetMonitor(monitorIndex);
+    WCHAR copyName[MAX_RCCOMMAND];
+    StringCchPrintfW(copyName, _countof(copyName), L"%sScreen%u", taskbarName, monitorIndex);
+    if (gTaskbars.find(copyName) != gTaskbars.end())
+    {
+        return;
+    }
+
+    // ScreenX/Y/Width/Height, else the taskbar's own geometry, measured against this monitor
+    // (a primary taskbar often leaves room for a start button or a tray the copies lack).
+    auto distance = [&settings] (LPCWSTR copyKey, LPCWSTR key, float defaultValue, float length) {
+        return settings.GetDistance(copyKey, settings.GetDistance(key, defaultValue)).Evaluate(length);
+    };
+    const float width = distance(L"ScreenWidth", L"Width", float(GetSystemMetrics(SM_CXSCREEN)), float(monitor.width));
+    const float height = distance(L"ScreenHeight", L"Height", 36.0f, float(monitor.height));
+    const float x = distance(L"ScreenX", L"X", 0.0f, float(monitor.width));
+    const float y = distance(L"ScreenY", L"Y", 0.0f, float(monitor.height));
+
+    WCHAR index[16];
+    StringCchPrintfW(index, _countof(index), L"%u", monitorIndex);
+    SetTaskbarVariable(copyName, L"Group", taskbarName);
+    SetTaskbarVariable(copyName, L"Monitor", index);
+    SetTaskbarPixels(copyName, L"X", monitor.rect.left + x);
+    SetTaskbarPixels(copyName, L"Y", monitor.rect.top + y);
+    SetTaskbarPixels(copyName, L"Width", width);
+    SetTaskbarPixels(copyName, L"Height", height);
+
+    gTaskbars.emplace(std::piecewise_construct, std::forward_as_tuple(copyName), std::forward_as_tuple(copyName));
+    sMonitorCopies.insert(copyName);
+}
+
+
+/// <summary>
+/// Keeps each copy's edge of its monitor out of that monitor's work area.
+/// </summary>
+static void EnforceCopyWorkAreas()
+{
+    struct Wanted { HMONITOR monitor; RECT monitorRect; RECT workArea; };
+    std::vector<Wanted> wanted;
+
+    for (const std::wstring &name : sMonitorCopies)
+    {
+        auto taskbar = gTaskbars.find(name);
+        if (taskbar == gTaskbars.end() || !Settings(name.c_str()).GetBool(L"ReserveScreen", true))
+        {
+            continue;
+        }
+        HWND window = taskbar->second.GetWindow()->GetWindowHandle();
+        RECT bar;
+        if (!IsWindowVisible(window) || !GetWindowRect(window, &bar))
+        {
+            continue;
+        }
+        HMONITOR monitor = MonitorFromRect(&bar, MONITOR_DEFAULTTONULL);
+        MONITORINFO info = { sizeof(info) };
+        if (monitor == nullptr || !GetMonitorInfoW(monitor, &info))
+        {
+            continue;
+        }
+        auto entry = std::find_if(wanted.begin(), wanted.end(), [monitor] (const Wanted &w) { return w.monitor == monitor; });
+        if (entry == wanted.end())
+        {
+            wanted.push_back({ monitor, info.rcMonitor, info.rcMonitor });
+            entry = wanted.end() - 1;
+        }
+
+        // The edge the bar is nearest to, along its long side.
+        const RECT &m = info.rcMonitor;
+        RECT &work = entry->workArea;
+        if (bar.right - bar.left >= bar.bottom - bar.top)
+        {
+            if (bar.top - m.top < m.bottom - bar.bottom)
+            {
+                work.top = std::max(work.top, bar.bottom);
+            }
+            else
+            {
+                work.bottom = std::min(work.bottom, bar.top);
+            }
+        }
+        else if (bar.left - m.left < m.right - bar.right)
+        {
+            work.left = std::max(work.left, bar.right);
+        }
+        else
+        {
+            work.right = std::min(work.right, bar.left);
+        }
+    }
+
+    for (Wanted &w : wanted)
+    {
+        MONITORINFO info = { sizeof(info) };
+        if (w.workArea.right <= w.workArea.left || w.workArea.bottom <= w.workArea.top ||
+            !GetMonitorInfoW(w.monitor, &info))
+        {
+            continue;
+        }
+        bool saved = std::any_of(sSavedWorkAreas.begin(), sSavedWorkAreas.end(),
+            [&w] (const SavedWorkArea &s) { return s.monitor == w.monitor; });
+        if (!saved)
+        {
+            sSavedWorkAreas.push_back({ w.monitor, info.rcWork });
+        }
+        if (!EqualRect(&info.rcWork, &w.workArea))
+        {
+            // Not broadcast, as Core does: Explorer would recompute its own value at once.
+            SystemParametersInfoW(SPI_SETWORKAREA, 0, &w.workArea, 0);
+        }
+    }
+}
+
+
+static void RestoreCopyWorkAreas()
+{
+    for (SavedWorkArea &saved : sSavedWorkAreas)
+    {
+        MONITORINFO info = { sizeof(info) };
+        if (GetMonitorInfoW(saved.monitor, &info))
+        {
+            SystemParametersInfoW(SPI_SETWORKAREA, 0, &saved.workArea, SPIF_SENDCHANGE);
+        }
+    }
+    sSavedWorkAreas.clear();
+}
+
+
+static void StartCopyWorkAreas()
+{
+    if (!sMonitorCopies.empty())
+    {
+        EnforceCopyWorkAreas();
+        SetTimer(gLSModule.GetMessageWindow(), TIMER_COPY_WORKAREAS, 1000, nullptr);
+    }
+}
+
+
+static void StopCopyWorkAreas()
+{
+    KillTimer(gLSModule.GetMessageWindow(), TIMER_COPY_WORKAREAS);
+    RestoreCopyWorkAreas();
+}
+
+
+/// <summary>
+/// Throws every taskbar away and makes them again (a refresh, or the monitors changed).
+/// </summary>
+static void RebuildTaskbars()
+{
+    StopShelf();
+    StopCopyWorkAreas();
+    WindowManager::Stop();
+    DestroyTaskbars();
+    WindowManager::Start();
+    LoadSettings();
+    StartCopyWorkAreas();
+    StartShelf();
+    WindowManager::AddExisting();
 }
 
 
@@ -99,8 +324,11 @@ EXPORT_CDECL(int) initModuleW(HWND parent, HINSTANCE instance, LPCWSTR /* path *
 
     SystemParametersInfo(SPI_GETACTIVEWINDOWTRACKING, 0, &gActiveWindowTracking, 0);
 
+    sRebuildMessage = RegisterWindowMessageW(L"LiteStepTNG.TaskbarRebuild");
+
     // Load settings
     LoadSettings();
+    StartCopyWorkAreas();
 
     // Start the window manager
     WindowManager::Start();
@@ -125,6 +353,7 @@ void quitModule(HINSTANCE /* hDllInstance */)
 
     TestWindow::DestroyAll();
     StopShelf();
+    StopCopyWorkAreas();
     WindowManager::Stop();
     DestroyTaskbars();
     gLSModule.DeInitalize();
@@ -174,6 +403,10 @@ LRESULT WINAPI LSMessageHandler(HWND window, UINT message, WPARAM wParam, LPARAM
                 }
                 return 0;
 
+            case TIMER_COPY_WORKAREAS:
+                EnforceCopyWorkAreas();
+                return 0;
+
             default:
                 {
                 }
@@ -201,16 +434,28 @@ LRESULT WINAPI LSMessageHandler(HWND window, UINT message, WPARAM wParam, LPARAM
         return 0;
 
     case LM_REFRESH:
-        {
-            StopShelf();
-            WindowManager::Stop();
-            DestroyTaskbars();
-            WindowManager::Start();
-            LoadSettings();
-            StartShelf();
-            WindowManager::AddExisting();
-        }
+        RebuildTaskbars();
         return 0;
+
+    case NCORE_DISPLAYCHANGE:
+        {
+            // Monitors added, removed or moved: the copies are made for the old layout.
+            LRESULT result = WindowManager::ShellMessage(window, message, wParam, lParam);
+            if (!sMonitorLayout.empty() && CurrentMonitorLayout().size() > 0)
+            {
+                std::vector<RECT> layout = CurrentMonitorLayout();
+                bool changed = layout.size() != sMonitorLayout.size();
+                for (size_t i = 0; !changed && i < layout.size(); ++i)
+                {
+                    changed = !EqualRect(&layout[i], &sMonitorLayout[i]);
+                }
+                if (changed)
+                {
+                    PostMessage(window, sRebuildMessage, 0, 0);
+                }
+            }
+            return result;
+        }
 
     case WM_ADDED_EXISTING:
         if (gMinimizedShelf)
@@ -228,7 +473,6 @@ LRESULT WINAPI LSMessageHandler(HWND window, UINT message, WPARAM wParam, LPARAM
     case LM_WINDOWREPLACED:
     case LM_WINDOWREPLACING:
     case LM_MONITORCHANGED:
-    case NCORE_DISPLAYCHANGE:
     case LM_TASK_SETPROGRESSSTATE:
     case LM_TASK_SETPROGRESSVALUE:
     case LM_TASK_MARKASACTIVE:
@@ -246,6 +490,11 @@ LRESULT WINAPI LSMessageHandler(HWND window, UINT message, WPARAM wParam, LPARAM
     case LM_TASK_THUMBBARSETIMAGELIST:
       return WindowManager::ShellMessage(window, message, wParam, lParam);
     }
+    if (message == sRebuildMessage && sRebuildMessage != 0)
+    {
+        RebuildTaskbars();
+        return 0;
+    }
     return DefWindowProc(window, message, wParam, lParam);
 }
 
@@ -256,6 +505,8 @@ LRESULT WINAPI LSMessageHandler(HWND window, UINT message, WPARAM wParam, LPARAM
 void DestroyTaskbars()
 {
     gTaskbars.clear();
+    sMonitorCopies.clear();
+    sMonitorLayout.clear();
 }
 
 
@@ -275,11 +526,29 @@ void CreateTaskbar(LPCTSTR taskbarName)
 {
     if (gTaskbars.find(taskbarName) == gTaskbars.end())
     {
+        Settings settings(taskbarName);
+        const UINT monitors = nCore::FetchMonitorInfo().GetMonitorCount();
+        const bool everyMonitor = settings.GetBool(L"EveryMonitor", false) && monitors > 1;
+        if (everyMonitor && settings.GetMonitor(L"Monitor", 0xFFFFFFFF) == 0xFFFFFFFF)
+        {
+            // The other monitors get their own copy: this one keeps the primary's windows.
+            SetTaskbarVariable(taskbarName, L"Monitor", L"0");
+        }
+
         gTaskbars.emplace(
             std::piecewise_construct,
             std::forward_as_tuple(taskbarName),
             std::forward_as_tuple(taskbarName)
             );
+
+        if (everyMonitor)
+        {
+            for (UINT monitor = 1; monitor < monitors; ++monitor)
+            {
+                CreateMonitorCopy(taskbarName, settings, monitor);
+            }
+            sMonitorLayout = CurrentMonitorLayout();
+        }
     }
     else
     {
