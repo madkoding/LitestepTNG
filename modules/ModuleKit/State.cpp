@@ -181,61 +181,36 @@ namespace {
     static const std::unordered_map<std::wstring, std::vector<State::ShadowLayer>> presets = []() {
       std::unordered_map<std::wstring, std::vector<State::ShadowLayer>> map;
 
+      // Offsets, blur and spread in px (ShadowWindow.cpp): blur is the gaussian's reach,
+      // sigma = blur / 2. Opacity multiplies the colour's alpha.
+      auto px = [] (float offsetX, float offsetY, float blur, float spread, float opacity) {
+        return MakeShadowLayer(offsetX, offsetY, blur, spread, opacity, 1.0f, 1.0f, 1, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f));
+      };
+
       AddShadowPreset(map, { L"none", L"shadowless" }, {});
 
-      {
-        std::vector<State::ShadowLayer> layers;
-        layers.push_back(MakeShadowLayer(0.0f, 6.0f, 18.0f, 0.15f, 0.28f, 1.02f, 1.05f, 24, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f)));
-        layers.push_back(MakeShadowLayer(0.0f, 20.0f, 40.0f, 0.32f, 0.18f, 1.10f, 1.28f, 36, D2D1::ColorF(0.0f, 0.0f, 0.0f, 0.95f)));
-        AddShadowPreset(map, { L"macos", L"macos-floating", L"float" }, layers);
-      }
+      // A close, soft shadow for small things: labels, buttons, notifications.
+      AddShadowPreset(map, { L"subtle", L"soft" }, { px(0, 2, 18, 6, 0.60f) });
 
-      {
-        std::vector<State::ShadowLayer> layers;
-        layers.push_back(MakeShadowLayer(0.0f, 8.0f, 36.0f, 0.22f, 0.24f, 1.08f, 1.12f, 20, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f)));
-        AddShadowPreset(map, { L"windows", L"windows11", L"win11" }, layers);
-      }
+      // A hard, offset drop shadow, like the classic Windows menus.
+      AddShadowPreset(map, { L"classic", L"drop" }, { px(4, 4, 6, 0, 0.60f) });
 
-      {
-        std::vector<State::ShadowLayer> layers;
-        layers.push_back(MakeShadowLayer(0.0f, 4.0f, 12.0f, 0.08f, 0.32f, 1.02f, 1.05f, 24, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f)));
-        layers.push_back(MakeShadowLayer(0.0f, 18.0f, 48.0f, 0.30f, 0.22f, 1.12f, 1.24f, 48, D2D1::ColorF(0.02f, 0.02f, 0.03f, 1.0f)));
-        layers.push_back(MakeShadowLayer(0.0f, 36.0f, 72.0f, 0.42f, 0.12f, 1.24f, 1.42f, 32, D2D1::ColorF(0.08f, 0.08f, 0.12f, 1.0f)));
-        AddShadowPreset(map, { L"raytraced", L"ray" }, layers);
-      }
+      // Windows 11's menus and flyouts.
+      AddShadowPreset(map, { L"windows", L"windows11", L"win11" }, { px(0, 4, 36, 10, 0.65f), px(0, 1, 10, 2, 0.40f) });
 
-      {
-        std::vector<State::ShadowLayer> layers;
-        layers.push_back(MakeShadowLayer(0.0f, 10.0f, 36.0f, 0.20f, 0.26f, 1.04f, 1.18f, 28, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f)));
-        AddShadowPreset(map, { L"material", L"material-high" }, layers);
-      }
+      AddShadowPreset(map, { L"macos", L"macos-floating", L"float" }, { px(0, 8, 24, 2, 0.50f), px(0, 22, 56, 6, 0.30f) });
 
-      {
-        std::vector<State::ShadowLayer> layers;
-        layers.push_back(MakeShadowLayer(0.0f, 14.0f, 32.0f, 0.18f, 0.32f, 1.06f, 1.18f, 28, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f)));
-        layers.push_back(MakeShadowLayer(0.0f, 34.0f, 56.0f, 0.28f, 0.18f, 1.15f, 1.36f, 36, D2D1::ColorF(0.0f, 0.0f, 0.0f, 0.92f)));
-        AddShadowPreset(map, { L"design1-panel", L"design-panel", L"panel" }, layers);
-      }
+      AddShadowPreset(map, { L"material", L"material-high" }, { px(0, 10, 32, 4, 0.50f), px(0, 3, 8, 0, 0.32f) });
 
-      {
-        std::vector<State::ShadowLayer> layers;
-        layers.push_back(MakeShadowLayer(0.0f, 18.0f, 52.0f, 0.32f, 0.30f, 1.28f, 1.12f, 36, D2D1::ColorF(0.0f, 0.0f, 0.0f, 0.95f)));
-        layers.push_back(MakeShadowLayer(0.0f, 32.0f, 78.0f, 0.48f, 0.16f, 1.42f, 1.20f, 40, D2D1::ColorF(0.0f, 0.0f, 0.0f, 0.8f)));
-        AddShadowPreset(map, { L"design1-dock", L"design-dock", L"dock" }, layers);
-      }
+      AddShadowPreset(map, { L"raytraced", L"ray" }, { px(0, 3, 8, 0, 0.45f), px(0, 16, 40, 4, 0.35f), px(0, 36, 80, 8, 0.20f) });
 
-      {
-        std::vector<State::ShadowLayer> layers;
-        layers.push_back(MakeShadowLayer(0.0f, 6.0f, 18.0f, 0.18f, 0.30f, 1.12f, 1.04f, 24, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f)));
-        AddShadowPreset(map, { L"design1-pill", L"pill", L"chip" }, layers);
-      }
+      AddShadowPreset(map, { L"design1-panel", L"design-panel", L"panel" }, { px(0, 12, 36, 4, 0.50f), px(0, 28, 64, 8, 0.28f) });
 
-      {
-        std::vector<State::ShadowLayer> layers;
-        layers.push_back(MakeShadowLayer(0.0f, 10.0f, 26.0f, 0.22f, 0.28f, 1.08f, 1.06f, 24, D2D1::ColorF(0.0f, 0.0f, 0.0f, 1.0f)));
-        layers.push_back(MakeShadowLayer(0.0f, 24.0f, 48.0f, 0.28f, 0.18f, 1.16f, 1.24f, 32, D2D1::ColorF(0.0f, 0.0f, 0.0f, 0.9f)));
-        AddShadowPreset(map, { L"design1-tray", L"design-tray", L"tray" }, layers);
-      }
+      AddShadowPreset(map, { L"design1-dock", L"design-dock", L"dock" }, { px(0, 14, 44, 4, 0.50f), px(0, 28, 76, 8, 0.28f) });
+
+      AddShadowPreset(map, { L"design1-pill", L"pill", L"chip" }, { px(0, 5, 18, 2, 0.50f) });
+
+      AddShadowPreset(map, { L"design1-tray", L"design-tray", L"tray" }, { px(0, 8, 28, 2, 0.48f), px(0, 20, 52, 6, 0.28f) });
 
       return map;
     }();
@@ -334,9 +309,6 @@ void State::DiscardDeviceResources() {
 
 
 void State::Paint(ID2D1RenderTarget* renderTarget, WindowData *windowData) {
-  for (const ShadowLayer &shadow : windowData->shadowLayers) {
-    RenderShadowLayer(renderTarget, windowData, shadow);
-  }
   if (mBrushes[BrushType::Background].brush) {
     if (mBrushes[BrushType::Background].IsImageEdgeBrush()) {
       for (Brush::EdgeType type = Brush::EdgeType(0); type != Brush::EdgeType::Count;
@@ -380,6 +352,8 @@ void State::PaintText(ID2D1RenderTarget* renderTarget, WindowData *windowData, W
     }
 
     if (windowData->textLayout) {
+      DropShadow::PaintTextShadow(renderTarget, windowData->textLayout,
+        D2D1::Point2F(windowData->textArea.left, windowData->textArea.top), mStateSettings.textShadow);
       windowData->textLayout->Draw(renderTarget, mTextRender, windowData->textArea.left, windowData->textArea.top);
     }
 
@@ -489,87 +463,6 @@ void State::SetTextOffsets(float left, float top, float right, float bottom) {
   //this->textArea.top += mStateSettings.textOffsetTop;
   //this->textArea.left += mStateSettings.textOffsetLeft;
   //this->textArea.right -= mStateSettings.textOffsetRight;
-}
-
-
-void State::RenderShadowLayer(ID2D1RenderTarget* renderTarget, WindowData *windowData, const ShadowLayer &layer) const {
-  if (!layer.enabled || layer.opacity <= 0.0f) {
-    return;
-  }
-
-  const D2D1_RECT_F &rect = windowData->drawingArea.rect;
-  D2D1_POINT_2F center = {
-    (rect.left + rect.right) * 0.5f,
-    (rect.top + rect.bottom) * 0.5f
-  };
-
-  ID2D1Geometry *geometry = windowData->shapeGeometry;
-
-  const int samplesHint = layer.samples > 0 ? layer.samples : (layer.blurRadius > 0.0f ? static_cast<int>(std::min(64.0f, std::ceil(layer.blurRadius * 2.0f))) : 1);
-  const int samples = std::max(1, samplesHint);
-
-  std::vector<float> weights(samples, 1.0f / static_cast<float>(samples));
-  if (layer.blurRadius > 0.0f && samples > 1) {
-    const float sigma = std::max(layer.blurRadius, 0.5f);
-    float sum = 0.0f;
-    for (int i = 0; i < samples; ++i) {
-      const float x = samples == 1 ? 0.0f : static_cast<float>(i) / static_cast<float>(samples - 1);
-      const float distance = 1.0f - x;
-      const float weight = std::exp(-(distance * distance) / (2.0f * sigma * sigma));
-      weights[i] = weight;
-      sum += weight;
-    }
-    if (sum > 0.0f) {
-      for (float &value : weights) {
-        value /= sum;
-      }
-    }
-  }
-
-  const float spreadScale = std::max(0.0f, layer.spread) + std::max(0.0f, layer.blurRadius) * 0.03f;
-  const float scaleXBase = layer.scaleX <= 0.0f ? 1.0f : layer.scaleX;
-  const float scaleYBase = layer.scaleY <= 0.0f ? 1.0f : layer.scaleY;
-
-  D2D1_COLOR_F baseColor = layer.color;
-  float opacity = layer.opacity;
-  if (opacity < 0.0f) { opacity = 0.0f; }
-  if (opacity > 1.0f) { opacity = 1.0f; }
-  baseColor.a *= opacity;
-
-  ID2D1SolidColorBrush *brush = nullptr;
-  if (FAILED(renderTarget->CreateSolidColorBrush(baseColor, &brush)) || brush == nullptr) {
-    return;
-  }
-
-  D2D1_MATRIX_3X2_F originalTransform;
-  renderTarget->GetTransform(&originalTransform);
-
-  for (int i = 0; i < samples; ++i) {
-    const float position = samples == 1 ? 1.0f : static_cast<float>(i) / static_cast<float>(samples - 1);
-    const float scaleFactor = 1.0f + spreadScale * position;
-    const float scaleX = scaleXBase * scaleFactor;
-    const float scaleY = scaleYBase * scaleFactor;
-
-    D2D1_MATRIX_3X2_F transform =
-      D2D1::Matrix3x2F::Translation(-center.x, -center.y) *
-      D2D1::Matrix3x2F::Scale(scaleX, scaleY) *
-      D2D1::Matrix3x2F::Translation(center.x + layer.offsetX, center.y + layer.offsetY);
-
-    renderTarget->SetTransform(transform * originalTransform);
-
-    D2D1_COLOR_F iterationColor = baseColor;
-    iterationColor.a = baseColor.a * weights[i];
-    brush->SetColor(iterationColor);
-
-    if (geometry != nullptr) {
-      renderTarget->FillGeometry(geometry, brush);
-    } else {
-      renderTarget->FillRectangle(rect, brush);
-    }
-  }
-
-  renderTarget->SetTransform(originalTransform);
-  brush->Release();
 }
 
 

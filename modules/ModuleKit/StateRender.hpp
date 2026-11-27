@@ -10,6 +10,7 @@
 #include "IStateRender.hpp"
 #include "State.hpp"
 #include "StateWindowData.hpp"
+#include "ShadowWindow.hpp"
 #include "../Utilities/EnumArray.hpp"
 #include <list>
 
@@ -298,6 +299,16 @@ public:
         }
 
         return ret;
+    }
+
+    void GetShadowShape(IStateWindowData *windowData, ShadowShape &shape) override
+    {
+        StateWindowData<StateEnum> *data;
+        data = decltype(data)(windowData);
+        const State::WindowData &state = data->data[data->currentState];
+        shape.layers = state.shadowLayers;
+        shape.rect = state.drawingArea.rect;
+        shape.radii = state.effectiveCornerRadii;
     }
 
     void UpdateText(IStateWindowData *windowData) override

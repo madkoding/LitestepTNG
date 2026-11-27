@@ -12,6 +12,7 @@
 #include "LiteStep.h"
 #include "MessageHandler.hpp"
 #include "Window.hpp"
+#include "ShadowWindow.hpp"
 #include "WindowSettings.hpp"
 
 #include "../CoreCom/Core.h"
@@ -45,6 +46,13 @@ static HWND DesktopInsertAfter(HWND self)
         return HWND_BOTTOM;
     }
     HWND above = GetWindow(background, GW_HWNDPREV);
+    // Skip drop shadows (ShadowWindow): they sit right below their own window.
+    WCHAR className[32];
+    while (above != nullptr && GetClassNameW(above, className, _countof(className)) &&
+        wcscmp(className, ShadowWindow::ClassName()) == 0)
+    {
+        above = GetWindow(above, GW_HWNDPREV);
+    }
     if (above == self)
     {
         return nullptr;
@@ -406,6 +414,7 @@ void Window::EndShowAnimation() {
   SetWindowPos(this->window, nullptr, int(mPosition.x + 0.5f), int(mPosition.y + 0.5f), 0, 0,
     SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
   RedrawWindow(this->window, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
+  UpdateShadow();
 }
 
 
@@ -815,6 +824,8 @@ LRESULT WINAPI Window::HandleMessage(HWND window, UINT msg, WPARAM wParam, LPARA
                     }
                 }
 
+                UpdateShadow();
+
                 // Paint actual owned/child windows.
                 //EnumChildWindows(this->window, [] (HWND hwnd, LPARAM) -> BOOL
                 //{
@@ -898,6 +909,12 @@ LRESULT WINAPI Window::HandleMessage(HWND window, UINT msg, WPARAM wParam, LPARA
         return 0;
     }
 
+    // Moved, resized, shown, hidden or restacked: the shadow follows.
+    if (msg == WM_WINDOWPOSCHANGED)
+    {
+        UpdateShadow();
+    }
+
     if (msg == FrameClock::Message())
     {
         OnFrame();
@@ -938,6 +955,29 @@ LRESULT WINAPI Window::HandleMessage(HWND window, UINT msg, WPARAM wParam, LPARA
     }
 }
 
+
+
+/// <summary>
+/// Shows the drop shadow of a top-level window under it (see ShadowWindow.hpp).
+/// </summary>
+void Window::UpdateShadow()
+{
+    if (mIsChild || !this->initialized || this->window == nullptr || mStateRender == nullptr || mWindowData == nullptr)
+    {
+        return;
+    }
+    ShadowShape shape;
+    mStateRender->GetShadowShape(mWindowData, shape);
+    if (shape.layers.empty() && !mShadow)
+    {
+        return;
+    }
+    if (!mShadow)
+    {
+        mShadow.reset(new ShadowWindow());
+    }
+    mShadow->Update(this->window, shape, this->visible && !mShowAnimating);
+}
 
 /// <summary>
 /// Hides the window.

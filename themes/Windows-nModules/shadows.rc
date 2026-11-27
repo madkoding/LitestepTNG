@@ -1,0 +1,36 @@
+; ==============================================================================
+;  shadows
+;  <Prefix>ShadowPreset none|subtle|classic|win11|macos|material|panel|dock|tray
+;  and, layer by layer, <Prefix>Shadow<N>OffsetX/OffsetY/Blur/Spread/Opacity/Color
+;  (px; they change layer N of the preset). Each window casts it outside its own
+;  rectangle (ShadowWindow), following its rounded corners.
+; ==============================================================================
+
+; Menus and notifications float, as in Windows 11 (the start menu has its own line
+; in menus.rc).
+nPopupShadowPreset win11
+NotifyBoxShadowPreset win11
+
+; Top bar: the shadow falls onto the desktop.
+TopBarBackgroundShadowPreset subtle
+TopBarBackgroundShadow1OffsetY 4
+TopBarBackgroundShadow1Blur 30
+TopBarBackgroundShadow1Opacity 0.75
+TopBarBackgroundShadow1Spread 6
+
+; Bottom bar (start, tasks, tray): the shadow goes up.
+StartButtonShadowPreset subtle
+StartButtonShadow1OffsetY -4
+StartButtonShadow1Blur 30
+StartButtonShadow1Opacity 0.75
+StartButtonShadow1Spread 6
+TaskbarMainShadowPreset subtle
+TaskbarMainShadow1OffsetY -4
+TaskbarMainShadow1Blur 30
+TaskbarMainShadow1Opacity 0.75
+TaskbarMainShadow1Spread 6
+TrayDockShadowPreset subtle
+TrayDockShadow1OffsetY -4
+TrayDockShadow1Blur 30
+TrayDockShadow1Opacity 0.75
+TrayDockShadow1Spread 6

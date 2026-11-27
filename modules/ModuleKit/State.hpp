@@ -10,6 +10,7 @@
 class State;
 
 #include "Brush.hpp"
+#include "DropShadow.hpp"
 #include "IPainter.hpp"
 #include "IBrushOwner.hpp"
 #include "StateTextRender.hpp"
@@ -186,6 +187,10 @@ public:
         // Text stroke width. Default: 0
         float fontStrokeWidth;
 
+        // Shadow under the text: TextShadowColor (default transparent = none),
+        // TextShadowOffsetX / Y (default 1), TextShadowBlur (px, default 2).
+        DropShadow::Params textShadow;
+
         // The trimming setting. None, Character, Word. Default: Character
         DWRITE_TRIMMING_GRANULARITY textTrimmingGranularity;
 
@@ -250,7 +255,6 @@ public:
     void SetWordWrapping(DWRITE_WORD_WRAPPING wrapping);
 
 private:
-  void RenderShadowLayer(ID2D1RenderTarget* renderTarget, WindowData *windowData, const ShadowLayer &layer) const;
 
 public:
     // The name of this state.

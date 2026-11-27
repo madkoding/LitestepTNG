@@ -43,5 +43,12 @@ void TileSettings::Load(Settings *settings) {
   mIconSize = settings->GetInt(L"Size", 48);
   mIconOffsetTop = settings->GetInt(L"OffsetTop", 0);
   mGhostOpacity = settings->GetFloat(L"GhostOpacity", 0.6f);
+
+  std::unique_ptr<IColorVal> noShadow(Color::Create(0x00000000));
+  std::unique_ptr<IColorVal> shadowColor(settings->GetColor(L"ImageShadowColor", noShadow.get()));
+  mShadow.color = Color::ARGBToD2D(shadowColor ? shadowColor->Evaluate() : 0);
+  mShadow.offsetX = settings->GetFloat(L"ImageShadowOffsetX", 1.0f);
+  mShadow.offsetY = settings->GetFloat(L"ImageShadowOffsetY", 2.0f);
+  mShadow.blur = settings->GetFloat(L"ImageShadowBlur", 4.0f);
 }
 

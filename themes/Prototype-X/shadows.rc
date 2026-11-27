@@ -1,0 +1,36 @@
+; ==============================================================================
+;  Sombras
+;  <Prefijo>ShadowPreset none|subtle|classic|win11|macos|material|panel|dock|tray
+;  y, capa por capa, <Prefijo>Shadow<N>OffsetX/OffsetY/Blur/Spread/Opacity/Color
+;  (px; cambian la capa N del preset). Cada ventana la proyecta fuera de su
+;  rectangulo (ShadowWindow).
+; ==============================================================================
+
+; Menus y notificaciones.
+PXMenuShadowPreset win11
+NotifyBoxShadowPreset win11
+
+; Barra superior (tres piezas): la sombra cae hacia el escritorio.
+PXHotShadowPreset subtle
+PXHotShadow1OffsetY 4
+PXHotShadow1Blur 30
+PXHotShadow1Opacity 0.75
+PXHotShadow1Spread 6
+PXTasksShadowPreset subtle
+PXTasksShadow1OffsetY 4
+PXTasksShadow1Blur 30
+PXTasksShadow1Opacity 0.75
+PXTasksShadow1Spread 6
+PXTrayShadowPreset subtle
+PXTrayShadow1OffsetY 4
+PXTrayShadow1Blur 30
+PXTrayShadow1Opacity 0.75
+PXTrayShadow1Spread 6
+
+; Columna izquierda (los dos paneles): la sombra va hacia la derecha.
+PXColumnPanelShadowPreset subtle
+PXColumnPanelShadow1OffsetX 4
+PXColumnPanelShadow1OffsetY 0
+PXColumnPanelShadow1Blur 30
+PXColumnPanelShadow1Opacity 0.75
+PXColumnPanelShadow1Spread 6

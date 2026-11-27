@@ -1,0 +1,35 @@
+; ==============================================================================
+;  Sombras
+;  <Prefijo>ShadowPreset none|subtle|classic|win11|macos|material|panel|dock|tray
+;  y, capa por capa, <Prefijo>Shadow<N>OffsetX/OffsetY/Blur/Spread/Opacity/Color
+;  (px; cambian la capa N del preset). Cada ventana la proyecta fuera de su
+;  rectangulo (ShadowWindow), siguiendo sus esquinas redondeadas.
+; ==============================================================================
+
+; Menus y notificaciones flotan, como en Windows 11.
+MenuStyleShadowPreset win11
+NotifyBoxShadowPreset win11
+
+; Barra superior: la sombra cae hacia el escritorio.
+TopBarShadowPreset subtle
+TopBarShadow1OffsetY 4
+TopBarShadow1Blur 30
+TopBarShadow1Opacity 0.75
+TopBarShadow1Spread 6
+
+; Barra inferior (inicio, tareas, bandeja): la sombra sube.
+StartButtonShadowPreset subtle
+StartButtonShadow1OffsetY -4
+StartButtonShadow1Blur 30
+StartButtonShadow1Opacity 0.75
+StartButtonShadow1Spread 6
+TaskbarMainShadowPreset subtle
+TaskbarMainShadow1OffsetY -4
+TaskbarMainShadow1Blur 30
+TaskbarMainShadow1Opacity 0.75
+TaskbarMainShadow1Spread 6
+TrayDockShadowPreset subtle
+TrayDockShadow1OffsetY -4
+TrayDockShadow1Blur 30
+TrayDockShadow1Opacity 0.75
+TrayDockShadow1Spread 6

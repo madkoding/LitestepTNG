@@ -7,6 +7,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma once
 
+#include <memory>
 #include "../Utilities/CommonD2D.h"
 #include "WindowSettings.hpp"
 #include "State.hpp"
@@ -28,6 +29,8 @@
 #include "Rect.hpp"
 #include <set>
 
+
+class ShadowWindow;
 
 class Window : MessageHandler, IDropTarget
 {
@@ -389,6 +392,11 @@ private:
     // Display-refresh ticks (FrameClock). Only the top-level window subscribes; children
     // forward their requests to it.
     void UpdateFrameSubscription();
+
+    // The drop shadow of a top-level window whose state has shadow layers
+    // (<Prefix>ShadowPreset, <Prefix>Shadow<N>...). Created on first use.
+    std::unique_ptr<ShadowWindow> mShadow;
+    void UpdateShadow();
     void OnFrame();
     // A child animated during the last paint, so the next frame must repaint.
     bool mChildAnimating = false;

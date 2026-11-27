@@ -331,6 +331,29 @@ build, matching the original theme's preview screenshot (1024×768; not part of 
   `[System.IO.File]::WriteAllText($f,$t,(New-Object System.Text.UTF8Encoding($false)))`
   — or just the `Edit`/`Write` tools, which are safe.
 
+### Shadows (since 2026-11-27)
+- **Window shadows** (menus, notifications, bars, any top-level window):
+  `<Prefix>ShadowPreset none|subtle|classic|win11|macos|material|raytraced|panel|dock|pill|tray`
+  and per layer `<Prefix>Shadow<N>OffsetX|OffsetY|Blur|Spread|Opacity|Color|Enabled`, in px
+  (a layer key changes layer N of the preset). `ModuleKit/ShadowWindow.cpp` draws them in a
+  second window (class `LSShadow`: layered, click-through, kept right below its window,
+  same topmost band): a window can only paint inside its own rectangle, so the old code,
+  which drew scaled copies of the shape inside the window, never showed. The shape is the
+  state's rounded rectangle; it is cut out of the shadow (as CSS does), so translucent
+  windows do not show their own shadow. Image-skinned windows with transparent parts (LiteStep
+  Enhanced's top panels, its tray) get a rectangular shadow that does not follow the picture:
+  leave those without one. `OnDesktop` windows skip `LSShadow` windows when stacking.
+- **Text shadow** (any window): `<Prefix>TextShadowColor` (default none),
+  `TextShadowOffsetX|Y` (1), `TextShadowBlur` (px, 2; 0 = crisp copy).
+- **Desktop icon picture**: `<Icons>IconImageShadowColor|OffsetX|OffsetY|Blur`.
+- Text and picture shadows use Direct2D's shadow effect (`ModuleKit/DropShadow.cpp`), which
+  needs an `ID2D1DeviceContext`: the D2D factory is created as `ID2D1Factory1`
+  (`Factories.cpp`); with the 1.0 factory the render targets did not give one.
+- Each theme keeps its shadows in `shadows.rc`, included last. Values from the first try
+  were too faint for the user; the presets were made stronger and wider on 2026-11-27.
+- `Settings::GetLine` returns false when the value comes from a style (`Group`) although it
+  fills the buffer: check the buffer, not the result (that hid every shadow set on a style).
+
 ### Theme files (layout since 2026-11-25)
 - `theme.rc` is a header plus `include` lines; each area has its own file of ~50–150 lines
   (`general.rc`, `styles.rc`, `bar-*.rc`, `popups.rc` = menu skin, `menus.rc`, `notify.rc`…).

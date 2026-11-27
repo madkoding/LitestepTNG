@@ -53,6 +53,8 @@
     <ClInclude Include="LiteralColorVal.hpp" />
     <ClInclude Include="Overlay.hpp" />
     <ClInclude Include="State.hpp" />
+    <ClInclude Include="ShadowWindow.hpp" />
+    <ClInclude Include="DropShadow.hpp" />
     <ClInclude Include="StateBangs.h" />
     <ClInclude Include="FrameClock.hpp" />
     <ClInclude Include="Window.hpp" />
@@ -99,6 +101,8 @@
     <ClCompile Include="Window.cpp" />
     <ClCompile Include="Overlay.cpp" />
     <ClCompile Include="State.cpp" />
+    <ClCompile Include="ShadowWindow.cpp" />
+    <ClCompile Include="DropShadow.cpp" />
     <ClCompile Include="Easing.cpp" />
     <ClCompile Include="ErrorHandler.cpp" />
     <ClCompile Include="EventHandler.cpp" />
