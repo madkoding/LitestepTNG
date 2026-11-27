@@ -34,6 +34,7 @@ if (-not (Test-Path (Join-Path $Bin 'litestep.exe'))) { throw "No build in $Bin.
 # theme in the repo should have one); a theme.json that is not valid JSON stops the
 # build. Sorted by name (ordinal) so every build stages the same list.
 $Themes = @()
+$Fonts = @()      # non-stock fonts the shipped themes need (requires.fonts), for the installer
 $themeDirs = @(Get-ChildItem (Join-Path $Root 'themes') -Directory |
     Where-Object { $_.Name -notin 'original-2002', 'drafts' -and -not $_.Name.StartsWith('.') })
 [string[]]$names = @($themeDirs | ForEach-Object { $_.Name })
@@ -48,7 +49,15 @@ foreach ($name in $names) {
     catch { throw "themes\$name\theme.json is not valid JSON: $($_.Exception.Message)" }
     if ($null -eq $json) { throw "themes\$name\theme.json is empty" }
     $mode = if ($json.PSObject.Properties['mode'] -and $json.mode) { [string]$json.mode } else { 'overlay' }
-    if ($mode -eq 'overlay') { $Themes += $name }
+    if ($mode -eq 'overlay') {
+        $Themes += $name
+        $requires = $json.PSObject.Properties['requires']
+        if ($requires -and $requires.Value -and $requires.Value.PSObject.Properties['fonts']) {
+            foreach ($font in @($requires.Value.fonts)) {
+                if ($font -and $font.name) { $Fonts += [pscustomobject]@{ Font = [string]$font.name; Theme = $name } }
+            }
+        }
+    }
     elseif ($mode -eq 'shell') { Write-Host "Theme '$name' has mode 'shell'; not packaged." }
     else { Write-Warning "Theme '$name' has an unknown mode '$mode'; not packaged." }
 }
@@ -110,8 +119,20 @@ if (-not $NoInstaller) {
 
     # The installer's own version fields only take numbers: 1.2.3-rc1 -> 1.2.3
     $numeric = if ($Version -match '^(\d+(\.\d+){0,3})') { $Matches[1] } else { '0.0.0' }
+
+    # The font note comes from the manifests: one entry per font a shipped theme needs and
+    # Windows does not ship. Empty when none does (the installer then shows no note).
+    $fontNote = Join-Path $Dist 'fontnote.isi'
+    $list = ($Fonts | ForEach-Object { '"{0}" ({1})' -f $_.Font, $_.Theme }) -join ', '
+    $lines = if ($Fonts.Count) {
+        "english.FontNote=Some themes are designed for fonts that are not included: $list. Without them Windows substitutes another font and the text of those themes will look different.",
+        "spanish.FontNote=Algunos temas est$([char]0xE1)n dise$([char]0xF1)ados para fuentes que no se incluyen: $list. Sin ellas Windows usa otra fuente y el texto de esos temas se ver$([char]0xE1) distinto."   # ASCII script: PS 5.1 reads it as ANSI
+    } else { 'english.FontNote=', 'spanish.FontNote=' }
+    # Inno Setup reads an include as UTF-8 only with a byte order mark.
+    [IO.File]::WriteAllLines($fontNote, [string[]]$lines, (New-Object Text.UTF8Encoding $true))
+
     & $iscc /Qp "/DAppVersion=$Version" "/DAppNumericVersion=$numeric" "/DRepoUrl=$RepoUrl" `
-        "/DStageDir=$Stage" "/DOutputDir=$Dist" (Join-Path $Root 'installer\LiteStepTNG.iss')
+        "/DStageDir=$Stage" "/DOutputDir=$Dist" "/DFontNoteFile=$fontNote" (Join-Path $Root 'installer\LiteStepTNG.iss')
     if ($LASTEXITCODE -ne 0) { throw "ISCC failed (code $LASTEXITCODE)" }
     Write-Host "Installer: $(Join-Path $Dist "LiteStepTNG-$Version-x64-setup.exe")"
 }
