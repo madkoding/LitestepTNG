@@ -85,8 +85,13 @@ void MinimizedShelf::Thumb::Place(const RECT &rect, int padding) {
 
 LRESULT WINAPI MinimizedShelf::Thumb::HandleMessage(HWND window, UINT message, WPARAM wParam, LPARAM lParam, LPVOID) {
   if (message == WM_LBUTTONUP) {
-    ShowWindowAsync(mTarget, SW_RESTORE);
+    // What a task button does for a minimized window (TaskButton::HandleMessage): the window
+    // restores itself (some programs, packaged apps and Explorer among them, do not answer
+    // a ShowWindow from outside), then it gets the foreground.
+    BringWindowToTop(mTarget);
+    PostMessage(mTarget, WM_SYSCOMMAND, SC_RESTORE, 0);
     WindowActivation::ForceForeground(mTarget);
+    return 0;
   }
   mEventHandler->HandleMessage(window, message, wParam, lParam);
   return DefWindowProc(window, message, wParam, lParam);
