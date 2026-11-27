@@ -819,6 +819,14 @@ LRESULT WINAPI Window::HandleMessage(HWND window, UINT msg, WPARAM wParam, LPARA
         }
     }
 
+    // The capture went to another window (or was released): stop routing the mouse to the
+    // handler that asked for it. Without this a lost capture (a drag, another window taking
+    // it) left every later click going to that handler. The message still reaches msgHandler.
+    if (msg == WM_CAPTURECHANGED && !mIsChild && HWND(lParam) != window)
+    {
+        mCaptureHandler = nullptr;
+    }
+
     // Handle DrawableWindow messages.
     switch (msg)
     {

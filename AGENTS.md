@@ -690,6 +690,14 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   `DesktopInsertAfter` climbs from the background over shadows, hidden windows, the window
   itself and lower layers. Check without the mouse: minimize a window of your own process and
   compare the z-order positions of `MinimizedShelf` and `MIcons` while restacking each.
+  **Lost mouse capture:** a press on the icon group starts a rectangle selection that holds
+  the capture, and the right press that opens the menu is one. A capture that ended without
+  its release (taken by another window, a drag) left `Window::mCaptureHandler` set and the
+  selection open, so the next click (the first one on the menu or a thumbnail) went to the
+  icons. Now `Window` clears the handler on `WM_CAPTURECHANGED`, `TileGroup` cancels the
+  selection on it (and a press during a stale selection starts a new one), and `Popup::Show`
+  releases a capture held by any non-popup window. Checked without the mouse
+  (`WM_RBUTTONDOWN` posted to MIcons, then `!PopupContext`, read `GetGUIThreadInfo`).
 - Build with `/nr:false` when waiting for MSBuild to finish: `/m` leaves worker nodes
   (`MSBuild.exe`) running for reuse, so "wait until MSBuild exits" never ends. Never pipe
   MSBuild's output through a command that can be moved to the background: when nobody reads
