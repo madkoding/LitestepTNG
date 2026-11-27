@@ -65,7 +65,12 @@ still needs when it is installed or switched.
   line is skipped and logged; **no download happens in this feature**.
   *(Builder-check call)* `ModuleManager::_LoadModules` reads them in a second loop **after** the
   `LoadModule` lines, so a theme's explicit `LoadModule` order (Core first) is never disturbed.
-  The loader adds no module the theme does not ask for.
+  *(Revised 2026-11-27)* One module is added that the theme does not ask for: when a line was
+  mapped to an nModule and no queued module is `Core.dll`, `<run folder>\Core.dll` is loaded
+  first, because every nModule needs nCore and a 2002 theme never loads it (each mapped module
+  showed "problem connecting to nCore!"). The plan lists it as `Core`, note "loaded for the
+  nModules". The goal "no edit to the theme" wins over "add nothing": Core first is also the
+  load order the native themes use.
 - *(Builder-check call)* **Fallback.** "nModules win" is a preference, not a ban: if the alias
   target DLL is not in the run folder but the original is, the original is loaded and the log
   and plan say so (`ok`, with `note: "original used, nModule not installed"`). Only when neither
@@ -80,10 +85,12 @@ still needs when it is installed or switched.
 - *(Builder-check call)* **Reading the map.** Lines are `*ModuleAlias <name> <target>` read in
   order (the resolver iterates them like `LoadModule`); the first line for a name wins, so
   `personal.rc`, included before the map, overrides it.
-- *(Builder-check call)* **Desk.** The runtime resolver does not refuse `Desk.dll` when a theme
-  names it explicitly (the two shell-mode themes need it when LiteStep is the shell); only the
-  plan marks it `blocked` for an `overlay` install, and no alias targets it. Refusing it in
-  overlay mode at runtime is a follow-up.
+- *(Builder-check call)* **Desk.** No alias targets it, and the plan marks it `blocked` for an
+  `overlay` install. *(Revised 2026-11-27)* The runtime refuses it too, on any line, while
+  Explorer's desktop view (a `SHELLDLL_DefView`) exists: the shell-mode themes that needed it
+  and `Desk.dll` itself were removed on 2026-11-26, and a theme that brings its own copy would
+  take Explorer's desktop away (AGENTS.md §3). In a session where LiteStep is the shell there is
+  no such view, so it is not refused there.
 - Every substitution and every skip is logged (`Logger::Log`), including the theme line number
   when available, so the plan and the log agree.
 
@@ -184,5 +191,6 @@ themes and lists only non-stock ones.
 
 ## Open follow-ups (not part of this work)
 - The downloader module (fetch, verify `sha256`, extract, recycle).
-- The installer's hard-coded font note could be generated from the manifest.
+- ~~The installer's hard-coded font note could be generated from the manifest.~~ Done
+  2026-11-27: `package.ps1` writes it from the shipped themes' `requires.fonts`.
 - Translating classic module configuration, if it ever becomes a goal.
