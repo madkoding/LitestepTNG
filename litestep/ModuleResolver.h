@@ -27,7 +27,8 @@ namespace ModuleResolver {
     };
 
     // Parses "*ModuleAlias <name> <Target>" (key case-insensitive, exactly three tokens separated
-    // by spaces or tabs). Returns false for anything else.
+    // by spaces or tabs; "..." or '...' groups a token and one pair of outer quotes is removed,
+    // as Split-RcLine in tools\theme-plan.ps1 does). Returns false for anything else.
     bool ParseAliasLine(const std::wstring& line, Alias& out);
 
     class AliasMap {
@@ -69,4 +70,28 @@ namespace ModuleResolver {
     // original location (expanded like KeptOriginal) for error messages.
     Resolution Resolve(const std::wstring& location, const AliasMap& map,
         const std::wstring& appPath, const std::function<bool(const std::wstring&)>& exists);
+
+    // The file a location stands for: a name with no folder (no \, /, : or $) is
+    // <appPath><name>, plus ".dll" unless it already ends with it ("label-1.99" ->
+    // <appPath>label-1.99.dll; LoadLibrary would not add ".dll" to a name with a dot). Anything
+    // else is returned as written. Used as the key that finds two lines naming the same DLL.
+    std::wstring ExpandLocation(const std::wstring& location, const std::wstring& appPath);
+
+    // Resolve for *NetLoadModule / *NetInstallModule lines, which name a module the way a 2002
+    // theme did and must never reach the loader's "Could not locate module" box: when Resolve
+    // says Unchanged, the location is expanded (ExpandLocation) and the outcome becomes Missing
+    // if that file does not exist. The other outcomes are Resolve's. LoadModule lines keep
+    // using Resolve, which leaves an Unchanged location exactly as written.
+    Resolution ResolveNet(const std::wstring& location, const AliasMap& map,
+        const std::wstring& appPath, const std::function<bool(const std::wstring&)>& exists);
+
+    enum class Architecture {
+        Unknown,    // too short, not a PE file, or an optional header this code does not know
+        Bits32,     // optional header magic 0x10b (or, without one, machine i386)
+        Bits64      // optional header magic 0x20b
+    };
+
+    // Reads the architecture from the first bytes of a DLL: MZ, e_lfanew (offset 0x3C),
+    // "PE\0\0", IMAGE_FILE_HEADER (Machine), then the optional header's magic.
+    Architecture ReadArchitecture(const unsigned char* data, size_t size);
 }

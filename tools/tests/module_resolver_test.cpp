@@ -7,6 +7,7 @@
 #include <iostream>
 #include <set>
 #include <string>
+#include <vector>
 
 using namespace ModuleResolver;
 
@@ -211,6 +212,114 @@ static void test_already_nmodule_unchanged() {
     CheckEqual(other.location, kApp + L"Popup.dll", T, "location of a classic popup.dll");
 }
 
+static void test_parse_alias_line_quotes() {
+    const char* T = "test_parse_alias_line_quotes";
+    Alias a;
+    Check(ParseAliasLine(L"*ModuleAlias \"label-1.99\" \"Label\"", a), T, "quoted line rejected");
+    CheckEqual(a.from, L"label", T, "quoted from");
+    CheckEqual(a.to, L"Label", T, "quoted to");
+
+    Alias b;
+    Check(ParseAliasLine(L"*ModuleAlias 'popup2' 'My Popup'", b), T, "single quotes rejected");
+    CheckEqual(b.from, L"popup2", T, "single-quoted from");
+    CheckEqual(b.to, L"My Popup", T, "a quoted target keeps its space");
+
+    Alias c;
+    Check(!ParseAliasLine(L"*ModuleAlias label \"\"", c), T, "empty target accepted");
+}
+
+static void test_net_unaliased_bare_name() {
+    const char* T = "test_net_unaliased_bare_name";
+    AliasMap empty;
+    FakeFiles none;
+    Resolution r = ResolveNet(L"geekamp-1.9.7", empty, kApp, none.Exists());
+    CheckOutcome(r.outcome, Outcome::Missing, T);
+    CheckEqual(r.location, kApp + L"geekamp-1.9.7.dll", T, "location of an absent module");
+
+    FakeFiles fs;
+    fs.files.insert(kApp + L"lsxcommand-1.9.9.dll");
+    Resolution p = ResolveNet(L"lsxcommand-1.9.9", empty, kApp, fs.Exists());
+    CheckOutcome(p.outcome, Outcome::Unchanged, T);
+    CheckEqual(p.location, kApp + L"lsxcommand-1.9.9.dll", T, "a present module is expanded");
+
+    // A full path that does not exist is skipped too; one that exists is kept as written.
+    Resolution full = ResolveNet(L"C:\\x\\geekamp.dll", empty, kApp, none.Exists());
+    CheckOutcome(full.outcome, Outcome::Missing, T);
+    FakeFiles fx;
+    fx.files.insert(L"C:\\x\\geekamp.dll");
+    Resolution kept = ResolveNet(L"C:\\x\\geekamp.dll", empty, kApp, fx.Exists());
+    CheckOutcome(kept.outcome, Outcome::Unchanged, T);
+    CheckEqual(kept.location, L"C:\\x\\geekamp.dll", T, "full path kept");
+
+    // Aliased names resolve as with Resolve.
+    AliasMap map = MapOf({L"*ModuleAlias label Label"});
+    FakeFiles lf;
+    lf.files.insert(kApp + L"Label.dll");
+    Resolution m = ResolveNet(L"label-1.99", map, kApp, lf.Exists());
+    CheckOutcome(m.outcome, Outcome::Mapped, T);
+    CheckEqual(m.location, kApp + L"Label.dll", T, "mapped location");
+
+    // A self alias still loads the original, expanded.
+    AliasMap self = MapOf({L"*ModuleAlias popup2 popup2"});
+    FakeFiles pf;
+    pf.files.insert(kApp + L"popup2.dll");
+    Resolution s = ResolveNet(L"popup2", self, kApp, pf.Exists());
+    CheckOutcome(s.outcome, Outcome::Unchanged, T);
+    CheckEqual(s.location, kApp + L"popup2.dll", T, "self alias location");
+
+    // LoadModule lines (Resolve) keep the location as written.
+    Resolution lm = Resolve(L"geekamp-1.9.7", empty, kApp, none.Exists());
+    CheckOutcome(lm.outcome, Outcome::Unchanged, T);
+    CheckEqual(lm.location, L"geekamp-1.9.7", T, "Resolve leaves a bare name alone");
+}
+
+static void test_expand_location() {
+    const char* T = "test_expand_location";
+    CheckEqual(ExpandLocation(L"Label", kApp), kApp + L"Label.dll", T, "bare");
+    CheckEqual(ExpandLocation(L"label-1.99", kApp), kApp + L"label-1.99.dll", T, "dotted bare");
+    CheckEqual(ExpandLocation(L"Label.dll", kApp), kApp + L"Label.dll", T, "file name");
+    CheckEqual(ExpandLocation(L"C:\\run\\Label.dll", kApp), L"C:\\run\\Label.dll", T, "path");
+    CheckEqual(ExpandLocation(L"$LiteStepDir$Label.dll", kApp), L"$LiteStepDir$Label.dll", T,
+               "variable");
+}
+
+static std::vector<unsigned char> MinimalPe(unsigned machine, unsigned magic, size_t size) {
+    std::vector<unsigned char> b(size, 0);
+    b[0] = 'M'; b[1] = 'Z';
+    b[0x3C] = 0x40;
+    b[0x40] = 'P'; b[0x41] = 'E';
+    b[0x44] = static_cast<unsigned char>(machine & 0xFF);
+    b[0x45] = static_cast<unsigned char>(machine >> 8);
+    if (size >= 0x5A) {
+        b[0x58] = static_cast<unsigned char>(magic & 0xFF);
+        b[0x59] = static_cast<unsigned char>(magic >> 8);
+    }
+    return b;
+}
+
+static void test_read_architecture() {
+    const char* T = "test_read_architecture";
+    std::vector<unsigned char> x86 = MinimalPe(0x14c, 0x10b, 0x80);
+    Check(ReadArchitecture(x86.data(), x86.size()) == Architecture::Bits32, T, "PE32");
+    std::vector<unsigned char> x64 = MinimalPe(0x8664, 0x20b, 0x80);
+    Check(ReadArchitecture(x64.data(), x64.size()) == Architecture::Bits64, T, "PE32+");
+    std::vector<unsigned char> noMagic = MinimalPe(0x14c, 0, 0x58);
+    Check(ReadArchitecture(noMagic.data(), noMagic.size()) == Architecture::Bits32, T,
+          "i386 machine without an optional header");
+    Check(ReadArchitecture(nullptr, 0) == Architecture::Unknown, T, "empty");
+    std::vector<unsigned char> shortFile(0x20, 0);
+    shortFile[0] = 'M'; shortFile[1] = 'Z';
+    Check(ReadArchitecture(shortFile.data(), shortFile.size()) == Architecture::Unknown, T,
+          "too short");
+    std::vector<unsigned char> farPe = MinimalPe(0x14c, 0x10b, 0x80);
+    farPe[0x3C] = 0xF0; farPe[0x3D] = 0xFF;  // e_lfanew past the end
+    Check(ReadArchitecture(farPe.data(), farPe.size()) == Architecture::Unknown, T,
+          "e_lfanew past the end");
+    std::vector<unsigned char> notPe = MinimalPe(0x14c, 0x10b, 0x80);
+    notPe[0x40] = 'X';
+    Check(ReadArchitecture(notPe.data(), notPe.size()) == Architecture::Unknown, T, "no PE sig");
+}
+
 int main(int argc, char** argv) {
     if (argc < 2) {
         std::cout << "usage: module_resolver_test <module-names.txt>\n";
@@ -224,6 +333,10 @@ int main(int argc, char** argv) {
     test_unknown_bare_name_is_missing();
     test_self_alias_keeps_original();
     test_already_nmodule_unchanged();
+    test_parse_alias_line_quotes();
+    test_net_unaliased_bare_name();
+    test_expand_location();
+    test_read_architecture();
     if (gFailures == 0) std::cout << "OK\n";
     return gFailures;
 }

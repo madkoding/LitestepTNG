@@ -59,22 +59,50 @@ namespace {
             EqualsNoCase(folder, appPath);
     }
 
+    // Whitespace separates tokens; "..." and '...' group (quotes removed), like Split-RcLine.
     std::vector<std::wstring> SplitWhitespace(const std::wstring& line) {
         std::vector<std::wstring> tokens;
-        size_t pos = 0;
-        while (pos < line.size()) {
-            size_t start = line.find_first_not_of(L" \t\r\n", pos);
-            if (start == std::wstring::npos) {
-                break;
+        std::wstring current;
+        wchar_t quote = 0;
+        bool inToken = false;
+        for (wchar_t c : line) {
+            if (quote != 0) {
+                if (c == quote) {
+                    quote = 0;
+                } else {
+                    current += c;
+                }
+                continue;
             }
-            size_t end = line.find_first_of(L" \t\r\n", start);
-            if (end == std::wstring::npos) {
-                end = line.size();
+            if (c == L'"' || c == L'\'') {
+                quote = c;
+                inToken = true;
+                continue;
             }
-            tokens.push_back(line.substr(start, end - start));
-            pos = end;
+            if (c == L' ' || c == L'\t' || c == L'\r' || c == L'\n') {
+                if (inToken) {
+                    tokens.push_back(current);
+                    current.clear();
+                    inToken = false;
+                }
+                continue;
+            }
+            current += c;
+            inToken = true;
+        }
+        if (inToken) {
+            tokens.push_back(current);
         }
         return tokens;
+    }
+
+    unsigned ReadU16(const unsigned char* p) {
+        return static_cast<unsigned>(p[0]) | (static_cast<unsigned>(p[1]) << 8);
+    }
+
+    unsigned long ReadU32(const unsigned char* p) {
+        return static_cast<unsigned long>(ReadU16(p)) |
+            (static_cast<unsigned long>(ReadU16(p + 2)) << 16);
     }
 }
 
@@ -101,7 +129,7 @@ namespace ModuleResolver {
             return false;
         }
         std::wstring from = NormalizeName(tokens[1]);
-        if (from.empty()) {
+        if (from.empty() || tokens[2].empty()) {
             return false;
         }
         out.from = from;
@@ -137,5 +165,46 @@ namespace ModuleResolver {
             return Resolution{ original, Outcome::KeptOriginal };
         }
         return Resolution{ original, Outcome::Missing };
+    }
+
+    std::wstring ExpandLocation(const std::wstring& location, const std::wstring& appPath) {
+        if (location.empty() || location.find_first_of(L"\\/:$") != std::wstring::npos) {
+            return location;
+        }
+        return EndsWithDll(location) ? appPath + location : appPath + location + kDll;
+    }
+
+    Resolution ResolveNet(const std::wstring& location, const AliasMap& map,
+        const std::wstring& appPath, const std::function<bool(const std::wstring&)>& exists) {
+        Resolution r = Resolve(location, map, appPath, exists);
+        if (r.outcome != Outcome::Unchanged) {
+            return r;
+        }
+        const std::wstring path = ExpandLocation(location, appPath);
+        return Resolution{ path, exists(path) ? Outcome::Unchanged : Outcome::Missing };
+    }
+
+    Architecture ReadArchitecture(const unsigned char* data, size_t size) {
+        if (data == nullptr || size < 0x40 || data[0] != 'M' || data[1] != 'Z') {
+            return Architecture::Unknown;
+        }
+        const unsigned long pe = ReadU32(data + 0x3C);
+        // "PE\0\0" (4) + IMAGE_FILE_HEADER (20); Machine is its first field.
+        if (pe > size || size - pe < 4 + 20 || data[pe] != 'P' || data[pe + 1] != 'E' ||
+            data[pe + 2] != 0 || data[pe + 3] != 0) {
+            return Architecture::Unknown;
+        }
+        const unsigned machine = ReadU16(data + pe + 4);
+        if (size - pe >= 4 + 20 + 2) {
+            const unsigned magic = ReadU16(data + pe + 24);
+            if (magic == 0x10b) {
+                return Architecture::Bits32;
+            }
+            if (magic == 0x20b) {
+                return Architecture::Bits64;
+            }
+            return Architecture::Unknown;
+        }
+        return machine == 0x14c ? Architecture::Bits32 : Architecture::Unknown;
     }
 }
