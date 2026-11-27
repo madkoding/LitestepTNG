@@ -122,6 +122,7 @@ UINT ModuleManager::_LoadModules()
         // need to use a separate queue as modules may load other modules (e.g.
         // mzscript via LoadModule) during the startup process
         ModuleQueue mqModules;
+        bool bAnyMapped = false;
 
         _ReadAliases(f);
 
@@ -156,7 +157,8 @@ UINT ModuleManager::_LoadModules()
                     dwFlags |= LS_MODULE_THREADED;
                 }
 
-                _QueueModule(mqModules, _MakeModule(wzToken1, dwFlags));
+                _QueueModule(mqModules,
+                    _MakeModule(wzToken1, dwFlags, false, &bAnyMapped));
             }
         }
 
@@ -177,12 +179,18 @@ UINT ModuleManager::_LoadModules()
 
                 if (LCTokenizeW(wzLine, lpwzBuffers, 3, nullptr) >= 2)
                 {
-                    _QueueModule(mqModules, _MakeModule(wzToken1, 0));
+                    _QueueModule(mqModules,
+                        _MakeModule(wzToken1, 0, true, &bAnyMapped));
                 }
             }
         }
 
         LCClose (f);
+
+        if (bAnyMapped)
+        {
+            _AddCoreForNModules(mqModules);
+        }
 
         uReturn = _StartModules(mqModules);
     }
@@ -231,6 +239,99 @@ void ModuleManager::_ReadAliases(LPVOID f)
 }
 
 
+std::wstring ModuleManager::_AppPathWithSlash() const
+{
+    std::wstring sAppPath = m_sAppPath;
+
+    if (!sAppPath.empty() && sAppPath.back() != L'\\' && sAppPath.back() != L'/')
+    {
+        sAppPath += L'\\';
+    }
+
+    return sAppPath;
+}
+
+
+std::wstring ModuleManager::_LocationKey(LPCWSTR pwzLocation) const
+{
+    std::wstring sPath = ModuleResolver::ExpandLocation(pwzLocation, _AppPathWithSlash());
+
+    wchar_t wzFull[MAX_PATH] = { 0 };
+    DWORD dwLength = GetFullPathNameW(sPath.c_str(), MAX_PATH, wzFull, nullptr);
+
+    if (dwLength > 0 && dwLength < MAX_PATH)
+    {
+        sPath = wzFull;
+    }
+
+    return sPath;
+}
+
+
+void ModuleManager::_AddCoreForNModules(ModuleQueue& mqModules)
+{
+    for (const Module* pModule : mqModules)
+    {
+        LPCWSTR pwzLocation = pModule->GetLocation();
+        LPCWSTR pwzName = pwzLocation;
+
+        for (LPCWSTR p = pwzLocation; *p; ++p)
+        {
+            if (*p == L'\\' || *p == L'/' || *p == L':' || *p == L'$')
+            {
+                pwzName = p + 1;
+            }
+        }
+
+        if (_wcsicmp(pwzName, L"Core.dll") == 0 || _wcsicmp(pwzName, L"Core") == 0)
+        {
+            return;
+        }
+    }
+
+    const std::wstring sCore = _AppPathWithSlash() + L"Core.dll";
+    DWORD dwAttributes = GetFileAttributesW(sCore.c_str());
+
+    if (dwAttributes == INVALID_FILE_ATTRIBUTES ||
+        (dwAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+    {
+        Logger::Log(L"Modules: the nModules need %ls, which is not installed.",
+            sCore.c_str());
+        return;
+    }
+
+    Logger::Log(L"Modules: loading %ls first: the theme's classic modules were "
+        L"mapped to nModules, which need it.", sCore.c_str());
+    mqModules.push_front(new Module(sCore, 0));
+}
+
+
+// The architecture of a DLL from its first bytes (Unknown when the file
+// cannot be read or is not a PE file).
+static ModuleResolver::Architecture ReadFileArchitecture(const std::wstring& sPath)
+{
+    ModuleResolver::Architecture architecture = ModuleResolver::Architecture::Unknown;
+
+    HANDLE hFile = CreateFileW(sPath.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
+        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+
+    if (hFile != INVALID_HANDLE_VALUE)
+    {
+        unsigned char buffer[4096];
+        DWORD dwRead = 0;
+
+        if (ReadFile(hFile, buffer, sizeof(buffer), &dwRead, nullptr))
+        {
+            architecture = ModuleResolver::ReadArchitecture(buffer, dwRead);
+        }
+
+        CloseHandle(hFile);
+    }
+
+    return architecture;
+}
+
+
 void ModuleManager::_QueueModule(ModuleQueue& mqModules, Module* pModule)
 {
     if (!pModule)
@@ -238,8 +339,16 @@ void ModuleManager::_QueueModule(ModuleQueue& mqModules, Module* pModule)
         return;
     }
 
-    ModuleQueue::iterator iter = std::find_if(mqModules.begin(),
-        mqModules.end(), IsLocationEqual(pModule->GetLocation()));
+    // Compare the files the lines stand for, not their spelling: "LoadModule
+    // Label" and "*NetLoadModule label-1.99" both load <app path>Label.dll.
+    const std::wstring sKey = _LocationKey(pModule->GetLocation());
+
+    ModuleQueue::iterator iter = std::find_if(mqModules.begin(), mqModules.end(),
+        [this, &sKey](const Module* pQueued)
+        {
+            return _wcsicmp(_LocationKey(pQueued->GetLocation()).c_str(),
+                sKey.c_str()) == 0;
+        });
 
     if (iter != mqModules.end())
     {
@@ -253,29 +362,36 @@ void ModuleManager::_QueueModule(ModuleQueue& mqModules, Module* pModule)
 }
 
 
-Module* ModuleManager::_MakeModule(LPCWSTR pwzLocation, DWORD dwFlags)
+Module* ModuleManager::_MakeModule(LPCWSTR pwzLocation, DWORD dwFlags,
+    bool bNetLine, bool* pbMapped)
 {
-    std::wstring sAppPath = m_sAppPath;
+    const std::wstring sAppPath = _AppPathWithSlash();
 
-    if (!sAppPath.empty() && sAppPath.back() != L'\\' && sAppPath.back() != L'/')
+    auto exists = [](const std::wstring& sPath)
     {
-        sAppPath += L'\\';
-    }
+        DWORD dwAttributes = GetFileAttributesW(sPath.c_str());
+        return dwAttributes != INVALID_FILE_ATTRIBUTES &&
+            (dwAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
+    };
 
-    ModuleResolver::Resolution resolution = ModuleResolver::Resolve(
-        pwzLocation, m_aliases, sAppPath,
-        [](const std::wstring& sPath)
-        {
-            DWORD dwAttributes = GetFileAttributesW(sPath.c_str());
-            return dwAttributes != INVALID_FILE_ATTRIBUTES &&
-                (dwAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
-        });
+    // *NetLoadModule lines name modules the 2002 way ("geekamp-1.9.7"): one
+    // that is neither mapped nor present is skipped here instead of reaching
+    // the loader's "Could not locate module" box. LoadModule lines keep
+    // Resolve, which leaves an unmapped location exactly as written.
+    ModuleResolver::Resolution resolution = bNetLine ?
+        ModuleResolver::ResolveNet(pwzLocation, m_aliases, sAppPath, exists) :
+        ModuleResolver::Resolve(pwzLocation, m_aliases, sAppPath, exists);
 
     switch (resolution.outcome)
     {
     case ModuleResolver::Outcome::Mapped:
         Logger::Log(L"Modules: %ls is loaded as %ls.", pwzLocation,
             resolution.location.c_str());
+
+        if (pbMapped)
+        {
+            *pbMapped = true;
+        }
         break;
 
     case ModuleResolver::Outcome::KeptOriginal:
@@ -284,12 +400,22 @@ Module* ModuleManager::_MakeModule(LPCWSTR pwzLocation, DWORD dwFlags)
         break;
 
     case ModuleResolver::Outcome::Missing:
-        Logger::Log(L"Modules: neither %ls nor its replacement exists; skipping it.",
-            resolution.location.c_str());
+        Logger::Log(L"Modules: %ls (%ls) is not installed and no installed module "
+            L"replaces it; skipping it.", resolution.location.c_str(), pwzLocation);
         return nullptr;
 
     case ModuleResolver::Outcome::Unchanged:
         break;
+    }
+
+    // Classic modules are 32-bit: Module::Init would stop start-up with a box
+    // saying so. Only for the classic *Net lines.
+    if (bNetLine && ReadFileArchitecture(resolution.location) ==
+        ModuleResolver::Architecture::Bits32)
+    {
+        Logger::Log(L"Modules: %ls is a 32-bit module and LiteStepTNG is 64-bit; "
+            L"skipping it.", resolution.location.c_str());
+        return nullptr;
     }
 
     return new Module(resolution.location, dwFlags);

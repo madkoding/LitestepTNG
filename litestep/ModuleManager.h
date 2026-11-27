@@ -186,9 +186,27 @@ private:
      */
     void _ReadAliases(LPVOID f);
 
+    /** m_sAppPath with a trailing backslash. */
+    std::wstring _AppPathWithSlash() const;
+
+    /**
+     * The file a module location stands for, used to find duplicates: a
+     * name with no folder is <app path><name>.dll (ModuleResolver::
+     * ExpandLocation), then GetFullPathNameW. Never passed to LoadLibrary.
+     */
+    std::wstring _LocationKey(LPCWSTR pwzLocation) const;
+
+    /**
+     * Puts <app path>Core.dll at the front of a start-up queue when no
+     * queued module is Core.dll and the file exists. Called by _LoadModules
+     * when a classic name was mapped to an nModule (every nModule needs
+     * nCore, and a 2002 theme never loads it).
+     */
+    void _AddCoreForNModules(ModuleQueue& mqModules);
+
     /**
      * Appends a module to a start-up queue, unless the queue already has
-     * one with the same location (compared case-insensitively).
+     * one for the same file (_LocationKey, compared case-insensitively).
      *
      * @param  mqModules  queue being built by _LoadModules
      * @param  pModule    module from _MakeModule (may be nullptr)
@@ -202,10 +220,15 @@ private:
      *
      * @param  pwzLocation  path to the module's DLL
      * @param  dwFlags      set of flags that control how the module is loaded
-     * @return pointer to the module object, or nullptr when neither the
-     *         mapped module nor the original exists
+     * @param  bNetLine     true for *NetLoadModule / *NetInstallModule lines:
+     *                      an unmapped name is expanded (ResolveNet), and the
+     *                      module is skipped when the file is absent or is a
+     *                      32-bit DLL
+     * @param  pbMapped     set to true when the name was mapped (may be null)
+     * @return pointer to the module object, or nullptr when it is skipped
      */
-    Module* _MakeModule(LPCWSTR pwzLocation, DWORD dwFlags);
+    Module* _MakeModule(LPCWSTR pwzLocation, DWORD dwFlags,
+        bool bNetLine = false, bool* pbMapped = nullptr);
 
     /**
      * Waits for an array of events to all be set while remaining responsive
