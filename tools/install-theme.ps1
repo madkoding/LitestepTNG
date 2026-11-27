@@ -42,7 +42,8 @@ function Assert-ThemeName([string]$Name) {
     if ($Name.Contains('..') -or $Name.IndexOfAny([IO.Path]::GetInvalidFileNameChars()) -ge 0) {
         throw "'$Name' is not a valid theme folder name."
     }
-    if ($Name -ne $Name.Trim() -or $Name.EndsWith('.') -or $ReservedNames -contains ($Name -split '\.')[0]) {
+    # A leading dot is kept for this script's own helper folders (.installing-*, .replaced-*).
+    if ($Name -ne $Name.Trim() -or $Name.StartsWith('.') -or $Name.EndsWith('.') -or $ReservedNames -contains ($Name -split '\.')[0]) {
         throw "'$Name' is not a valid theme folder name."
     }
 }
@@ -81,7 +82,8 @@ $exitCode = 0
 try {
     $LiteStepDir = Resolve-LiteStepDir $LiteStepDir
     if (-not (Test-Path -LiteralPath $Source)) { throw "Not found: $Source" }
-    $Source = (Resolve-Path -LiteralPath $Source).Path
+    # ProviderPath: .Path carries a provider prefix for UNC paths (\\server\share).
+    $Source = (Resolve-Path -LiteralPath $Source).ProviderPath
     $warnings = New-Object System.Collections.Generic.List[string]
 
     # Find the theme folder and its name.
@@ -142,7 +144,11 @@ try {
         if ($existing) { Rename-Item -LiteralPath $target -NewName (Split-Path $outgoing -Leaf) }
         try { Rename-Item -LiteralPath $incoming -NewName $name }
         catch {
-            if ($existing) { Rename-Item -LiteralPath $outgoing -NewName $name }
+            $failure = $_.Exception.Message
+            if ($existing) {
+                try { Rename-Item -LiteralPath $outgoing -NewName $name }
+                catch { throw "The new copy could not be put in place ($failure) and the installed theme could not be restored: it is in $outgoing; rename it back to '$name'." }
+            }
             throw
         }
         if ($existing) {

@@ -12,8 +12,8 @@ function Resolve-LiteStepDir([string]$LiteStepDir) {
     if (-not $LiteStepDir) {
         throw 'Where does LiteStep run from? Pass -LiteStepDir <folder>, set the LITESTEP_DIR environment variable, or start LiteStep first.'
     }
-    if (-not (Test-Path (Join-Path $LiteStepDir 'litestep.exe'))) {
+    if (-not (Test-Path -LiteralPath (Join-Path $LiteStepDir 'litestep.exe'))) {
         throw "No litestep.exe in '$LiteStepDir'."
     }
-    return (Resolve-Path $LiteStepDir).Path
+    return (Resolve-Path -LiteralPath $LiteStepDir).ProviderPath
 }

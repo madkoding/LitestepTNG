@@ -27,8 +27,9 @@ $LiteStepDir = Resolve-LiteStepDir $LiteStepDir
 $themesDir = Join-Path $LiteStepDir 'themes'
 $select    = Join-Path $LiteStepDir 'theme-select.rc'
 
-$themes = Get-ChildItem $themesDir -Directory |
-    Where-Object { Test-Path (Join-Path $_.FullName 'theme.rc') } |
+# Folders starting with a dot are install-theme.ps1's helper folders, not themes.
+$themes = Get-ChildItem -LiteralPath $themesDir -Directory |
+    Where-Object { -not $_.Name.StartsWith('.') -and (Test-Path -LiteralPath (Join-Path $_.FullName 'theme.rc')) } |
     Select-Object -ExpandProperty Name
 
 if (-not $Theme) {

@@ -176,6 +176,24 @@ class InstallTheme(ScratchRunFolder):
                 self.assert_refused(self.install(z))
                 self.assertEqual(listing(self.run_dir), before)
 
+    def test_leading_dot_name_is_refused(self):
+        z = self.make_zip('.hidden.zip', {'theme.rc': self.THEME_RC})
+        before = listing(self.run_dir)
+        self.assert_refused(self.install(z))
+        self.assertEqual(listing(self.run_dir), before)
+
+    def test_name_with_brackets_is_installed_and_planned(self):
+        self.assert_ok(self.install(self.copy_theme('Neo [v2]')))
+        self.assertTrue(os.path.isfile(self.theme_path('Neo [v2]', 'theme.rc')))
+        self.assertEqual(self.plan('Neo [v2]')['theme'], 'Neo [v2]')
+
+    def test_unc_source(self):
+        unc = '\\\\localhost\\' + FOLDER_THEME[0] + '$' + FOLDER_THEME[2:]
+        if not os.path.isdir(unc):
+            self.skipTest('the administrative share is not reachable')
+        self.assert_ok(self.install(unc))
+        self.assertTrue(os.path.isfile(self.theme_path('folder-theme', 'theme.rc')))
+
     def test_second_install_needs_force(self):
         self.assert_ok(self.install(FOLDER_THEME))
         marker = self.theme_path('folder-theme', 'old.txt')
@@ -226,6 +244,30 @@ class SwitchAndDeploy(ScratchRunFolder):
         self.assert_ok(run)
         self.assertIn('folder-theme', run.stdout)
         self.assertFalse(os.path.exists(os.path.join(self.run_dir, 'theme-select.rc')))
+
+    def leftover(self):
+        """A helper folder install-theme.ps1 can leave behind (with a theme.rc in it)."""
+        shutil.copytree(FOLDER_THEME, self.theme_path('.replaced-0123'))
+
+    def test_switch_skips_helper_folders_and_handles_brackets(self):
+        self.leftover()
+        self.assert_ok(self.install(self.copy_theme('Neo [v2]')))
+        run = self.tool('switch-theme.ps1')
+        self.assert_ok(run)
+        self.assertIn('Neo [v2]', run.stdout)
+        self.assertNotIn('.replaced-0123', run.stdout)
+        os.remove(os.path.join(self.run_dir, 'plans', 'Neo [v2].json'))
+        self.assert_ok(self.tool('switch-theme.ps1', 'Neo [v2]', '-NoRestart'))
+        self.plan('Neo [v2]')
+        self.assert_refused(self.tool('switch-theme.ps1', '.replaced-0123', '-NoRestart'))
+
+    def test_deploy_skips_helper_folders_and_plans_brackets(self):
+        self.leftover()
+        self.assert_ok(self.install(self.copy_theme('Neo [v2]')))
+        os.remove(os.path.join(self.run_dir, 'plans', 'Neo [v2].json'))
+        self.assert_ok(self.tool('deploy.ps1', '-ThemesOnly', '-NoRestart'))
+        self.plan('Neo [v2]')
+        self.assertFalse(os.path.exists(os.path.join(self.run_dir, 'plans', '.replaced-0123.json')))
 
     def test_deploy_themes_only_writes_plans(self):
         os.makedirs(self.theme_path('Glass'))
