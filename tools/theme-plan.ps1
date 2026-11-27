@@ -431,7 +431,7 @@ function Write-ThemePlan($Plan, [string]$LiteStepDir) {
 function Show-ThemePlan($Plan) {
     Write-Host "Theme '$($Plan.theme)':"
     $groups = @(
-        @{ Status = 'blocked'; Color = 'Red'; Title = 'Blocked (not loaded in this mode)' },
+        @{ Status = 'blocked'; Color = 'Red'; Title = 'Blocked (not loaded)' },
         @{ Status = 'missing'; Color = 'Yellow'; Title = 'Missing' },
         @{ Status = 'mapped'; Color = 'Cyan'; Title = 'Replaced by an nModule' },
         @{ Status = 'ok'; Color = 'Green'; Title = 'Ok' })

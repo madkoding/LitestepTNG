@@ -1,14 +1,16 @@
 ; ==============================================================================
 ;  classic-demo  -  test theme for config\module-map.rc
-;  Names its module the way a 2002 theme does. Nothing here loads Label.dll by
-;  name: litestep maps label-1.99 to Label through *ModuleAlias. Copy this folder
-;  to <run folder>\themes\classic-demo, select it with tools\switch-theme.ps1 and
-;  check that Label.dll is loaded and the box below shows up.
-;  Core is loaded by its own name: every nModule needs it ("There was a problem
-;  connecting to nCore!" otherwise), and a 2002 theme has no line for it.
+;  Names its modules the way a 2002 theme does and, like one, never loads Core.
+;  litestep maps label-1.99 to Label through *ModuleAlias and, because a module
+;  was mapped, loads Core.dll first by itself (every nModule needs it).
+;  geekamp-1.9.7 has no alias and is not installed: it must be skipped and
+;  logged, with no "Could not locate module" box.
+;  Copy this folder to <run folder>\themes\classic-demo, select it with
+;  tools\switch-theme.ps1 and check that Core.dll and Label.dll are loaded, that
+;  no dialog box is open and that the box below shows up.
 ; ==============================================================================
-LoadModule $LiteStepDir$Core.dll
 *NetLoadModule label-1.99
+*NetLoadModule geekamp-1.9.7
 
 *nLabel ClassicDemo
 ClassicDemoX 100
