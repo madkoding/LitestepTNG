@@ -4,7 +4,7 @@
 ; ==============================================================================
 *nLabel MLnkOffice
 MLnkOfficeGroup MMPanelImage
-MLnkOfficeX 1385
+MLnkOfficeX 50%-335
 MLnkOfficeY 100%-50
 MLnkOfficeWidth 134
 MLnkOfficeHeight 21
@@ -14,7 +14,7 @@ MLnkOfficeOn LeftClickUp None !PopupLnkOffice
 
 *nLabel MLnkGraphic
 MLnkGraphicGroup MMPanelImage
-MLnkGraphicX 1519
+MLnkGraphicX 50%-201
 MLnkGraphicY 100%-50
 MLnkGraphicWidth 134
 MLnkGraphicHeight 21
@@ -24,7 +24,7 @@ MLnkGraphicOn LeftClickUp None !PopupLnkGraphic
 
 *nLabel MLnkMulti
 MLnkMultiGroup MMPanelImage
-MLnkMultiX 1653
+MLnkMultiX 50%-67
 MLnkMultiY 100%-50
 MLnkMultiWidth 134
 MLnkMultiHeight 21
@@ -34,7 +34,7 @@ MLnkMultiOn LeftClickUp None !PopupLnkMulti
 
 *nLabel MLnkInternet
 MLnkInternetGroup MMPanelImage
-MLnkInternetX 1787
+MLnkInternetX 50%+67
 MLnkInternetY 100%-50
 MLnkInternetWidth 134
 MLnkInternetHeight 21
@@ -44,7 +44,7 @@ MLnkInternetOn LeftClickUp None !PopupLnkInternet
 
 *nLabel MLnkTools
 MLnkToolsGroup MMPanelImage
-MLnkToolsX 1921
+MLnkToolsX 50%+201
 MLnkToolsY 100%-50
 MLnkToolsWidth 134
 MLnkToolsHeight 21
