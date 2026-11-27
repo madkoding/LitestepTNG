@@ -12,24 +12,20 @@ NotifyBoxShadowPreset win11
 
 ; Barra superior: la sombra cae hacia el escritorio.
 TopBarShadowPreset subtle
-TopBarShadow1OffsetY 4
-TopBarShadow1Blur 30
-TopBarShadow1Opacity 0.75
-TopBarShadow1Spread 6
+TopBarShadow1OffsetY 6
+TopBarShadow1Blur 24
+TopBarShadow1Opacity 0.55
 
 ; Barra inferior (inicio, tareas, bandeja): la sombra sube.
 StartButtonShadowPreset subtle
-StartButtonShadow1OffsetY -4
-StartButtonShadow1Blur 30
-StartButtonShadow1Opacity 0.75
-StartButtonShadow1Spread 6
+StartButtonShadow1OffsetY -6
+StartButtonShadow1Blur 24
+StartButtonShadow1Opacity 0.55
 TaskbarMainShadowPreset subtle
-TaskbarMainShadow1OffsetY -4
-TaskbarMainShadow1Blur 30
-TaskbarMainShadow1Opacity 0.75
-TaskbarMainShadow1Spread 6
+TaskbarMainShadow1OffsetY -6
+TaskbarMainShadow1Blur 24
+TaskbarMainShadow1Opacity 0.55
 TrayDockShadowPreset subtle
-TrayDockShadow1OffsetY -4
-TrayDockShadow1Blur 30
-TrayDockShadow1Opacity 0.75
-TrayDockShadow1Spread 6
+TrayDockShadow1OffsetY -6
+TrayDockShadow1Blur 24
+TrayDockShadow1Opacity 0.55

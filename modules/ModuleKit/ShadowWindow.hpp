@@ -42,7 +42,7 @@ public:
   /// Shows the shadow of the given window under it, or hides it (no layers, window hidden,
   /// or show == false). Re-renders only when the shape changed.
   /// </summary>
-  void Update(HWND target, const ShadowShape &shape, bool show);
+  void Update(HWND target, const ShadowShape &shape, bool show, float opacity = 1.0f);
 
   /// <summary>
   /// The class name of shadow windows, so that code stacking windows can skip them.
@@ -61,4 +61,6 @@ private:
   // Where the shadow starts relative to the window's top left corner.
   POINT mOrigin;
   SIZE mSize;
+  // 0..1, the window's own opacity during its animations.
+  float mOpacity = 1.0f;
 };

@@ -383,13 +383,16 @@ void Window::StepShowAnimation() {
   float eased = 1.0f - (1.0f - t) * (1.0f - t) * (1.0f - t);
 
   SetLayeredWindowAttributes(this->window, 0, BYTE(255.0f * eased + 0.5f), LWA_ALPHA);
+  mAnimationOpacity = eased;
 
   // Slide relative to mPosition, so a resize/move during the animation is respected.
-  if (mWindowSettings.showAnimationOffset != 0) {
-    float offset = mWindowSettings.showAnimationOffset * (1.0f - eased);
-    SetWindowPos(this->window, nullptr, int(mPosition.x + 0.5f), int(mPosition.y + offset + 0.5f),
+  if (mWindowSettings.showAnimationOffset != 0 || mWindowSettings.showAnimationOffsetX != 0) {
+    float offsetY = mWindowSettings.showAnimationOffset * (1.0f - eased);
+    float offsetX = mWindowSettings.showAnimationOffsetX * (1.0f - eased);
+    SetWindowPos(this->window, nullptr, int(mPosition.x + offsetX + 0.5f), int(mPosition.y + offsetY + 0.5f),
       0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
   }
+  UpdateShadow();
 
   if (t >= 1.0f) {
     EndShowAnimation();
@@ -402,6 +405,7 @@ void Window::StepShowAnimation() {
 /// </summary>
 void Window::EndShowAnimation() {
   mShowAnimating = false;
+  mAnimationOpacity = 1.0f;
   UpdateFrameSubscription();
 
   if (mShowAnimationAddedLayered) {
@@ -976,7 +980,7 @@ void Window::UpdateShadow()
     {
         mShadow.reset(new ShadowWindow());
     }
-    mShadow->Update(this->window, shape, this->visible && !mShowAnimating);
+    mShadow->Update(this->window, shape, this->visible, mAnimationOpacity);
 }
 
 /// <summary>
@@ -998,6 +1002,97 @@ void Window::Hide()
     {
         RECT r = { (LONG)drawingArea.left, (LONG)drawingArea.top, (LONG)drawingArea.right, (LONG)drawingArea.bottom };
         mParent->Repaint(&r);
+    }
+}
+
+
+/// <summary>
+/// Hides the window with its exit animation, then calls done.
+/// </summary>
+void Window::HideAnimated(std::function<void()> done)
+{
+    if (mIsChild || mWindowSettings.hideAnimationDuration <= 0 || !IsWindowVisible(this->window))
+    {
+        Hide();
+        if (done)
+        {
+            done();
+        }
+        return;
+    }
+    if (mHideAnimating)
+    {
+        // Already leaving: the newest caller is told when it is gone.
+        mHideDone = done;
+        return;
+    }
+    if (mShowAnimating)
+    {
+        EndShowAnimation();
+    }
+
+    LONG_PTR exStyle = GetWindowLongPtr(this->window, GWL_EXSTYLE);
+    mHideAnimationAddedLayered = (exStyle & WS_EX_LAYERED) == 0;
+    if (mHideAnimationAddedLayered)
+    {
+        SetWindowLongPtr(this->window, GWL_EXSTYLE, exStyle | WS_EX_LAYERED);
+    }
+    SetLayeredWindowAttributes(this->window, 0, 255, LWA_ALPHA);
+
+    mHideDone = done;
+    mHideAnimating = true;
+    mShowAnimationClock.Clock();
+    UpdateFrameSubscription();
+}
+
+
+/// <summary>
+/// One frame of the exit animation: an ease-in curve, so the window starts slowly and
+/// leaves fast, fading out while it slides by HideAnimationOffset[X].
+/// </summary>
+void Window::StepHideAnimation()
+{
+    float t = Clamp(0.0f, mShowAnimationClock.GetTime() * 1000.0f / mWindowSettings.hideAnimationDuration, 1.0f);
+    float eased = t * t * t;
+
+    mAnimationOpacity = 1.0f - eased;
+    SetLayeredWindowAttributes(this->window, 0, BYTE(255.0f * mAnimationOpacity + 0.5f), LWA_ALPHA);
+    if (mWindowSettings.hideAnimationOffset != 0 || mWindowSettings.hideAnimationOffsetX != 0)
+    {
+        SetWindowPos(this->window, nullptr,
+            int(mPosition.x + mWindowSettings.hideAnimationOffsetX * eased + 0.5f),
+            int(mPosition.y + mWindowSettings.hideAnimationOffset * eased + 0.5f),
+            0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+    }
+    UpdateShadow();
+
+    if (t < 1.0f)
+    {
+        return;
+    }
+
+    mHideAnimating = false;
+    UpdateFrameSubscription();
+    Hide();
+    // Back to normal for the next time it is shown.
+    if (mHideAnimationAddedLayered)
+    {
+        SetWindowLongPtr(this->window, GWL_EXSTYLE, GetWindowLongPtr(this->window, GWL_EXSTYLE) & ~WS_EX_LAYERED);
+        mHideAnimationAddedLayered = false;
+    }
+    else
+    {
+        SetLayeredWindowAttributes(this->window, 0, 255, LWA_ALPHA);
+    }
+    mAnimationOpacity = 1.0f;
+    SetWindowPos(this->window, nullptr, int(mPosition.x + 0.5f), int(mPosition.y + 0.5f), 0, 0,
+        SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+
+    std::function<void()> done;
+    done.swap(mHideDone);
+    if (done)
+    {
+        done();
     }
 }
 
@@ -1565,7 +1660,7 @@ void Window::UpdateFrameSubscription()
     {
         return;
     }
-    bool wanted = mShowAnimating || mAnimating || mChildAnimating || !mFrameHandlers.empty();
+    bool wanted = mShowAnimating || mHideAnimating || mAnimating || mChildAnimating || !mFrameHandlers.empty();
     if (wanted != mFrameSubscribed)
     {
         mFrameSubscribed = wanted;
@@ -1589,6 +1684,10 @@ void Window::OnFrame()
     if (mShowAnimating)
     {
         StepShowAnimation();
+    }
+    if (mHideAnimating)
+    {
+        StepHideAnimation();
     }
     if (mAnimating)
     {

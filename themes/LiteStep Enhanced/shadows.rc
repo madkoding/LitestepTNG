@@ -15,27 +15,23 @@ NotifyBoxShadowPreset win11
 
 ; Paneles superiores: la sombra cae hacia el escritorio.
 MBarLeftShadowPreset subtle
-MBarLeftShadow1OffsetY 4
-MBarLeftShadow1Blur 30
-MBarLeftShadow1Opacity 0.75
-MBarLeftShadow1Spread 6
+MBarLeftShadow1OffsetY 6
+MBarLeftShadow1Blur 24
+MBarLeftShadow1Opacity 0.55
 MBarRightShadowPreset subtle
-MBarRightShadow1OffsetY 4
-MBarRightShadow1Blur 30
-MBarRightShadow1Opacity 0.75
-MBarRightShadow1Spread 6
+MBarRightShadow1OffsetY 6
+MBarRightShadow1Blur 24
+MBarRightShadow1Opacity 0.55
 
 ; Bandeja y barra de tareas: la sombra sube hacia el escritorio.
 MTrayShadowPreset subtle
-MTrayShadow1OffsetY -4
-MTrayShadow1Blur 30
-MTrayShadow1Opacity 0.75
-MTrayShadow1Spread 6
+MTrayShadow1OffsetY -6
+MTrayShadow1Blur 24
+MTrayShadow1Opacity 0.55
 MTasksShadowPreset subtle
-MTasksShadow1OffsetY -4
-MTasksShadow1Blur 30
-MTasksShadow1Opacity 0.75
-MTasksShadow1Spread 6
+MTasksShadow1OffsetY -6
+MTasksShadow1Blur 24
+MTasksShadow1Opacity 0.55
 
 ; Iconos del escritorio: sombra bajo el dibujo y bajo el nombre (ademas del contorno).
 MIconsIconImageShadowColor #E0000000

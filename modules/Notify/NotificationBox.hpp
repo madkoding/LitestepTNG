@@ -56,7 +56,8 @@ public:
   float GetWidth() const { return mWindow->GetSize().width; }
 
   // Puts the box at a screen position and makes sure it is visible.
-  void Place(float x, float y);
+  // Moves the box to (x, y): a visible box slides there in moveDuration ms.
+  void Place(float x, float y, int moveDuration);
   void Hide();
 
 private:

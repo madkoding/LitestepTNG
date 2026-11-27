@@ -45,6 +45,10 @@ WindowSettings::WindowSettings()
     , registerWithCore(false)
     , showAnimationDuration(0)
     , showAnimationOffset(0)
+    , showAnimationOffsetX(0)
+    , hideAnimationDuration(0)
+    , hideAnimationOffset(0)
+    , hideAnimationOffsetX(0)
     , textAntiAliasMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE)
     , textUppercase(false)
     , width(100)
@@ -88,6 +92,10 @@ void WindowSettings::Load(const Settings *settings, const WindowSettings *defaul
   this->registerWithCore = defaults->registerWithCore;
   this->showAnimationDuration = settings->GetInt(L"ShowAnimationDuration", defaults->showAnimationDuration);
   this->showAnimationOffset = settings->GetInt(L"ShowAnimationOffset", defaults->showAnimationOffset);
+  this->showAnimationOffsetX = settings->GetInt(L"ShowAnimationOffsetX", defaults->showAnimationOffsetX);
+  this->hideAnimationDuration = settings->GetInt(L"HideAnimationDuration", defaults->hideAnimationDuration);
+  this->hideAnimationOffset = settings->GetInt(L"HideAnimationOffset", defaults->hideAnimationOffset);
+  this->hideAnimationOffsetX = settings->GetInt(L"HideAnimationOffsetX", defaults->hideAnimationOffsetX);
   settings->GetString(L"Text", buf, _countof(buf), defaults->text);
   StringCchCopy(this->text, _countof(this->text), buf);
   settings->GetString(L"TextAntiAliasMode", buf, _countof(buf), textAntiAliasModeMap.GetByA(defaults->textAntiAliasMode, L"ClearType"));

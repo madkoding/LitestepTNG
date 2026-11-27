@@ -190,27 +190,27 @@ namespace {
       AddShadowPreset(map, { L"none", L"shadowless" }, {});
 
       // A close, soft shadow for small things: labels, buttons, notifications.
-      AddShadowPreset(map, { L"subtle", L"soft" }, { px(0, 2, 18, 6, 0.60f) });
+      AddShadowPreset(map, { L"subtle", L"soft" }, { px(0, 3, 12, 0, 0.40f), px(0, 1, 3, 0, 0.22f) });
 
       // A hard, offset drop shadow, like the classic Windows menus.
-      AddShadowPreset(map, { L"classic", L"drop" }, { px(4, 4, 6, 0, 0.60f) });
+      AddShadowPreset(map, { L"classic", L"drop" }, { px(3, 3, 5, 0, 0.50f) });
 
       // Windows 11's menus and flyouts.
-      AddShadowPreset(map, { L"windows", L"windows11", L"win11" }, { px(0, 4, 36, 10, 0.65f), px(0, 1, 10, 2, 0.40f) });
+      AddShadowPreset(map, { L"windows", L"windows11", L"win11" }, { px(0, 12, 32, 0, 0.42f), px(0, 2, 6, 0, 0.28f) });
 
-      AddShadowPreset(map, { L"macos", L"macos-floating", L"float" }, { px(0, 8, 24, 2, 0.50f), px(0, 22, 56, 6, 0.30f) });
+      AddShadowPreset(map, { L"macos", L"macos-floating", L"float" }, { px(0, 10, 30, 0, 0.40f), px(0, 24, 60, 0, 0.22f), px(0, 1, 3, 0, 0.25f) });
 
-      AddShadowPreset(map, { L"material", L"material-high" }, { px(0, 10, 32, 4, 0.50f), px(0, 3, 8, 0, 0.32f) });
+      AddShadowPreset(map, { L"material", L"material-high" }, { px(0, 8, 24, 0, 0.38f), px(0, 3, 6, 0, 0.26f) });
 
-      AddShadowPreset(map, { L"raytraced", L"ray" }, { px(0, 3, 8, 0, 0.45f), px(0, 16, 40, 4, 0.35f), px(0, 36, 80, 8, 0.20f) });
+      AddShadowPreset(map, { L"raytraced", L"ray" }, { px(0, 2, 6, 0, 0.32f), px(0, 14, 36, 0, 0.30f), px(0, 34, 80, 0, 0.16f) });
 
-      AddShadowPreset(map, { L"design1-panel", L"design-panel", L"panel" }, { px(0, 12, 36, 4, 0.50f), px(0, 28, 64, 8, 0.28f) });
+      AddShadowPreset(map, { L"design1-panel", L"design-panel", L"panel" }, { px(0, 12, 32, 0, 0.40f), px(0, 28, 64, 0, 0.20f) });
 
-      AddShadowPreset(map, { L"design1-dock", L"design-dock", L"dock" }, { px(0, 14, 44, 4, 0.50f), px(0, 28, 76, 8, 0.28f) });
+      AddShadowPreset(map, { L"design1-dock", L"design-dock", L"dock" }, { px(0, 14, 40, 0, 0.40f), px(0, 30, 76, 0, 0.20f) });
 
-      AddShadowPreset(map, { L"design1-pill", L"pill", L"chip" }, { px(0, 5, 18, 2, 0.50f) });
+      AddShadowPreset(map, { L"design1-pill", L"pill", L"chip" }, { px(0, 4, 14, 0, 0.40f), px(0, 1, 3, 0, 0.22f) });
 
-      AddShadowPreset(map, { L"design1-tray", L"design-tray", L"tray" }, { px(0, 8, 28, 2, 0.48f), px(0, 20, 52, 6, 0.28f) });
+      AddShadowPreset(map, { L"design1-tray", L"design-tray", L"tray" }, { px(0, 8, 24, 0, 0.38f), px(0, 20, 50, 0, 0.20f) });
 
       return map;
     }();

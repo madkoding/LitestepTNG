@@ -194,7 +194,7 @@ void ShadowWindow::Hide() {
 }
 
 
-void ShadowWindow::Update(HWND target, const ShadowShape &shape, bool show) {
+void ShadowWindow::Update(HWND target, const ShadowShape &shape, bool show, float opacity) {
   bool any = false;
   for (const State::ShadowLayer &layer : shape.layers) {
     any |= layer.enabled && layer.opacity > 0;
@@ -229,6 +229,14 @@ void ShadowWindow::Update(HWND target, const ShadowShape &shape, bool show) {
     }
     mRendered = shape;
     mHasRendered = true;
+  }
+
+  opacity = std::max(0.0f, std::min(1.0f, opacity));
+  if (opacity != mOpacity) {
+    mOpacity = opacity;
+    // Only the constant alpha changes: the bitmap stays.
+    BLENDFUNCTION blend = { AC_SRC_OVER, 0, BYTE(255 * mOpacity + 0.5f), AC_SRC_ALPHA };
+    UpdateLayeredWindow(mWindow, nullptr, nullptr, nullptr, nullptr, nullptr, 0, &blend, ULW_ALPHA);
   }
 
   RECT targetRect;
@@ -361,7 +369,7 @@ bool ShadowWindow::Render(const ShadowShape &shape) {
   HGDIOBJ old = SelectObject(memory, bitmap);
   POINT source = { 0, 0 };
   SIZE size = { width, height };
-  BLENDFUNCTION blend = { AC_SRC_OVER, 0, 255, AC_SRC_ALPHA };
+  BLENDFUNCTION blend = { AC_SRC_OVER, 0, BYTE(255 * mOpacity + 0.5f), AC_SRC_ALPHA };
   const BOOL updated = UpdateLayeredWindow(mWindow, screen, nullptr, &size, memory, &source, 0, &blend, ULW_ALPHA);
   SelectObject(memory, old);
   DeleteDC(memory);

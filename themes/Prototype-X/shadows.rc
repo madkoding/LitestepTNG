@@ -12,25 +12,21 @@ NotifyBoxShadowPreset win11
 
 ; Barra superior (tres piezas): la sombra cae hacia el escritorio.
 PXHotShadowPreset subtle
-PXHotShadow1OffsetY 4
-PXHotShadow1Blur 30
-PXHotShadow1Opacity 0.75
-PXHotShadow1Spread 6
+PXHotShadow1OffsetY 6
+PXHotShadow1Blur 24
+PXHotShadow1Opacity 0.55
 PXTasksShadowPreset subtle
-PXTasksShadow1OffsetY 4
-PXTasksShadow1Blur 30
-PXTasksShadow1Opacity 0.75
-PXTasksShadow1Spread 6
+PXTasksShadow1OffsetY 6
+PXTasksShadow1Blur 24
+PXTasksShadow1Opacity 0.55
 PXTrayShadowPreset subtle
-PXTrayShadow1OffsetY 4
-PXTrayShadow1Blur 30
-PXTrayShadow1Opacity 0.75
-PXTrayShadow1Spread 6
+PXTrayShadow1OffsetY 6
+PXTrayShadow1Blur 24
+PXTrayShadow1Opacity 0.55
 
 ; Columna izquierda (los dos paneles): la sombra va hacia la derecha.
 PXColumnPanelShadowPreset subtle
-PXColumnPanelShadow1OffsetX 4
+PXColumnPanelShadow1OffsetX 6
 PXColumnPanelShadow1OffsetY 0
-PXColumnPanelShadow1Blur 30
-PXColumnPanelShadow1Opacity 0.75
-PXColumnPanelShadow1Spread 6
+PXColumnPanelShadow1Blur 24
+PXColumnPanelShadow1Opacity 0.55

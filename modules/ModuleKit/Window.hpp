@@ -7,6 +7,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 #pragma once
 
+#include <functional>
 #include <memory>
 #include "../Utilities/CommonD2D.h"
 #include "WindowSettings.hpp"
@@ -199,6 +200,10 @@ public:
     // Hides this window.
     void Hide();
 
+    // Hides the window with its exit animation (HideAnimationDuration...), then calls
+    // done. Without an exit animation it hides at once and calls done right away.
+    void HideAnimated(std::function<void()> done);
+
     // Initializes the Window.
     void Initialize(WindowSettings &windowSettings, IStateRender *stateRender);
 
@@ -386,6 +391,12 @@ private:
     void StepShowAnimation();
     void EndShowAnimation();
     bool mShowAnimating = false;
+    void StepHideAnimation();
+    bool mHideAnimating = false;
+    bool mHideAnimationAddedLayered = false;
+    std::function<void()> mHideDone;
+    // How opaque the window is during its entry/exit animation; the shadow follows it.
+    float mAnimationOpacity = 1.0f;
     bool mShowAnimationAddedLayered = false;
     StopWatch mShowAnimationClock;
 

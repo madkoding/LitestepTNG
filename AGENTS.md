@@ -355,8 +355,14 @@ build, matching the original theme's preview screenshot (1024×768; not part of 
 - Text and picture shadows use Direct2D's shadow effect (`ModuleKit/DropShadow.cpp`), which
   needs an `ID2D1DeviceContext`: the D2D factory is created as `ID2D1Factory1`
   (`Factories.cpp`); with the 1.0 factory the render targets did not give one.
-- Each theme keeps its shadows in `shadows.rc`, included last. Values from the first try
-  were too faint for the user; the presets were made stronger and wider on 2026-11-27.
+- Each theme keeps its shadows in `shadows.rc`, included last. The user found the first
+  values too faint, then a wide spread "unnatural" (a grown shape reads as a glow): the
+  presets are now two layers without spread, a soft key shadow below and a short contact
+  shadow (2026-11-27).
+- The shadow follows the window's entry and exit animations: `Window` keeps
+  `mAnimationOpacity` and the shadow window takes it as its constant alpha
+  (`UpdateLayeredWindow` without a bitmap); it used to wait hidden until the animation
+  ended and then pop in.
 - `Settings::GetLine` returns false when the value comes from a style (`Group`) although it
   fills the buffer: check the buffer, not the result (that hid every shadow set on a style).
 
@@ -567,6 +573,10 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   so the boxes can replace the banners. To raise a test toast from a script, use the
   AppUserModelID of an app whose notifications are enabled in Windows (e.g. Terminal's). Private messages must stay clear of the `LM_`
   range, which starts at `WM_APP` (32768). Needs `stdcpp17` like Core.
+  Boxes are animated: they enter with `NotifyBoxShowAnimation*` (slide in from the right,
+  `ShowAnimationOffsetX`), leave with `NotifyBoxHideAnimation*` (`Window::HideAnimated`; a
+  closing box moves to `sClosing` and is deleted on `WM_NOTIFY_CLOSED` when the animation
+  ends), and the others close up with `Window::SetAnimation` (`NotifyMoveDuration`, ms).
   Every theme loads it and styles it in its own `notify.rc` (LiteStep Enhanced with the
   popup frame images, the others with colours, `CornerRadius*` and a Segoe Fluent Icons X,
   U+E711, as the `Close` part's text). `NotifyTimeFormat` is formatted without the theme's
@@ -650,6 +660,10 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   `SystemParametersInfo(SPI_SETDESKWALLPAPER, ..., SPIF_UPDATEINIFILE|SPIF_SENDCHANGE)` on a
   worker thread; the old code wrote the registry value and broadcast by hand, which makes
   Explorer redraw nothing. Verify through `SPI_GETDESKWALLPAPER` while switching themes.
+- **Entry/exit animations (ModuleKit):** `<Prefix>ShowAnimationDuration|Offset|OffsetX` (fade
+  and slide in when a hidden window is shown) and `<Prefix>HideAnimationDuration|Offset|OffsetX`,
+  used by `Window::HideAnimated(done)` (fade and slide out, then hide and call done; without a
+  duration it hides at once). Both run on `FrameClock`.
 - **Taskbar animation:** `<Taskbar>AnimationDuration` (ms) slides task buttons to their new
   place when tasks are added/removed (`TaskButton::SetTarget/StepAnimation`, timer in
   `Taskbar`). The thumbnail's own `ThumbnailAnimate` and the popup `ShowAnimation*` settings
