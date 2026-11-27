@@ -339,10 +339,16 @@ build, matching the original theme's preview screenshot (1024×768; not part of 
   second window (class `LSShadow`: layered, click-through, kept right below its window,
   same topmost band): a window can only paint inside its own rectangle, so the old code,
   which drew scaled copies of the shape inside the window, never showed. The shape is the
-  state's rounded rectangle; it is cut out of the shadow (as CSS does), so translucent
-  windows do not show their own shadow. Image-skinned windows with transparent parts (LiteStep
-  Enhanced's top panels, its tray) get a rectangular shadow that does not follow the picture:
-  leave those without one. `OnDesktop` windows skip `LSShadow` windows when stacking.
+  state's rounded rectangle, or, when the background is a picture, the picture's alpha laid
+  out at the window's size exactly as `Brush` draws it (`ModuleKit/ShapeMask.cpp`: Stretch,
+  Tile, Center, Fit, Fill and Edges, copying `Brush::ComputeEdgeData`'s mapping, where the
+  middle of an Edges picture is scaled by the whole width), so LiteStep Enhanced's cut corners
+  and diagonal panel edges cast a matching shadow (the user asked for it: a plain rectangle
+  under them looked wrong). Spread grows a picture mask with a max filter. The shape is cut
+  out of the shadow (as CSS does), so translucent windows do not show their own shadow.
+  Check a shape by giving it `Shadow1Color #FFFF0000`, `Opacity 1`, `Blur 2`, `Spread 4` in
+  personal.rc: a red outline that must hug the drawing. `OnDesktop` windows skip `LSShadow`
+  windows when stacking.
 - **Text shadow** (any window): `<Prefix>TextShadowColor` (default none),
   `TextShadowOffsetX|Y` (1), `TextShadowBlur` (px, 2; 0 = crisp copy).
 - **Desktop icon picture**: `<Icons>IconImageShadowColor|OffsetX|OffsetY|Blur`.

@@ -10,6 +10,7 @@
 #pragma once
 
 #include "State.hpp"
+#include "ShapeMask.hpp"
 
 #include <vector>
 
@@ -22,6 +23,9 @@ struct ShadowShape {
   // The shape, in the window's client coordinates.
   D2D1_RECT_F rect;
   State::CornerRadii radii;
+  // For a picture background: its alpha at the window's size, used instead of the rounded
+  // rectangle so the shadow follows the picture.
+  std::shared_ptr<const ShapeMask> mask;
 };
 
 

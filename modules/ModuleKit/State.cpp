@@ -466,6 +466,16 @@ void State::SetTextOffsets(float left, float top, float right, float bottom) {
 }
 
 
+std::shared_ptr<const ShapeMask> State::GetShadowMask(const WindowData *windowData) const {
+  const D2D1_RECT_F &rect = windowData->drawingArea.rect;
+  const int width = int(std::ceil(rect.right - rect.left)), height = int(std::ceil(rect.bottom - rect.top));
+  if (!mShadowMask || mShadowMask->width != width || mShadowMask->height != height) {
+    mShadowMask = ShapeMasks::FromBrush(mStateSettings.brushSettings[BrushType::Background], width, height);
+  }
+  return mShadowMask;
+}
+
+
 bool State::TryGetShadowPreset(const std::wstring &presetName, std::vector<ShadowLayer> &layersOut) {
   const auto &map = GetShadowPresetMap();
   std::wstring normalized = NormalizePresetName(presetName);

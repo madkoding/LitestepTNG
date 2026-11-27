@@ -116,6 +116,34 @@ namespace {
   }
 
   /// <summary>
+  /// Grows the shape by radius px (a max filter, horizontal then vertical).
+  /// </summary>
+  void Dilate(std::vector<float> &data, int width, int height, int radius) {
+    if (radius <= 0) {
+      return;
+    }
+    std::vector<float> scratch(data.size());
+    for (int y = 0; y < height; ++y) {
+      for (int x = 0; x < width; ++x) {
+        float best = 0;
+        for (int k = std::max(0, x - radius); k <= std::min(width - 1, x + radius); ++k) {
+          best = std::max(best, data[size_t(y) * width + k]);
+        }
+        scratch[size_t(y) * width + x] = best;
+      }
+    }
+    for (int y = 0; y < height; ++y) {
+      for (int x = 0; x < width; ++x) {
+        float best = 0;
+        for (int k = std::max(0, y - radius); k <= std::min(height - 1, y + radius); ++k) {
+          best = std::max(best, scratch[size_t(k) * width + x]);
+        }
+        data[size_t(y) * width + x] = best;
+      }
+    }
+  }
+
+  /// <summary>
   /// A gaussian blur of the given sigma, approximated by three box blurs.
   /// </summary>
   void GaussianBlur(std::vector<float> &data, int width, int height, float sigma) {
@@ -188,7 +216,9 @@ void ShadowWindow::Update(HWND target, const ShadowShape &shape, bool show) {
   }
 
   const float width = shape.rect.right - shape.rect.left, height = shape.rect.bottom - shape.rect.top;
-  const bool sameShape = mHasRendered && SameLayers(shape.layers, mRendered.layers) &&
+  const bool sameMask = shape.mask == mRendered.mask ||
+    (shape.mask && mRendered.mask && shape.mask->key == mRendered.mask->key);
+  const bool sameShape = mHasRendered && sameMask && SameLayers(shape.layers, mRendered.layers) &&
     SameRadii(shape.radii, mRendered.radii) &&
     width == mRendered.rect.right - mRendered.rect.left &&
     height == mRendered.rect.bottom - mRendered.rect.top;
@@ -269,9 +299,20 @@ bool ShadowWindow::Render(const ShadowShape &shape) {
         corner->x += spread;
       }
     }
-    for (int y = 0; y < height; ++y) {
-      for (int x = 0; x < width; ++x) {
-        mask[size_t(y) * width + x] = Coverage(float(x), float(y), left, top, right, bottom, radii);
+    if (shape.mask) {
+      // The picture's shape, moved by the offset and grown by the spread.
+      const int dx = padLeft + int(std::round(layer.offsetX)), dy = padTop + int(std::round(layer.offsetY));
+      for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+          mask[size_t(y) * width + x] = shape.mask->At(x - dx, y - dy);
+        }
+      }
+      Dilate(mask, width, height, int(std::round(spread)));
+    } else {
+      for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+          mask[size_t(y) * width + x] = Coverage(float(x), float(y), left, top, right, bottom, radii);
+        }
       }
     }
     GaussianBlur(mask, width, height, layer.blurRadius / 2);
@@ -306,8 +347,9 @@ bool ShadowWindow::Render(const ShadowShape &shape) {
   for (int y = 0; y < height; ++y) {
     for (int x = 0; x < width; ++x, pixel += 4) {
       const size_t i = size_t(y) * width + x;
-      const float cut = 1 - Coverage(float(x), float(y), float(padLeft), float(padTop),
-        padLeft + shapeW, padTop + shapeH, shape.radii);
+      const float cut = 1 - (shape.mask
+        ? shape.mask->At(x - padLeft, y - padTop)
+        : Coverage(float(x), float(y), float(padLeft), float(padTop), padLeft + shapeW, padTop + shapeH, shape.radii));
       pixel[0] = BYTE(std::min(255.0f, outB[i] * cut * 255 + 0.5f));
       pixel[1] = BYTE(std::min(255.0f, outG[i] * cut * 255 + 0.5f));
       pixel[2] = BYTE(std::min(255.0f, outR[i] * cut * 255 + 0.5f));

@@ -309,6 +309,7 @@ public:
         shape.layers = state.shadowLayers;
         shape.rect = state.drawingArea.rect;
         shape.radii = state.effectiveCornerRadii;
+        shape.mask = mStates[data->currentState].GetShadowMask(&state);
     }
 
     void UpdateText(IStateWindowData *windowData) override

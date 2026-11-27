@@ -3,8 +3,8 @@
 ;  <Prefijo>ShadowPreset none|subtle|classic|win11|macos|material|panel|dock|tray
 ;  y, capa por capa, <Prefijo>Shadow<N>OffsetX/OffsetY/Blur/Spread/Opacity/Color
 ;  (px; cambian la capa N del preset). Las ventanas de primer nivel la proyectan
-;  fuera de su rectangulo (ShadowWindow); los paneles superiores (injektion*.png)
-;  tienen el borde en diagonal y una sombra rectangular quedaria despegada: sin sombra.
+;  fuera de su rectangulo (ShadowWindow); con fondo de imagen sigue el dibujo (sus
+;  esquinas cortadas y bordes en diagonal), no el rectangulo (ShapeMask).
 ; ==============================================================================
 
 ; Menus (todos los popups usan el estilo MMMenu).
@@ -13,8 +13,24 @@ MMMenuShadowPreset win11
 ; Notificaciones.
 NotifyBoxShadowPreset win11
 
-; Barra de tareas: la sombra sube hacia el escritorio (la bandeja no: su imagen tiene un
-; hueco en diagonal y la sombra rectangular asomaria por el).
+; Paneles superiores: la sombra cae hacia el escritorio.
+MBarLeftShadowPreset subtle
+MBarLeftShadow1OffsetY 4
+MBarLeftShadow1Blur 30
+MBarLeftShadow1Opacity 0.75
+MBarLeftShadow1Spread 6
+MBarRightShadowPreset subtle
+MBarRightShadow1OffsetY 4
+MBarRightShadow1Blur 30
+MBarRightShadow1Opacity 0.75
+MBarRightShadow1Spread 6
+
+; Bandeja y barra de tareas: la sombra sube hacia el escritorio.
+MTrayShadowPreset subtle
+MTrayShadow1OffsetY -4
+MTrayShadow1Blur 30
+MTrayShadow1Opacity 0.75
+MTrayShadow1Spread 6
 MTasksShadowPreset subtle
 MTasksShadow1OffsetY -4
 MTasksShadow1Blur 30
