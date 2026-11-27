@@ -13,3 +13,5 @@ geekamp-1.9.7 -> geekamp
 label-1.99.dll -> label
 C:/themes/x/lsslider-0.5.dll -> lsslider
 ckVWM -> ckvwm
+ls-mute -> ls-mute
+lsx-command-1.2 -> lsx-command
