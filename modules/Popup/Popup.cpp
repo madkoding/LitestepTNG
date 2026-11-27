@@ -336,6 +336,13 @@ void Popup::Show(LPRECT position, Popup* owner)
 
     mWindow->Show();
     SetWindowPos(mWindow->GetWindowHandle(), HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+    // Another of the shell's windows holding the mouse (the desktop icons start a selection
+    // on the press that opens the menu) would get the first click meant for an item.
+    HWND capture = GetCapture();
+    if (capture != nullptr && sPopupWindows.find(capture) == sPopupWindows.end())
+    {
+        ReleaseCapture();
+    }
     // When LiteStep runs on top of Explorer it is not the foreground process, and a popup
     // that is only active inside our own thread never receives WA_INACTIVE: it would stay
     // open until an item is clicked. Taking the foreground lets a click elsewhere close it.

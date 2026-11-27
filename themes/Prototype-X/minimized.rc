@@ -1,0 +1,22 @@
+; ==============================================================================
+;  Ventanas minimizadas: una miniatura con su contenido sobre el boton de su tarea
+;  (TaskBar.dll, MinimizedShelf*). Clic en una: la ventana vuelve.
+; ==============================================================================
+MinimizedShelfEnabled true
+MinimizedShelfDesktopLayer 1
+; Grows out of its task button when the window is minimized, shrinks back into it when
+; the window comes back (ms; the offset slides it from/to the button's side).
+MinimizedShelfShowAnimationDuration 220
+MinimizedShelfShowAnimationOffset -10
+MinimizedShelfHideAnimationDuration 180
+MinimizedShelfHideAnimationOffset -10
+MinimizedShelfThumbHeight 120
+MinimizedShelfMaxThumbWidth 220
+MinimizedShelfPadding 6
+MinimizedShelfGap 8
+MinimizedShelfColor #F0FFFFFF
+MinimizedShelfOutlineColor #FF9A9A9A
+MinimizedShelfOutlineWidth 1
+MinimizedShelfCornerRadiusX 2
+MinimizedShelfCornerRadiusY 2
+MinimizedShelfShadowPreset win11

@@ -146,6 +146,7 @@
     <ClCompile Include="TaskButton.cpp" />
     <ClCompile Include="TestWindow.cpp" />
     <ClCompile Include="WindowManager.cpp" />
+    <ClCompile Include="MinimizedShelf.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Task.h" />
@@ -157,6 +158,7 @@
     <ClInclude Include="TaskButton.hpp" />
     <ClInclude Include=".\WindowManager.h" />
     <ClInclude Include="TestWindow.hpp" />
+    <ClInclude Include="MinimizedShelf.hpp" />
     <ClInclude Include="Version.h" />
   </ItemGroup>
   <ItemGroup>

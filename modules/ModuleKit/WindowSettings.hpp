@@ -56,6 +56,15 @@ public:
     // negative = drops from above. Default: 0
     int showAnimationOffset;
 
+    // Horizontal slide of the entry animation, px (ShowAnimationOffsetX). Default: 0
+    int showAnimationOffsetX;
+
+    // Exit animation of HideAnimated(): duration in ms (0 = none) and where the window
+    // slides to while it fades (HideAnimationDuration, HideAnimationOffset[X]). Default: 0
+    int hideAnimationDuration;
+    int hideAnimationOffset;
+    int hideAnimationOffsetX;
+
     // The text to display. Default: "" (blank)
     TCHAR text[MAX_LINE_LENGTH];
 

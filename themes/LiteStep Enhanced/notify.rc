@@ -39,8 +39,11 @@ NotifyBoxImageEdgesRight 20
 NotifyBoxImageEdgesBottom 18
 NotifyBoxColor #00000000
 NotifyBoxFontColor #00000000
-NotifyBoxShowAnimationDuration 200
-NotifyBoxShowAnimationOffset -10
+NotifyBoxShowAnimationDuration 320
+NotifyBoxShowAnimationOffset 0
+NotifyBoxShowAnimationOffsetX 60
+NotifyBoxHideAnimationDuration 220
+NotifyBoxHideAnimationOffsetX 60
 
 ; Nombre de la aplicacion, en la cabecera blanca.
 NotifyBoxTitleX 70

@@ -9,6 +9,7 @@
 
 #include "../Utilities/CommonD2D.h"
 
+#include <d2d1_1.h>
 #include <dwrite.h>
 #include <wincodec.h>
 
@@ -58,7 +59,9 @@ HRESULT Factories::GetD2DFactory(LPVOID *factory) {
 #endif
 
     HRESULT hr;
-    RETURNONFAIL(hr, D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory),
+    // A Direct2D 1.1 factory (it is still used as an ID2D1Factory): only its render targets
+    // give an ID2D1DeviceContext, which effects such as DropShadow's need.
+    RETURNONFAIL(hr, D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof(ID2D1Factory1),
       &d2dFactoryOptions, reinterpret_cast<LPVOID*>(&sD2DFactory)));
   }
   *factory = sD2DFactory;

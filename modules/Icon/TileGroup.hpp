@@ -141,6 +141,7 @@ private:
 private:
   void StartRectangleSelection(D2D1_POINT_2U point);
   void EndRectangleSelection(D2D1_POINT_2U point);
+  void CancelRectangleSelection();
   void MoveRectangleSelection(D2D1_POINT_2U point);
   D2D1_POINT_2U mRectangleStart;
   bool mInRectangleSelection;

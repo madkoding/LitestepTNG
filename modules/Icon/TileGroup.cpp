@@ -851,6 +851,20 @@ void TileGroup::StartRectangleSelection(D2D1_POINT_2U point) {
 
 
 /// <summary>
+/// Ends a rectangle selection without selecting anything (the mouse capture was lost).
+/// </summary>
+void TileGroup::CancelRectangleSelection() {
+  mInRectangleSelection = false;
+  mSelectionRectagle.Hide();
+  mWindow->EnableMouseForwarding();
+  if (GetCapture() == mWindow->GetWindowHandle()) {
+    mWindow->ReleaseMouseCapture();
+  }
+  mWindow->Repaint(&mSelectionRectagle.GetRect());
+}
+
+
+/// <summary>
 ///
 /// </summary>
 void TileGroup::EndRectangleSelection(D2D1_POINT_2U point) {
@@ -1081,10 +1095,19 @@ LRESULT WINAPI TileGroup::HandleMessage(HWND window, UINT message, WPARAM wParam
 
   case WM_LBUTTONDOWN:
   case WM_RBUTTONDOWN:
-    if (!mInRectangleSelection) {
-      StartRectangleSelection(D2D1::Point2U(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)));
-    } else {
-      EndRectangleSelection(D2D1::Point2U(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)));
+    // A selection still open here lost its button release: drop it and start a new one,
+    // rather than spending this press on closing it (the press was lost).
+    if (mInRectangleSelection) {
+      CancelRectangleSelection();
+    }
+    StartRectangleSelection(D2D1::Point2U(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)));
+    break;
+
+  case WM_CAPTURECHANGED:
+    // Something else took the mouse (a popup opening, a drag, another program): the
+    // selection is over, and the clicks must go where the pointer is again.
+    if (mInRectangleSelection && HWND(lParam) != window) {
+      CancelRectangleSelection();
     }
     break;
 

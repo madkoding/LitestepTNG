@@ -37,6 +37,8 @@
 
 // LiteStep's own LM_ messages start at WM_APP; these sit well above the ones it defines.
 #define WM_NOTIFY_UPDATE (WM_APP + 0x3A01)
+// A closing box finished its exit animation: wParam is the box.
+#define WM_NOTIFY_CLOSED (WM_APP + 0x3A04)
 
 // Ids for !NotifyTest boxes; Windows counts its own ids up from a small number.
 #define TEST_ID_FLAG 0x80000000u
@@ -50,12 +52,29 @@ static UINT gLSMessages[] = { LM_GETREVID, LM_REFRESH, LM_FULLSCREENACTIVATED,
 
 // The boxes, oldest first; that is also their order on screen, top to bottom.
 static std::vector<std::unique_ptr<NotificationBox>> sBoxes;
+// Boxes playing their exit animation; deleted when it ends.
+static std::vector<std::unique_ptr<NotificationBox>> sClosing;
 
-static int sMarginTop, sMarginRight, sMarginBottom, sSpacing;
+static int sMarginTop, sMarginRight, sMarginBottom, sSpacing, sMoveDuration;
 static WCHAR sTimeFormat[64];
 static bool sDismissFromSystem, sClickDismisses, sOverflowDropsOldest;
 static WCHAR sSound[MAX_PATH];
 static UINT32 sNextTestId = TEST_ID_FLAG;
+
+
+/// <summary>
+/// Takes a box out of the column and lets it leave with its exit animation
+/// (NotifyBoxHideAnimation*); it is deleted when the animation ends.
+/// </summary>
+static void CloseBox(std::vector<std::unique_ptr<NotificationBox>>::iterator box) {
+  NotificationBox *raw = box->get();
+  sClosing.push_back(std::move(*box));
+  sBoxes.erase(box);
+  raw->GetWindow()->HideAnimated([raw] () {
+    // Not from inside the box's own window procedure: delete it from the module's queue.
+    PostMessage(gLSModule.GetMessageWindow(), WM_NOTIFY_CLOSED, (WPARAM)raw, 0);
+  });
+}
 
 
 /// <summary>
@@ -76,7 +95,7 @@ static void Relayout() {
       if (index > 0 && y + box.GetHeight() > bottom) {
         break;
       }
-      box.Place(right - box.GetWidth(), y);
+      box.Place(right - box.GetWidth(), y, sMoveDuration);
       y += box.GetHeight() + float(sSpacing);
     }
 
@@ -95,7 +114,7 @@ static void Relayout() {
     }
     // Drop the oldest box (it stays in the Windows notification centre) and lay the
     // column out again, so the newest is always on screen.
-    sBoxes.erase(sBoxes.begin());
+    CloseBox(sBoxes.begin());
   }
 }
 
@@ -123,7 +142,7 @@ static void PlayNotifySound() {
 static void RemoveBox(UINT32 id, bool dismiss) {
   for (auto box = sBoxes.begin(); box != sBoxes.end(); ++box) {
     if ((*box)->GetData().id == id) {
-      sBoxes.erase(box);
+      CloseBox(box);
       if (dismiss && sDismissFromSystem && (id & TEST_ID_FLAG) == 0) {
         Listener::Dismiss(id);
       }
@@ -139,6 +158,8 @@ static void LoadSettings() {
   sMarginRight = settings.GetInt(L"MarginRight", 8);
   sMarginBottom = settings.GetInt(L"MarginBottom", 8);
   sSpacing = settings.GetInt(L"Spacing", 6);
+  // How long the others take to close up when a box leaves (ms; 0 = jump).
+  sMoveDuration = settings.GetInt(L"MoveDuration", 220);
   sDismissFromSystem = settings.GetBool(L"DismissFromSystem", true);
   sClickDismisses = settings.GetBool(L"ClickDismisses", true);
   WCHAR overflow[32];
@@ -270,6 +291,15 @@ LRESULT WINAPI LSMessageHandler(HWND window, UINT message, WPARAM wParam, LPARAM
     Relayout();
     return 0;
 
+  case WM_NOTIFY_CLOSED:
+    for (auto box = sClosing.begin(); box != sClosing.end(); ++box) {
+      if ((WPARAM)box->get() == wParam) {
+        sClosing.erase(box);
+        break;
+      }
+    }
+    return 0;
+
   case WM_DISPLAYCHANGE:
   case WM_SETTINGCHANGE:
     Relayout();
@@ -295,6 +325,7 @@ LRESULT WINAPI LSMessageHandler(HWND window, UINT message, WPARAM wParam, LPARAM
         shown.push_back(box->GetData());
       }
       sBoxes.clear();
+      sClosing.clear();
       LoadSettings();
       for (const ToastData &data : shown) {
         AddBox(data);
@@ -315,5 +346,6 @@ EXPORT_CDECL(void) quitModule(HINSTANCE /* instance */) {
   LiteStep::RemoveBangCommand(L"!NotifyClear");
   Listener::Stop();
   sBoxes.clear();
+  sClosing.clear();
   gLSModule.DeInitalize();
 }

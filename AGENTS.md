@@ -331,6 +331,41 @@ build, matching the original theme's preview screenshot (1024×768; not part of 
   `[System.IO.File]::WriteAllText($f,$t,(New-Object System.Text.UTF8Encoding($false)))`
   — or just the `Edit`/`Write` tools, which are safe.
 
+### Shadows (since 2026-11-27)
+- **Window shadows** (menus, notifications, bars, any top-level window):
+  `<Prefix>ShadowPreset none|subtle|classic|win11|macos|material|raytraced|panel|dock|pill|tray`
+  and per layer `<Prefix>Shadow<N>OffsetX|OffsetY|Blur|Spread|Opacity|Color|Enabled`, in px
+  (a layer key changes layer N of the preset). `ModuleKit/ShadowWindow.cpp` draws them in a
+  second window (class `LSShadow`: layered, click-through, kept right below its window,
+  same topmost band): a window can only paint inside its own rectangle, so the old code,
+  which drew scaled copies of the shape inside the window, never showed. The shape is the
+  state's rounded rectangle, or, when the background is a picture, the picture's alpha laid
+  out at the window's size exactly as `Brush` draws it (`ModuleKit/ShapeMask.cpp`: Stretch,
+  Tile, Center, Fit, Fill and Edges, copying `Brush::ComputeEdgeData`'s mapping, where the
+  middle of an Edges picture is scaled by the whole width), so LiteStep Enhanced's cut corners
+  and diagonal panel edges cast a matching shadow (the user asked for it: a plain rectangle
+  under them looked wrong). Spread grows a picture mask with a max filter. The shape is cut
+  out of the shadow (as CSS does), so translucent windows do not show their own shadow.
+  Check a shape by giving it `Shadow1Color #FFFF0000`, `Opacity 1`, `Blur 2`, `Spread 4` in
+  personal.rc: a red outline that must hug the drawing. `OnDesktop` windows skip `LSShadow`
+  windows when stacking.
+- **Text shadow** (any window): `<Prefix>TextShadowColor` (default none),
+  `TextShadowOffsetX|Y` (1), `TextShadowBlur` (px, 2; 0 = crisp copy).
+- **Desktop icon picture**: `<Icons>IconImageShadowColor|OffsetX|OffsetY|Blur`.
+- Text and picture shadows use Direct2D's shadow effect (`ModuleKit/DropShadow.cpp`), which
+  needs an `ID2D1DeviceContext`: the D2D factory is created as `ID2D1Factory1`
+  (`Factories.cpp`); with the 1.0 factory the render targets did not give one.
+- Each theme keeps its shadows in `shadows.rc`, included last. The user found the first
+  values too faint, then a wide spread "unnatural" (a grown shape reads as a glow): the
+  presets are now two layers without spread, a soft key shadow below and a short contact
+  shadow (2026-11-27).
+- The shadow follows the window's entry and exit animations: `Window` keeps
+  `mAnimationOpacity` and the shadow window takes it as its constant alpha
+  (`UpdateLayeredWindow` without a bitmap); it used to wait hidden until the animation
+  ended and then pop in.
+- `Settings::GetLine` returns false when the value comes from a style (`Group`) although it
+  fills the buffer: check the buffer, not the result (that hid every shadow set on a style).
+
 ### Theme files (layout since 2026-11-25)
 - `theme.rc` is a header plus `include` lines; each area has its own file of ~50–150 lines
   (`general.rc`, `styles.rc`, `bar-*.rc`, `popups.rc` = menu skin, `menus.rc`, `notify.rc`…).
@@ -538,6 +573,10 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   so the boxes can replace the banners. To raise a test toast from a script, use the
   AppUserModelID of an app whose notifications are enabled in Windows (e.g. Terminal's). Private messages must stay clear of the `LM_`
   range, which starts at `WM_APP` (32768). Needs `stdcpp17` like Core.
+  Boxes are animated: they enter with `NotifyBoxShowAnimation*` (slide in from the right,
+  `ShowAnimationOffsetX`), leave with `NotifyBoxHideAnimation*` (`Window::HideAnimated`; a
+  closing box moves to `sClosing` and is deleted on `WM_NOTIFY_CLOSED` when the animation
+  ends), and the others close up with `Window::SetAnimation` (`NotifyMoveDuration`, ms).
   Every theme loads it and styles it in its own `notify.rc` (LiteStep Enhanced with the
   popup frame images, the others with colours, `CornerRadius*` and a Segoe Fluent Icons X,
   U+E711, as the `Close` part's text). `NotifyTimeFormat` is formatted without the theme's
@@ -621,6 +660,88 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   `SystemParametersInfo(SPI_SETDESKWALLPAPER, ..., SPIF_UPDATEINIFILE|SPIF_SENDCHANGE)` on a
   worker thread; the old code wrote the registry value and broadcast by hand, which makes
   Explorer redraw nothing. Verify through `SPI_GETDESKWALLPAPER` while switching themes.
+- **Entry/exit animations (ModuleKit):** `<Prefix>ShowAnimationDuration|Offset|OffsetX` (fade
+  and slide in when a hidden window is shown) and `<Prefix>HideAnimationDuration|Offset|OffsetX`,
+  used by `Window::HideAnimated(done)` (fade and slide out, then hide and call done; without a
+  duration it hides at once). Both run on `FrameClock`.
+- **The tray follows its icons (SysTray, `Tray.cpp`):** `OverflowAction Size*` used to grow
+  the tray only past the size the theme gave it. `<Tray>MinWidth` / `MinHeight` (default:
+  that size, so other themes keep growing only) is now the floor: LiteStep Enhanced sets
+  `MTrayMinWidth 72`, so its tray grows left with each icon and shrinks when one goes, the
+  right edge fixed, and draws `systraydark.png` in `Edges` mode (left 52, right 10) so only
+  the dark box stretches. Glass, Windows-nModules and Prototype-X keep grow-only: their tray
+  sits next to the taskbar inside the bar, and shrinking would leave a gap. Checked with
+  three `NotifyIcon`s from a test process: 212 px, 254 px with them, 212 px after.
+- **A taskbar on every monitor (TaskBar, `ModuleEntry.cpp`):** `<Taskbar>EveryMonitor true`
+  (every theme sets it) with more than one monitor keeps the taskbar on the primary
+  monitor's windows (`Monitor 0` unless the theme names one) and creates a copy
+  `<Taskbar>Screen<n>` per other monitor (MonitorInfo numbering, 0 = primary), which lists
+  only that monitor's windows: the old `Monitor` filter, with `LM_MONITORCHANGED` moving a
+  button when its window changes monitor. Before creating a copy the module writes, with
+  `LSSetVariable`, `<copy>Group <Taskbar>` (it inherits every key, Button and Thumbnail
+  children included), `<copy>Monitor <n>` and `<copy>X/Y/Width/Height` in pixels: top-level
+  windows measure percentages against the primary monitor, so the copy's geometry is worked
+  out against its own monitor here (`<Taskbar>ScreenX/ScreenY/ScreenWidth/ScreenHeight`
+  override it; Glass, Windows-nModules and Prototype-X use the full width, since their
+  primary bar leaves room for a start button and a tray). Explorer's secondary taskbars are
+  hidden by nCore, so the other monitors had no taskbar before. With
+  `<Taskbar>ReserveScreen` (default true) a 1 s timer keeps each copy's edge out of its
+  monitor's work area (`SPI_SETWORKAREA` without broadcast, as Core does for the primary;
+  restored with a broadcast on unload). `NCORE_DISPLAYCHANGE` with a different monitor
+  layout rebuilds every taskbar. Window positions are now rounded with `floorf`: `int(x+0.5f)`
+  truncated toward zero, so a bar on a monitor left of the primary started 1 px late.
+  Verified on three monitors: a window moved from the left monitor to the primary left the
+  left copy's bar and appeared on the primary one; the secondary work areas shrank by 26 px.
+- **Minimized windows as thumbnails (TaskBar, `MinimizedShelf.cpp`):** with
+  `MinimizedShelfEnabled true` (every theme sets it, in `minimized.rc`) each minimized task
+  window gets a small `OnDesktop` window (prefix `MinimizedShelf`) right above its own task
+  button (below it for a taskbar in the top half of the monitor), showing a DWM thumbnail of
+  its content: DWM keeps a minimized window's last frame. As wide as the button within
+  `MaxThumbWidth`, at most `ThumbHeight` high, `Gap` from the button, `Padding` around the
+  content. A first version put them all in one row above the taskbar; the user wanted each over
+  its task. The thumbnails follow their buttons (a 120 ms timer while any exist, since the
+  taskbar slides its buttons); `WindowManager::GetButtonRect` gives the button.
+  Minimize/restore come from `EVENT_SYSTEM_MINIMIZESTART/END` (out of context); windows
+  minimized earlier are picked up after `AddExisting` and in the maintenance pass; windows
+  parked by nVWM are skipped. `GetMinRect` answers with the thumbnail's rectangle, so the
+  minimize animation flies into it. A click restores the window (`ShowWindowAsync(SW_RESTORE)`
+  + `ForceForeground`). Verified on screen: Explorer and WhatsApp, minimized, each showed its
+  content over its own button. Windows' window animations were off on this machine; the user
+  had them turned on (Performance options) on 2026-11-27.
+  **Animated:** a thumbnail grows out of its button when its window is minimized and shrinks
+  back into it when the window returns. The window's `ShowAnimation*`/`HideAnimation*`
+  (themes: 220/180 ms, offset 10 toward the button, -10 in Prototype-X whose taskbar is at
+  the top) fade and slide the background; `Thumb::ApplyThumbnail` scales the DWM content
+  (55 % to 100 %, pinned to the button's side) and its opacity on the same curves, driven by
+  `Window::RequestFrames`. A restored window's thumbnail moves to `mClosing` and is deleted
+  by the 120 ms timer once `IsGone()`. The exit starts about 180 ms after the restore:
+  `EVENT_SYSTEM_MINIMIZEEND` arrives when Windows' own restore animation ends.
+  **Desktop layers:** the icon group covers the whole desktop and is OnDesktop too, and each
+  OnDesktop window used to restack itself right above the desktop, so the icons and the
+  thumbnails took turns at the bottom and every other click on a thumbnail landed on the icons
+  (found with a read-only `WH_MOUSE_LL` monitor logging the window under each press and
+  LiteStep's capture). `<Prefix>DesktopLayer <n>` (default 0, read in `Window::Initialize`,
+  kept as the window property `LSDesktopLayer` = n+1) keeps an OnDesktop window above every
+  OnDesktop window of a lower layer; the themes set `MinimizedShelfDesktopLayer 1`.
+  `DesktopInsertAfter` climbs from the background over shadows, hidden windows, the window
+  itself and lower layers. Check without the mouse: minimize a window of your own process and
+  compare the z-order positions of `MinimizedShelf` and `MIcons` while restacking each.
+  **Lost mouse capture:** a press on the icon group starts a rectangle selection that holds
+  the capture, and the right press that opens the menu is one. A capture that ended without
+  its release (taken by another window, a drag) left `Window::mCaptureHandler` set and the
+  selection open, so the next click (the first one on the menu or a thumbnail) went to the
+  icons. Now `Window` clears the handler on `WM_CAPTURECHANGED`, `TileGroup` cancels the
+  selection on it (and a press during a stale selection starts a new one), and `Popup::Show`
+  releases a capture held by any non-popup window. Checked without the mouse
+  (`WM_RBUTTONDOWN` posted to MIcons, then `!PopupContext`, read `GetGUIThreadInfo`).
+- Build with `/nr:false` when waiting for MSBuild to finish: `/m` leaves worker nodes
+  (`MSBuild.exe`) running for reuse, so "wait until MSBuild exits" never ends. Never pipe
+  MSBuild's output through a command that can be moved to the background: when nobody reads
+  the pipe any more, the `cl.exe` processes block writing to it and hang with no CPU. Write to
+  a log (`/flp:LogFile=...`) and start it with `Start-Process -PassThru` + `WaitForExit(ms)`.
+  For a fix in a few modules, build only their `.vcxproj` (ModuleKit first,
+  `/p:SolutionDir=<repo>\ /p:BuildProjectReferences=false`): seconds instead of minutes. A
+  change in a ModuleKit header recompiles every module; a change in a `.cpp` only relinks.
 - **Taskbar animation:** `<Taskbar>AnimationDuration` (ms) slides task buttons to their new
   place when tasks are added/removed (`TaskButton::SetTarget/StepAnimation`, timer in
   `Taskbar`). The thumbnail's own `ThumbnailAnimate` and the popup `ShowAnimation*` settings

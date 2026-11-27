@@ -23,6 +23,12 @@ TaskbarMainY 100%-48
 TaskbarMainWidth 100%-516
 TaskbarMainHeight 48
 TaskbarMainAlwaysOnTop true
+; Con varias pantallas, una copia de la barra en cada una con las ventanas de esa pantalla
+; (esta se queda con las de la principal). Las copias no tienen inicio ni bandeja: ocupan
+; todo el ancho, y reservan su borde de la pantalla (TaskbarMainReserveScreen false para no).
+TaskbarMainEveryMonitor true
+TaskbarMainScreenX 0
+TaskbarMainScreenWidth 100%
 TaskbarMainColor $BarColor$
 TaskbarMainPaddingLeft 4
 TaskbarMainPaddingTop 4

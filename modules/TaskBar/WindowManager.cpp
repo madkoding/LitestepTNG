@@ -11,6 +11,7 @@
 #include "TaskButton.hpp"
 #include "Taskbar.hpp"
 #include "WindowManager.h"
+#include "MinimizedShelf.hpp"
 #include "../ModuleKit/MonitorInfo.hpp"
 #include "../ModuleKit/LSModule.hpp"
 #include <dwmapi.h>
@@ -424,6 +425,11 @@ void WindowManager::RemoveWindow(HWND hWnd)
     // Check that we are currently running
     ASSERT(isStarted);
 
+    if (gMinimizedShelf)
+    {
+        gMinimizedShelf->Remove(hWnd);
+    }
+
     WindowMap::iterator iter = windowMap.find(hWnd);
     if (iter != windowMap.end())
     {
@@ -514,6 +520,16 @@ LRESULT WindowManager::GetMinRect(HWND hWnd, LPPOINTS lpPoints)
     // Check that we are currently running
     ASSERT(isStarted);
 
+    RECT slot;
+    if (gMinimizedShelf && gMinimizedShelf->GetSlot(hWnd, &slot))
+    {
+        lpPoints[0].x = (short)slot.left;
+        lpPoints[0].y = (short)slot.top;
+        lpPoints[1].x = (short)slot.right;
+        lpPoints[1].y = (short)slot.bottom;
+        return 1;
+    }
+
     WindowMap::const_iterator iter = windowMap.find(hWnd);
     if (iter != windowMap.end() && !iter->second.buttons.empty())
     {
@@ -521,6 +537,26 @@ LRESULT WindowManager::GetMinRect(HWND hWnd, LPPOINTS lpPoints)
         return 1;
     }
     return 0;
+}
+
+
+/// <summary>
+/// The screen rectangle of the window's first task button.
+/// </summary>
+bool WindowManager::GetButtonRect(HWND hWnd, LPRECT rect)
+{
+    WindowMap::const_iterator iter = windowMap.find(hWnd);
+    if (iter == windowMap.end() || iter->second.buttons.empty())
+    {
+        return false;
+    }
+    POINTS points[2];
+    iter->second.buttons.front()->GetMinRect(points);
+    rect->left = points[0].x;
+    rect->top = points[0].y;
+    rect->right = points[1].x;
+    rect->bottom = points[1].y;
+    return rect->right > rect->left && rect->bottom > rect->top;
 }
 
 
@@ -942,6 +978,11 @@ void WindowManager::RunWindowMaintenance()
     for (HWND hwnd : removals)
     {
         RemoveWindow(hwnd);
+    }
+
+    if (gMinimizedShelf)
+    {
+        gMinimizedShelf->Refresh();
     }
 
     // Clear update locks

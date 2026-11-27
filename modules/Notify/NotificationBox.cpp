@@ -129,10 +129,17 @@ NotificationBox::NotificationBox(const ToastData &data, LPCWSTR timeFormat)
 }
 
 
-void NotificationBox::Place(float x, float y) {
+void NotificationBox::Place(float x, float y, int moveDuration) {
   D2D1_POINT_2F position = mWindow->GetPosition();
   if (position.x != x || position.y != y) {
-    mWindow->Move(x, y);
+    if (mWindow->IsVisible() && moveDuration > 0) {
+      // The others close up when one leaves: they slide to their new place.
+      const D2D1_SIZE_F size = mWindow->GetSize();
+      mWindow->SetAnimation(Distance(x), Distance(y), Distance(size.width), Distance(size.height),
+        moveDuration, Easing::Type::Cubic);
+    } else {
+      mWindow->Move(x, y);
+    }
   }
   if (!mWindow->IsVisible()) {
     mWindow->Show();

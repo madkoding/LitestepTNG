@@ -30,8 +30,11 @@ NotifyBoxCornerRadiusX 8
 NotifyBoxCornerRadiusY 8
 NotifyBoxFontColor #00000000
 NotifyBoxHoverColor #F2333333
-NotifyBoxShowAnimationDuration 200
-NotifyBoxShowAnimationOffset -10
+NotifyBoxShowAnimationDuration 320
+NotifyBoxShowAnimationOffset 0
+NotifyBoxShowAnimationOffsetX 60
+NotifyBoxHideAnimationDuration 220
+NotifyBoxHideAnimationOffsetX 60
 
 ; Name of the app.
 NotifyBoxTitleX 14

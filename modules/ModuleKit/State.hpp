@@ -10,11 +10,14 @@
 class State;
 
 #include "Brush.hpp"
+#include "DropShadow.hpp"
+#include "ShapeMask.hpp"
 #include "IPainter.hpp"
 #include "IBrushOwner.hpp"
 #include "StateTextRender.hpp"
 #include "Window.hpp"
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -186,6 +189,10 @@ public:
         // Text stroke width. Default: 0
         float fontStrokeWidth;
 
+        // Shadow under the text: TextShadowColor (default transparent = none),
+        // TextShadowOffsetX / Y (default 1), TextShadowBlur (px, default 2).
+        DropShadow::Params textShadow;
+
         // The trimming setting. None, Character, Word. Default: Character
         DWRITE_TRIMMING_GRANULARITY textTrimmingGranularity;
 
@@ -245,12 +252,20 @@ public:
     void SetReadingDirection(DWRITE_READING_DIRECTION direction);
     void SetTextAlignment(DWRITE_TEXT_ALIGNMENT alignment);
     void SetTextRotation(float rotation);
+
+  // The shape of the background picture at the window's size (ShapeMask.hpp), or nullptr
+  // when the background is not a picture. Kept for the last size asked.
+  std::shared_ptr<const ShapeMask> GetShadowMask(const WindowData *windowData) const;
+
+private:
+  mutable std::shared_ptr<const ShapeMask> mShadowMask;
+
+public:
     void SetTextTrimmingGranuality(DWRITE_TRIMMING_GRANULARITY granularity);
     void SetTextVerticalAlign(DWRITE_PARAGRAPH_ALIGNMENT alignment);
     void SetWordWrapping(DWRITE_WORD_WRAPPING wrapping);
 
 private:
-  void RenderShadowLayer(ID2D1RenderTarget* renderTarget, WindowData *windowData, const ShadowLayer &layer) const;
 
 public:
     // The name of this state.
