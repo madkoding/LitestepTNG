@@ -1210,6 +1210,12 @@ void Window::Paint(bool &inAnimation, D2D1_RECT_F *updateRect)
             painter->Paint(mRenderTarget);
         }
 
+        // The overlays' shadows go under the text; the overlays themselves above it.
+        for (Overlay *overlay : this->overlays)
+        {
+            overlay->PaintShadow(mRenderTarget);
+        }
+
         // Paint the active state's text.
         mStateRender->PaintText(mRenderTarget, mWindowData);
 

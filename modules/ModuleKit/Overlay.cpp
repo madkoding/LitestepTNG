@@ -113,16 +113,20 @@ void Overlay::UpdatePosition(D2D1_RECT_F parentPosition) {
 
 void Overlay::Paint(ID2D1RenderTarget* renderTarget) {
   if (this->brush != NULL) {
-    if (mShadow.Enabled()) {
-      ID2D1Bitmap *bitmap = nullptr;
-      this->brush->GetBitmap(&bitmap);
-      // A faded overlay (a dragged icon's ghost) casts a fainter shadow.
-      DropShadow::Params shadow = mShadow;
-      shadow.color.a *= this->brush->GetOpacity();
-      DropShadow::PaintBitmapShadow(renderTarget, bitmap, this->drawingPosition, shadow);
-      SAFERELEASE(bitmap);
-    }
     renderTarget->FillRectangle(this->drawingPosition, this->brush);
+  }
+}
+
+
+void Overlay::PaintShadow(ID2D1RenderTarget* renderTarget) {
+  if (this->brush != NULL && mShadow.Enabled()) {
+    ID2D1Bitmap *bitmap = nullptr;
+    this->brush->GetBitmap(&bitmap);
+    // A faded overlay (a dragged icon's ghost) casts a fainter shadow.
+    DropShadow::Params shadow = mShadow;
+    shadow.color.a *= this->brush->GetOpacity();
+    DropShadow::PaintBitmapShadow(renderTarget, bitmap, this->drawingPosition, shadow);
+    SAFERELEASE(bitmap);
   }
 }
 
