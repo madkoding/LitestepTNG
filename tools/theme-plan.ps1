@@ -24,6 +24,8 @@
 
 $script:DeskReason = "takes over Explorer's desktop"
 $script:FallbackNote = 'original used, nModule not installed'
+# Properties Get-ItemProperty adds to every registry key; not font names.
+$script:RegistryPropertyNames = 'PSPath', 'PSParentPath', 'PSChildName', 'PSDrive', 'PSProvider'
 
 # File name only (everything up to the last \, / or $ is a directory), lower case, no .dll and
 # no trailing "-" + text that starts with a digit. Pinned by tools\tests\fixtures\module-names.txt.
@@ -216,7 +218,7 @@ function Get-InstalledFontNames {
         $props = Get-ItemProperty -Path $key -ErrorAction SilentlyContinue
         if (-not $props) { continue }
         foreach ($p in $props.PSObject.Properties) {
-            if ($p.Name -like 'PS*') { continue }
+            if ($script:RegistryPropertyNames -ccontains $p.Name) { continue }
             $value = ($p.Name -replace '\s*\([^)]*\)\s*$', '')
             foreach ($part in ($value -split '\s+&\s+')) { $names[$part.Trim().ToLowerInvariant()] = $true }
         }

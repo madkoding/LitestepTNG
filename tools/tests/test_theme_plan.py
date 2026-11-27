@@ -27,7 +27,8 @@ FIELDS = {'kind', 'name', 'status', 'resolved', 'note', 'reason', 'url', 'sha256
 
 def powershell():
     """The PowerShell command line prefix, or None."""
-    for exe in ('pwsh', 'powershell'):
+    # Windows PowerShell 5.1 first: it is what the tools must run on.
+    for exe in ('powershell', 'pwsh'):
         path = shutil.which(exe)
         if path:
             return [path, '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass']
