@@ -76,7 +76,13 @@ MTrayBrushType Image
 ; Caja oscura (mismo degradado que el reloj): los iconos de bandeja actuales son blancos.
 ; El original claro sigue en systray.png.
 MTrayImage "$MMImg$systraydark.png"
-MTrayImageScalingMode Stretch
+; Solo se estira el centro de la caja oscura: la diagonal de la izquierda (52 px) y el borde
+; de la derecha (10 px) conservan su forma cuando la bandeja cambia de ancho.
+MTrayImageScalingMode Edges
+MTrayImageEdgesLeft 52
+MTrayImageEdgesRight 10
+MTrayImageEdgesTop 0
+MTrayImageEdgesBottom 0
 MTrayPaddingLeft 50
 MTrayPaddingTop 4
 MTrayPaddingRight 10
@@ -84,7 +90,10 @@ MTrayPaddingBottom 9
 MTrayStart TopRight
 MTrayPrimaryDirection Horizontal
 MTrayColumnSpacing 2
+; Crece hacia la izquierda con cada icono y se encoge cuando se van (el borde derecho queda
+; fijo). MTrayMinWidth: lo menos que mide (50 + 10 de margen + un icono).
 MTrayOverflowAction SizeLeft
+MTrayMinWidth 72
 MTrayIconSize 12
 MTrayOn RightClickUp None !PopupTray
 

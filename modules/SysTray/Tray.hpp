@@ -118,6 +118,10 @@ private:
 
   // The size that the tray should be when it's not overflowing
   D2D1_SIZE_F mTargetSize;
+  // The least the tray may measure along its overflow direction (MinWidth for SizeLeft and
+  // SizeRight, MinHeight for SizeUp and SizeDown). By default the size the theme gives it, so
+  // it only grows; a smaller one makes the tray follow its icons both ways.
+  float mMinLength;
 
   // The position where the tray should be when it's not overflowing
   D2D1_POINT_2F mTargetPosition;

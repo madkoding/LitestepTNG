@@ -664,6 +664,14 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   and slide in when a hidden window is shown) and `<Prefix>HideAnimationDuration|Offset|OffsetX`,
   used by `Window::HideAnimated(done)` (fade and slide out, then hide and call done; without a
   duration it hides at once). Both run on `FrameClock`.
+- **The tray follows its icons (SysTray, `Tray.cpp`):** `OverflowAction Size*` used to grow
+  the tray only past the size the theme gave it. `<Tray>MinWidth` / `MinHeight` (default:
+  that size, so other themes keep growing only) is now the floor: LiteStep Enhanced sets
+  `MTrayMinWidth 72`, so its tray grows left with each icon and shrinks when one goes, the
+  right edge fixed, and draws `systraydark.png` in `Edges` mode (left 52, right 10) so only
+  the dark box stretches. Glass, Windows-nModules and Prototype-X keep grow-only: their tray
+  sits next to the taskbar inside the bar, and shrinking would leave a gap. Checked with
+  three `NotifyIcon`s from a test process: 212 px, 254 px with them, 212 px after.
 - **A taskbar on every monitor (TaskBar, `ModuleEntry.cpp`):** `<Taskbar>EveryMonitor true`
   (every theme sets it) with more than one monitor keeps the taskbar on the primary
   monitor's windows (`Monitor 0` unless the theme names one) and creates a copy

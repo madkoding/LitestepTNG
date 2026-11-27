@@ -125,6 +125,12 @@ void Tray::LoadSettings() {
     { OverflowAction::SizeUp,    L"SizeUp"    }
   }, OverflowAction::None);
 
+  if (mOverflowAction == OverflowAction::SizeLeft || mOverflowAction == OverflowAction::SizeRight) {
+    mMinLength = mSettings->GetDistance(L"MinWidth", mTargetSize.width).Evaluate(refWidth);
+  } else {
+    mMinLength = mSettings->GetDistance(L"MinHeight", mTargetSize.height).Evaluate(refHeight);
+  }
+
   mSettings->GetLine(L"OnResize", mOnResize, _countof(mOnResize), nullptr);
 
   mSettings->IterateOverCommandLines(L"Hide", [this] (LPCWSTR line) -> void {
@@ -235,9 +241,10 @@ void Tray::Relayout() {
   case OverflowAction::SizeLeft: {
     int iconsPerColumn = mIconLayout.ItemsPerColumn(mIconSize, (int)size.height);
     int requiredColumns = (int)(mIcons.size() + iconsPerColumn - 1) / iconsPerColumn; // ceil(y/x) = floor((y + x - 1)/x)
+    // As wide as its icons need, never less than MinWidth.
     int requiredWidth = std::max((mIconSize + mIconLayout.mColumnSpacing) * requiredColumns -
       mIconLayout.mColumnSpacing + mIconLayout.mPadding.left + mIconLayout.mPadding.right,
-      (long)mTargetSize.width);
+      (long)mMinLength);
 
     int i = 0;
     for (auto icon : mIcons) {
@@ -262,7 +269,7 @@ void Tray::Relayout() {
     int requiredRows = (int)(mIcons.size() + iconsPerRow - 1) / iconsPerRow; // ceil(y/x) = floor((y + x - 1)/x)
     int requiredHeight = std::max((mIconSize + mIconLayout.mRowSpacing) * requiredRows -
       mIconLayout.mRowSpacing + mIconLayout.mPadding.top + mIconLayout.mPadding.bottom,
-      (long)mTargetSize.height);
+      (long)mMinLength);
 
     int i = 0;
     for (auto icon : mIcons) {
