@@ -86,8 +86,25 @@ Check "selected theme '$themeName' has a theme.rc" (Test-Path $themeRc)
 
 # A theme's theme.rc only lists its area files; LoadModule lines live in one of them.
 $themeFiles = Get-ChildItem (Split-Path $themeRc) -Filter *.rc | Select-Object -ExpandProperty FullName
-$wanted = Select-String -Path $themeFiles -Pattern '^\s*LoadModule\s+\$LiteStepDir\$(\S+)' | ForEach-Object { $_.Matches[0].Groups[1].Value }
-Check "theme '$themeName' loads modules" (@($wanted).Count -gt 0)
+$wanted = @(Select-String -Path $themeFiles -Pattern '^\s*LoadModule\s+\$LiteStepDir\$(\S+)' | ForEach-Object { $_.Matches[0].Groups[1].Value })
+
+# Classic module names (*NetLoadModule label-1.99) load the nModule that config\module-map.rc
+# (or personal.rc, read first: the first alias for a name wins) names for them.
+$aliases = @{}
+$aliasFiles = @(@('personal.rc', 'config\module-map.rc') | ForEach-Object { Join-Path $LiteStepDir $_ } | Where-Object { Test-Path $_ })
+if ($aliasFiles.Count) { $aliasMatches = Select-String -Path $aliasFiles -Pattern '^\s*\*ModuleAlias\s+(\S+)\s+(\S+)\s*$' } else { $aliasMatches = @() }
+foreach ($match in $aliasMatches) {
+    $from = $match.Matches[0].Groups[1].Value.ToLowerInvariant()
+    if (-not $aliases.ContainsKey($from)) { $aliases[$from] = $match.Matches[0].Groups[2].Value }
+}
+foreach ($match in (Select-String -Path $themeFiles -Pattern '^\s*\*Net(?:Load|Install)Module\s+"?([^"\s]+)')) {
+    $name = ($match.Matches[0].Groups[1].Value -split '[\\/$]')[-1].ToLowerInvariant() -replace '\.dll$', '' -replace '-\d.*$', ''
+    if ($aliases.ContainsKey($name) -and (Test-Path (Join-Path $LiteStepDir "$($aliases[$name]).dll"))) {
+        $wanted += "$($aliases[$name]).dll"
+    }
+}
+$wanted = @($wanted | Select-Object -Unique)
+Check "theme '$themeName' loads modules" ($wanted.Count -gt 0)
 $loaded = $litestep.Modules | ForEach-Object { $_.ModuleName }
 foreach ($module in $wanted) { Check "module loaded: $module" ($loaded -contains $module) }
 

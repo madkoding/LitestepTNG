@@ -23,6 +23,7 @@
 #define MODULEMANAGER_H
 
 #include "module.h"
+#include "ModuleResolver.h"
 #include "../utility/IManager.h"
 #include "../utility/common.h"
 #include <list>
@@ -179,11 +180,30 @@ private:
     ModuleQueue::iterator _FindModule(HINSTANCE hModule);
 
     /**
-     * Allocates a module object.
+     * Refills m_aliases from the "*ModuleAlias" lines of the settings.
+     *
+     * @param  f  settings file handle from LCOpenW
+     */
+    void _ReadAliases(LPVOID f);
+
+    /**
+     * Appends a module to a start-up queue, unless the queue already has
+     * one with the same location (compared case-insensitively).
+     *
+     * @param  mqModules  queue being built by _LoadModules
+     * @param  pModule    module from _MakeModule (may be nullptr)
+     */
+    void _QueueModule(ModuleQueue& mqModules, Module* pModule);
+
+    /**
+     * Allocates a module object. The location first goes through the
+     * "*ModuleAlias" map (config\module-map.rc), so a classic module name
+     * loads the matching nModule.
      *
      * @param  pwzLocation  path to the module's DLL
      * @param  dwFlags      set of flags that control how the module is loaded
-     * @return pointer to the module object
+     * @return pointer to the module object, or nullptr when neither the
+     *         mapped module nor the original exists
      */
     Module* _MakeModule(LPCWSTR pwzLocation, DWORD dwFlags);
 
@@ -207,6 +227,9 @@ private:
 
     /** Path to LiteStep's root directory */
     std::wstring m_sAppPath;
+
+    /** Classic module names and the nModules that replace them */
+    ModuleResolver::AliasMap m_aliases;
 
     /**
      * Predicate used by <code>_FindModule</code> to locate a loaded module

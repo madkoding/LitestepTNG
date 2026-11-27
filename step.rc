@@ -7,6 +7,10 @@ include "$LiteStepDir$theme-select.rc"
 ; Opcional y fuera del repo: ajustes personales. Va ANTES del tema porque la primera
 ; definicion de una clave es la que vale (ver personal.rc.example).
 include "$LiteStepDir$personal.rc"
+; Modulos clasicos (label-1.99, popup2...) que se cargan como nModules. Va DESPUES de
+; personal.rc: la primera definicion vale, asi que una linea *ModuleAlias de personal.rc
+; (todas las lineas * se leen, en orden) gana a la de este mapa.
+include "$LiteStepDir$config\module-map.rc"
 ; Idioma: el de pantalla de Windows (SystemLanguage, lo detecta litestep), salvo que
 ; personal.rc diga otro con "Language <codigo>" (en es pt fr de it zh ja). Los textos que
 ; falten en ese idioma salen del ingles, que se lee despues.

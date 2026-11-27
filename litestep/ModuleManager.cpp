@@ -21,6 +21,7 @@
 //=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #include "ModuleManager.h"
 #include "../utility/core.hpp"
+#include "../utility/logger.h"
 #include <algorithm>
 #include <vector>
 
@@ -122,6 +123,8 @@ UINT ModuleManager::_LoadModules()
         // mzscript via LoadModule) during the startup process
         ModuleQueue mqModules;
 
+        _ReadAliases(f);
+
 #if defined(LS_COMPAT_LSLOADMODULE)
         while (LCReadNextConfig(f, "*LSLoadModule", szLine, MAX_LINE_LENGTH))
 #elif defined(LS_COMPAT_LCREADNEXTCONFIG)
@@ -153,11 +156,28 @@ UINT ModuleManager::_LoadModules()
                     dwFlags |= LS_MODULE_THREADED;
                 }
 
-                Module* pModule = _MakeModule(wzToken1, dwFlags);
+                _QueueModule(mqModules, _MakeModule(wzToken1, dwFlags));
+            }
+        }
 
-                if (pModule)
+        // Classic themes name their modules with *NetLoadModule (or
+        // *NetInstallModule) lines: "*NetLoadModule label-1.99". The name
+        // goes through the alias map like any other location.
+        LPCWSTR apwzNetKeys[] = { L"*NetLoadModule", L"*NetInstallModule" };
+
+        for (LPCWSTR pwzKey : apwzNetKeys)
+        {
+            while (LCReadNextConfigW(f, pwzKey, wzLine, MAX_LINE_LENGTH))
+            {
+                wchar_t wzCommand[MAX_RCCOMMAND] = { 0 };
+                wchar_t wzToken1[MAX_LINE_LENGTH] = { 0 };
+                wchar_t wzToken2[MAX_LINE_LENGTH] = { 0 };
+
+                LPWSTR lpwzBuffers[] = { wzCommand, wzToken1, wzToken2 };
+
+                if (LCTokenizeW(wzLine, lpwzBuffers, 3, nullptr) >= 2)
                 {
-                    mqModules.push_back(pModule);
+                    _QueueModule(mqModules, _MakeModule(wzToken1, 0));
                 }
             }
         }
@@ -187,9 +207,92 @@ BOOL ModuleManager::LoadModule(LPCWSTR pwzLocation, DWORD dwFlags)
 }
 
 
+void ModuleManager::_ReadAliases(LPVOID f)
+{
+    m_aliases = ModuleResolver::AliasMap();
+
+    wchar_t wzLine[MAX_LINE_LENGTH];
+
+    // Read in file order: personal.rc comes before config\module-map.rc,
+    // and the first alias for a name wins (AliasMap::Add).
+    while (LCReadNextConfigW(f, L"*ModuleAlias", wzLine, MAX_LINE_LENGTH))
+    {
+        ModuleResolver::Alias alias;
+
+        if (ModuleResolver::ParseAliasLine(wzLine, alias))
+        {
+            m_aliases.Add(alias);
+        }
+        else
+        {
+            Logger::Log(L"Modules: ignoring malformed line \"%ls\".", wzLine);
+        }
+    }
+}
+
+
+void ModuleManager::_QueueModule(ModuleQueue& mqModules, Module* pModule)
+{
+    if (!pModule)
+    {
+        return;
+    }
+
+    ModuleQueue::iterator iter = std::find_if(mqModules.begin(),
+        mqModules.end(), IsLocationEqual(pModule->GetLocation()));
+
+    if (iter != mqModules.end())
+    {
+        Logger::Log(L"Modules: %ls is already in the list; skipping the second one.",
+            pModule->GetLocation());
+        delete pModule;
+        return;
+    }
+
+    mqModules.push_back(pModule);
+}
+
+
 Module* ModuleManager::_MakeModule(LPCWSTR pwzLocation, DWORD dwFlags)
 {
-    return new Module(pwzLocation, dwFlags);
+    std::wstring sAppPath = m_sAppPath;
+
+    if (!sAppPath.empty() && sAppPath.back() != L'\\' && sAppPath.back() != L'/')
+    {
+        sAppPath += L'\\';
+    }
+
+    ModuleResolver::Resolution resolution = ModuleResolver::Resolve(
+        pwzLocation, m_aliases, sAppPath,
+        [](const std::wstring& sPath)
+        {
+            DWORD dwAttributes = GetFileAttributesW(sPath.c_str());
+            return dwAttributes != INVALID_FILE_ATTRIBUTES &&
+                (dwAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
+        });
+
+    switch (resolution.outcome)
+    {
+    case ModuleResolver::Outcome::Mapped:
+        Logger::Log(L"Modules: %ls is loaded as %ls.", pwzLocation,
+            resolution.location.c_str());
+        break;
+
+    case ModuleResolver::Outcome::KeptOriginal:
+        Logger::Log(L"Modules: the replacement for %ls is not installed; loading %ls.",
+            pwzLocation, resolution.location.c_str());
+        break;
+
+    case ModuleResolver::Outcome::Missing:
+        Logger::Log(L"Modules: neither %ls nor its replacement exists; skipping it.",
+            resolution.location.c_str());
+        return nullptr;
+
+    case ModuleResolver::Outcome::Unchanged:
+        break;
+    }
+
+    return new Module(resolution.location, dwFlags);
 }
 
 
