@@ -9,8 +9,9 @@
 #  rights are needed, and nothing happens until the next sign-in.
 #
 #  LiteStep as the shell: Explorer does not start. LiteStep starts ShellAppRuntime.exe
-#  (Windows 11), which shows Store apps and Settings, paints the desktop background
-#  (nWallpaper) and runs the programs of the Run keys and the Startup folders.
+#  (Windows 11), which shows Store apps and Settings and, like Explorer, runs the programs
+#  of the Run keys; nWallpaper paints the desktop background. The Run key's own LiteStep
+#  entry ("-autostart" or "-overlay") then finds LiteStep running and leaves.
 #  Quitting LiteStep (!Quit, or "Quit" in its recovery menu) hands the session to
 #  Explorer. If the session ever comes up without a working desktop: Ctrl+Alt+Del ->
 #  Task Manager -> Run new task -> powershell, then run this script with Explorer, or:

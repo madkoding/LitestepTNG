@@ -60,6 +60,7 @@ const TCHAR szMainWindowTitle[] = _T("LiteStep");
 
 // Litestep Startup Flags (LSF)
 #define LSF_ALTERNATE_CONFIG   0x0004
+#define LSF_AUTOSTART          0x0008  // -autostart / -overlay: started from the Run key
 
 int StartLitestep(HINSTANCE hInst, WORD wStartFlags, LPCTSTR pszAltConfigFile);
 
@@ -112,6 +113,7 @@ private:
     bool m_bHandShellToExplorer; // = false; set by a deliberate quit
     HANDLE m_hShellHost; // = nullptr; ShellAppRuntime.exe, started by _StartShellHost
     HANDLE _StartShellHost();
+    HANDLE _FindRunningShellHost();
     void _HandShellToExplorer();
 
     // Notifications (Shell Hooks + WTS notifications)

@@ -105,11 +105,16 @@ WORD ParseCommandLine(LPCTSTR pszCommandLine, LPTSTR pszFile, DWORD cchFile)
         const std::wstring tokenText = ToWideString(szToken);
         if (szToken[0] == '-')
         {
-            // Switches of the old shell mode. LiteStep always runs on top of Explorer now,
-            // so they do nothing; they are still accepted because existing Run entries and
-            // shortcuts pass "-overlay".
-            if (!_tcsicmp(szToken, _T("-overlay")) ||
-                !_tcsicmp(szToken, _T("-nostartup")) ||
+            // Started by the sign-in sequence (the Run key). "-overlay" is what the Run
+            // values of older installs pass, so it means the same.
+            if (!_tcsicmp(szToken, _T("-autostart")) ||
+                !_tcsicmp(szToken, _T("-overlay")))
+            {
+                Logger::Log(L"Switch detected: %ls (autostart)", tokenText.c_str());
+                wStartFlags |= LSF_AUTOSTART;
+            }
+            // Switches of the old shell mode: accepted, and they do nothing.
+            else if (!_tcsicmp(szToken, _T("-nostartup")) ||
                 !_tcsicmp(szToken, _T("-startup")) ||
                 !_tcsicmp(szToken, _T("-explorer")) ||
                 !_tcsicmp(szToken, _T("-closeexplorer")) ||
@@ -400,7 +405,23 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE, LPTSTR lpCmdLine, int)
     HANDLE hMutex = NULL;
     bool allowLiteStep = true;
 
-    if (IsOtherInstanceRunning(&hMutex))
+    const bool bOtherInstance = IsOtherInstanceRunning(&hMutex);
+
+    if (bOtherInstance && (wStartFlags & LSF_AUTOSTART))
+    {
+        // The Run key starts LiteStep at sign-in. When LiteStep is the session's shell it
+        // is already running by then (ShellAppRuntime runs the Run key, like Explorer), and
+        // replacing it would restart the whole shell: this copy just leaves.
+        Logger::Log(L"Started from the Run key while LiteStep runs already: exiting.");
+        if (hMutex)
+        {
+            CloseHandle(hMutex);
+        }
+        Logger::Shutdown();
+        return 0;
+    }
+
+    if (bOtherInstance)
     {
         Logger::Log(L"Another LiteStep instance detected. Initiating shutdown.");
 

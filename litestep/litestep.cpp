@@ -25,7 +25,6 @@
 #include "DDEStub.h"
 #include "FullscreenMonitor.h"
 #include "RecoveryMenu.h"
-#include "StartupRunner.h"
 #include "TrayService.h"
 
 // Managers
@@ -313,8 +312,12 @@ HRESULT CLiteStep::Start(HINSTANCE hInstance)
     // Explorer is not running. Explorer's immersive shell is what shows Store apps and
     // Settings, so a host that provides it is started first (see _StartShellHost).
     // With Explorer running, LiteStep is a program on top of it and none of this applies.
-    m_bSessionShell = (GetShellWindow() == nullptr);
-    if (m_bSessionShell)
+    // When the host already owns the shell window, LiteStep was restarted inside such a
+    // session (a recycle by deploy, a crash): it is still the session's shell, and keeps a
+    // handle to the host so that quitting can hand the session to Explorer.
+    m_hShellHost = _FindRunningShellHost();
+    m_bSessionShell = (m_hShellHost != nullptr || GetShellWindow() == nullptr);
+    if (m_bSessionShell && m_hShellHost == nullptr)
     {
         Logger::Log(L"No shell window: LiteStep is the session's shell.");
         m_hShellHost = _StartShellHost();
@@ -348,13 +351,6 @@ HRESULT CLiteStep::Start(HINSTANCE hInstance)
         }
     }
 
-    // As the session's shell, LiteStep also does what Explorer does at sign-in: run the
-    // Run keys and the Startup folders (once per session; LiteStep's own entry is skipped).
-    if (SUCCEEDED(hr) && m_bSessionShell)
-    {
-        StartupRunner::Run(FALSE);
-    }
-
     return hr;
 }
 
@@ -367,14 +363,55 @@ HRESULT CLiteStep::Start(HINSTANCE hInstance)
 // Settings; tested on 26100/26300 with Explorer closed. LSShellHost names another
 // program, "" starts none. Returns the host's process, or nullptr.
 //
-HANDLE CLiteStep::_StartShellHost()
+// The LSShellHost setting, expanded and unquoted ("" = no host).
+static void GetShellHostPath(LPWSTR pwzPath, DWORD cchPath)
 {
     WCHAR wzHost[MAX_PATH] = { 0 };
     GetRCStringW(L"LSShellHost", wzHost, L"%WINDIR%\\System32\\ShellAppRuntime.exe", MAX_PATH);
+    ExpandEnvironmentStringsW(wzHost, pwzPath, cchPath);
+    PathUnquoteSpacesW(pwzPath);
+}
 
+
+//=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+//
+// _FindRunningShellHost
+// The process of the shell host, if it is the one that owns the shell window; else nullptr.
+//
+HANDLE CLiteStep::_FindRunningShellHost()
+{
     WCHAR wzPath[MAX_PATH] = { 0 };
-    ExpandEnvironmentStringsW(wzHost, wzPath, MAX_PATH);
-    PathUnquoteSpacesW(wzPath);
+    GetShellHostPath(wzPath, MAX_PATH);
+    HWND hShell = GetShellWindow();
+    DWORD dwOwner = 0;
+    if (wzPath[0] == L'\0' || hShell == nullptr || !GetWindowThreadProcessId(hShell, &dwOwner))
+    {
+        return nullptr;
+    }
+
+    HANDLE hProcess = OpenProcess(
+        SYNCHRONIZE | PROCESS_TERMINATE | PROCESS_QUERY_LIMITED_INFORMATION, FALSE, dwOwner);
+    if (hProcess == nullptr)
+    {
+        return nullptr;
+    }
+    WCHAR wzImage[MAX_PATH] = { 0 };
+    DWORD cchImage = MAX_PATH;
+    if (QueryFullProcessImageNameW(hProcess, 0, wzImage, &cchImage) &&
+        _wcsicmp(PathFindFileNameW(wzImage), PathFindFileNameW(wzPath)) == 0)
+    {
+        Logger::Log(L"Shell host \"%ls\" (pid %lu) owns the shell window already.", wzImage, dwOwner);
+        return hProcess;
+    }
+    CloseHandle(hProcess);
+    return nullptr;
+}
+
+
+HANDLE CLiteStep::_StartShellHost()
+{
+    WCHAR wzPath[MAX_PATH] = { 0 };
+    GetShellHostPath(wzPath, MAX_PATH);
 
     if (wzPath[0] == L'\0')
     {

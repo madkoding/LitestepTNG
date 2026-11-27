@@ -84,7 +84,7 @@ Name: "{autoprograms}\LiteStep TNG"; Filename: "{app}\litestep.exe"; WorkingDir:
 
 [Registry]
 ; Explorer is the shell; LiteStep is just a program started at sign-in.
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "LiteStep"; ValueData: """{app}\litestep.exe"""; Tasks: autostart; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "LiteStep"; ValueData: """{app}\litestep.exe"" -autostart"; Tasks: autostart; Flags: uninsdeletevalue
 
 [Run]
 Filename: "{app}\litestep.exe"; WorkingDir: "{app}"; Description: "{cm:RunNow}"; Flags: nowait postinstall skipifsilent
