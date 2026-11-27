@@ -46,9 +46,11 @@ foreach ($name in $names) {
     }
     try { $json = [IO.File]::ReadAllText($manifest) | ConvertFrom-Json -ErrorAction Stop }
     catch { throw "themes\$name\theme.json is not valid JSON: $($_.Exception.Message)" }
+    if ($null -eq $json) { throw "themes\$name\theme.json is empty" }
     $mode = if ($json.PSObject.Properties['mode'] -and $json.mode) { [string]$json.mode } else { 'overlay' }
     if ($mode -eq 'overlay') { $Themes += $name }
-    else { Write-Host "Theme '$name' has mode '$mode'; not packaged." }
+    elseif ($mode -eq 'shell') { Write-Host "Theme '$name' has mode 'shell'; not packaged." }
+    else { Write-Warning "Theme '$name' has an unknown mode '$mode'; not packaged." }
 }
 if (-not $Themes.Count) { throw 'No theme to package (no theme.json with mode overlay under themes\).' }
 
