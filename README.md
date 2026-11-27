@@ -39,20 +39,37 @@ is started again.
 
 ## What is in it
 
-- **Themes:** LiteStep Enhanced (default), Glass and Prototype-X. Change the theme from
-  the menu, or by editing `ThemeName` in `theme-select.rc`.
+- **Themes:** LiteStep Enhanced (default), Glass, Prototype-X and Windows-nModules. Change
+  the theme from the menu, or by editing `ThemeName` in `theme-select.rc`.
+- **Languages:** English, Spanish, Portuguese, French, German, Italian, Chinese and
+  Japanese, chosen from the Windows display language (`Language` in `personal.rc` forces
+  one).
 - **Bars and labels** (`nLabel`, `Clock`): clock, date, live text such as `[CPU]`,
   `[GPU]`, `[Memory]`, `[VRAM]` and `[NowPlaying]`, sliders for volume and track position.
 - **Task list and tray** (`nTaskbar`, `nTray`). Explorer's own taskbar is hidden while
   LiteStep runs (`HideExplorerTaskbar false` in a theme keeps it).
+  - **One taskbar per monitor:** with several monitors, each one gets its own copy of the
+    taskbar, listing the windows on that monitor, and maximized windows stop at it
+    (`<Taskbar>EveryMonitor`).
+  - **Minimized windows as thumbnails:** a minimized window shows a live picture of its
+    content over its own task button. The picture grows out of the button when the window
+    is minimized and shrinks back into it when the window returns; click it to restore the
+    window (`MinimizedShelfEnabled`).
+  - **The tray grows with its icons.** In LiteStep Enhanced it also shrinks when one goes;
+    the other themes keep a minimum size, since their tray sits in the bar next to the
+    taskbar (`<Tray>MinWidth`).
+- **Shadows and animations:** menus, notifications, bars and desktop icons cast soft
+  shadows that follow their shape, cut corners included, and fade in and out with their
+  windows' animations (`<Prefix>ShadowPreset`, `TextShadowColor`). Notifications slide in
+  and out, and task buttons slide into place.
 - **Popup menus** (`nPopup`, `StartMenu`): programs, folders, favourites, recent
   documents, themes.
 - **Media control:** buttons that drive the player you choose (the rotation is configured
   in the theme) through the Windows media session.
 - **Virtual desktops** (`VWM`): four desktops with a transition; right-click a desktop
   button, or press Win+Shift+1..4, to send the active window there.
-- **Notifications** (`Notify`): Windows toasts shown as theme boxes; click one to go to
-  its program, or close it with the X.
+- **Notifications** (`Notify`): Windows toasts shown as theme boxes, in every theme; click
+  one to go to its program, or close it with the X.
 - **Desktop icons** (`Icon`): the Desktop folder drawn in the theme's style, with
   thumbnails and drag and drop.
 - **Window frames** (`Frames`, experimental): a themed frame around other programs'
