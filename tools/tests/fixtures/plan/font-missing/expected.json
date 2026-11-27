@@ -1,0 +1,9 @@
+{
+  "theme": "font-missing",
+  "items": [
+    { "kind": "module", "name": "Core", "status": "ok", "resolved": "Core.dll" },
+    { "kind": "font", "name": "LiteStepTNG Absent Test Font 7Q", "status": "missing", "note": "made up: never installed", "url": "https://example.invalid/font.zip" },
+    { "kind": "font", "name": "Arial", "status": "ok" }
+  ],
+  "warnings": []
+}

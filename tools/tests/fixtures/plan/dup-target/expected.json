@@ -1,0 +1,7 @@
+{
+  "theme": "dup-target",
+  "items": [
+    { "kind": "module", "name": "Popup", "status": "ok", "resolved": "Popup.dll" }
+  ],
+  "warnings": []
+}

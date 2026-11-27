@@ -1,0 +1,3 @@
+; Both lines resolve to Popup.dll: one item, the first one.
+LoadModule $LiteStepDir$Popup.dll
+*NetLoadModule popup2-2.0

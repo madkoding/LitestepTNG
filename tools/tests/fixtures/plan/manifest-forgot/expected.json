@@ -1,0 +1,8 @@
+{
+  "theme": "manifest-forgot",
+  "items": [
+    { "kind": "module", "name": "Core", "status": "ok", "resolved": "Core.dll" },
+    { "kind": "module", "name": "Label", "status": "ok", "resolved": "Label.dll" }
+  ],
+  "warnings": [ "theme.json does not list Label, which the theme loads." ]
+}

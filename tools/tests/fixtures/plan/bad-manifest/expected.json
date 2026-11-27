@@ -1,0 +1,8 @@
+{
+  "theme": "bad-manifest",
+  "items": [
+    { "kind": "module", "name": "Core", "status": "ok", "resolved": "Core.dll" },
+    { "kind": "module", "name": "Label", "status": "missing", "url": null, "sha256": null }
+  ],
+  "warnings": [ "theme.json is not valid JSON; the modules were read from the theme's files." ]
+}

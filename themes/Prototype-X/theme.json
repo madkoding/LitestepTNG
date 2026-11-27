@@ -1,0 +1,23 @@
+{
+  "name": "Prototype-X",
+  "version": "1.0",
+  "author": "Shadowplayed (original); LiteStepTNG port",
+  "mode": "overlay",
+  "requires": {
+    "modules": [
+      { "name": "Core", "url": null, "sha256": null },
+      { "name": "Wallpaper", "url": null, "sha256": null },
+      { "name": "Popup", "url": null, "sha256": null },
+      { "name": "HotKey", "url": null, "sha256": null },
+      { "name": "SysTray", "url": null, "sha256": null },
+      { "name": "TaskBar", "url": null, "sha256": null },
+      { "name": "TaskSwitcher", "url": null, "sha256": null },
+      { "name": "Label", "url": null, "sha256": null },
+      { "name": "StartMenu", "url": null, "sha256": null },
+      { "name": "Notify", "url": null, "sha256": null }
+    ],
+    "fonts": [
+      { "name": "Exo 2", "url": null, "note": "open font (SIL OFL), used for every text of the theme" }
+    ]
+  }
+}

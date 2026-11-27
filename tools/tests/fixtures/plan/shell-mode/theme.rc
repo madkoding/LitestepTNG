@@ -1,0 +1,2 @@
+LoadModule $LiteStepDir$Core.dll
+LoadModule $LiteStepDir$Desk.dll

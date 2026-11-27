@@ -1,0 +1,8 @@
+{
+  "theme": "shell-mode-allowed",
+  "items": [
+    { "kind": "module", "name": "Core", "status": "ok", "resolved": "Core.dll" },
+    { "kind": "module", "name": "Desk", "status": "ok", "resolved": "Desk.dll" }
+  ],
+  "warnings": []
+}
