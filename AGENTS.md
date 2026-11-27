@@ -151,7 +151,10 @@ clone failed to link `MediaInfo`. To check before touching the build: `git clone
 scratch folder and build there.
 
 ### Test
-There are no unit tests. `.\tools\smoke-test.ps1` drives the running shell through its
+The tools and the module resolver have unit tests: `python -m unittest discover -s tools\tests`
+(the plan, install and switch scripts, `rc_effective.py`, the language files, the config
+menus, and `litestep\ModuleResolver.cpp` compiled with g++ or `zig c++`). The shell itself
+has none: `.\tools\smoke-test.ps1` drives the running shell through its
 bangs and inspects the resulting windows (modules loaded, notifications — only test boxes: `!NotifyClear test` — window frames,
 sending a window to another desktop); `-IncludeDesktopSwitch` also switches desktops and
 back, which moves the user's windows away for a couple of seconds. Exit code = failed checks.
@@ -463,8 +466,25 @@ manifest and the plan only describe and report.
   exactly as before. Else `<run folder>\<Target>.dll` exists -> that is loaded ("nModules
   win", even when the original DLL is present). Else the original exists -> the original is
   loaded and logged (fallback: a preference, not a ban). Else the line is skipped and logged.
-  A bare name (`label-1.99`) stands for `<run folder>\label-1.99.dll`. Two lines that resolve
-  to the same file load it once.
+  A name with no folder (`label-1.99`) stands for `<run folder>\label-1.99.dll` when checking
+  whether the original exists. An unmapped `LoadModule` line is passed to `LoadLibrary`
+  exactly as written, as before; an unmapped `*NetLoadModule` / `*NetInstallModule` name is
+  expanded that way (`ModuleResolver::ResolveNet`: `LoadLibrary` does not add `.dll` to a
+  name with a dot) and skipped and logged when the file is not there, so `geekamp-1.9.7`
+  never reaches the loader's modal "Could not locate module". Two lines that stand for the
+  same file (`LoadModule Label` and `*NetLoadModule label-1.99`; compared by the expanded
+  full path, `ModuleManager::_LocationKey`) load it once: the second is skipped and logged.
+- **nCore is loaded for mapped modules.** Every nModule needs Core.dll and a 2002 theme never
+  loads it (each mapped module would show a modal "There was a problem connecting to
+  nCore!"). At start-up and recycle (`_LoadModules`, not `!LoadModule`), when any line was
+  mapped and no queued module's file name is `Core.dll`, `<run folder>\Core.dll` is put at the
+  front of the queue and logged (`_AddCoreForNModules`); the plan starts with a matching
+  `Core` item (`note: "loaded for the nModules"`, `ok` or `missing`).
+- **32-bit modules.** Classic modules are 32-bit; LiteStepTNG is x64. The plan reads the PE
+  header of each DLL it would report `ok` and reports a 32-bit one `blocked` (`reason:
+  "32-bit module; LiteStepTNG is 64-bit"`; unreadable or non-PE files, like the tests' empty
+  stand-ins, keep their status). The shell skips and logs a 32-bit DLL named by a `*Net` line
+  instead of letting `Module::Init` show its modal; a `LoadModule` line still gets that box.
 - **Order:** every `LoadModule` line first (so a theme's explicit order, Core first, is never
   disturbed), then `*NetLoadModule`, then `*NetInstallModule` lines. On the Net lines the
   second token is the name; any flags after it are ignored.
@@ -498,8 +518,8 @@ manifest and the plan only describe and report.
   `name` is the name as the theme wrote it (a `missing` alias target is named after the
   nModule, with `note: "replaces <name>"`); `generated` is UTC. Statuses: `ok` (the DLL or
   font is there), `mapped` (replaced by an nModule that is there), `missing` (needed, not
-  there, not mappable), `blocked` (must not load in this mode: `Desk` unless the manifest
-  says `shell`). `items` and `warnings` are always arrays. Fonts count as installed when a
+  there, not mappable), `blocked` (must not or cannot load: `Desk` unless the manifest says
+  `shell`, or a 32-bit DLL). `items` and `warnings` are always arrays. Fonts count as installed when a
   family name is in the HKLM or HKCU `...\Fonts` registry key or in
   `%LOCALAPPDATA%\Microsoft\Windows\Fonts`.
 - **Where the downloader plugs in.** A switch runs: plan -> (future: download the `missing`
@@ -875,14 +895,12 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   Each substitution, fallback and skip is written with `Logger::Log` (`Modules: ...`).
   `ModuleResolver` uses only the standard library, so `tools\tests\module_resolver_test.cpp`
   builds it with g++ or `zig c++` (`test_module_resolver.py`, skipped without a compiler).
-  `tools\tests\fixtures\theme-classic-demo\` is a scratch theme (`*NetLoadModule label-1.99`)
-  for checking it in a running shell; `smoke-test.ps1` counts aliased modules among the
-  ones it expects loaded.
-  **Known limitation:** every nModule needs Core.dll (nCore). A classic theme has no line for
-  it, and the loader adds no module the theme does not ask for, so such a theme gets a modal
-  "There was a problem connecting to nCore!" from Label (seen while testing; the fixture
-  loads `$LiteStepDir$Core.dll` itself for that reason). Loading Core implicitly when an
-  aliased nModule is loaded is an open follow-up.
+  `tools\tests\fixtures\theme-classic-demo\` is a scratch theme for checking it in a running
+  shell: `*NetLoadModule label-1.99` (mapped), `*NetLoadModule geekamp-1.9.7` (no alias, not
+  installed: skipped) and no Core line, so Core.dll must be loaded implicitly; after switching
+  to it, `Core.dll` and `Label.dll` must be in litestep's modules and litestep must own no
+  `#32770` dialog window. `smoke-test.ps1` counts aliased modules among the ones it expects
+  loaded.
 - **StartMenu `.icon=` parsing:** `StartMenu/ModuleEntry.cpp` now parses a leading
   `.icon="file,idx"` token on menu entries (previously only nPopup did), passing the icon to
   Command/Folder items.
@@ -947,10 +965,11 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   the active theme in `!PopupThemes`); the lslnk popup title position inside the white
   header box (`MMMenuLnk*` in theme.rc) was not visually verified.
 
-- **Theme installation follow-ups** (§5 "Theme installation", §6 resolver): a classic theme
-  without `LoadModule ...Core.dll` gets nCore's connection error from every nModule; the
-  downloader of `missing` plan items; refusing `Desk.dll` at runtime in overlay mode;
-  translating classic module configuration is a non-goal.
+- **Theme installation follow-ups** (§5 "Theme installation", §6 resolver): the downloader
+  of `missing` plan items; refusing `Desk.dll` at runtime in overlay mode; a 32-bit DLL named
+  by a `LoadModule` line still shows `Module::Init`'s modal (only `*Net` lines are skipped);
+  translating classic module configuration is a non-goal. (A classic theme without Core now
+  gets it implicitly, see §5.)
 
 - Full side-by-side screen-vs-preview parity was still being tightened at last session end;
   the structural match is complete (all elements present, placed, and styled). Residual

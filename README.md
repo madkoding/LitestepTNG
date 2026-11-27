@@ -100,13 +100,17 @@ files). Point them at the folder LiteStep runs from with `-LiteStepDir`, or the
 `install-theme.ps1` copies the theme to `themes\<Name>` (add `-Force` to replace one that
 is already installed) and prints its plan, also saved as `plans\<Name>.json`: which modules
 and fonts the theme needs and whether each one is **ok**, **mapped** to an nModule,
-**missing** or **blocked**. Nothing is downloaded; missing items are only reported, and the
-theme still runs without them.
+**missing** or **blocked**. Nothing is downloaded; missing items are only reported. The
+theme still loads without them, minus whatever needs them: LiteStep skips and logs a missing
+module named the classic way (`*NetLoadModule`) or by an alias, and a 32-bit one (classic
+modules are 32-bit, LiteStepTNG is 64-bit: reported **blocked**). A missing DLL named by a
+`LoadModule` line still stops start-up with LiteStep's error box until it is closed.
 
 Classic themes name modules such as `label-1.99` or `popup2`; LiteStep loads the matching
-nModule instead (`config\module-map.rc`, which `personal.rc` can override). Only the module
-is swapped: the classic theme's configuration is not translated, so an old theme will not
-look as it did, and it must load `Core.dll` itself for the nModules to work.
+nModule instead (`config\module-map.rc`, which `personal.rc` can override), and loads
+`Core.dll` first when the theme does not, since every nModule needs it. Only the module is
+swapped: the classic theme's configuration is not translated, so an old theme will not look
+as it did.
 
 ## Architecture
 

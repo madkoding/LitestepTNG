@@ -11,8 +11,9 @@
 #
 #  Before that, the theme's plan is built, written to plans\<Name>.json and printed
 #  (tools\theme-plan.ps1). Missing modules or fonts are reported but do not stop the
-#  switch: the shell runs without them. Order of a switch: plan -> (a future
-#  downloader) -> theme-select.rc -> restart.
+#  switch: the theme loads without them, minus what needs them (a missing DLL named by
+#  a LoadModule line still shows LiteStep's error box). Order of a switch: plan -> (a
+#  future downloader) -> theme-select.rc -> restart.
 # ==============================================================================
 param(
     [string]$Theme,
@@ -50,7 +51,7 @@ try {
     Show-ThemePlan $plan
     $missing = @($plan.items | Where-Object { $_.status -eq 'missing' })
     if ($missing.Count) {
-        Write-Warning "$($missing.Count) item(s) missing ($(($missing | ForEach-Object { $_.name }) -join ', ')); switching anyway, the theme runs without them."
+        Write-Warning "$($missing.Count) item(s) missing ($(($missing | ForEach-Object { $_.name }) -join ', ')); switching anyway; the theme loads without them, minus the parts that need them."
     }
 }
 catch { Write-Warning "No plan for '$Theme': $($_.Exception.Message)" }
