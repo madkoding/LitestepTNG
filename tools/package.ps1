@@ -9,8 +9,9 @@
 #     LiteStepTNG-<version>-x64.zip          the staged folder, to unpack anywhere
 #     LiteStepTNG-<version>-x64-setup.exe    the installer (needs Inno Setup 6)
 #
-#  This file is the single list of what ships; the installer script only packs
-#  the staged folder. CI (.github\workflows\build.yml) runs exactly this.
+#  This file is the single list of what ships (themes: those whose theme.json has
+#  mode overlay); the installer script only packs the staged folder. CI
+#  (.github\workflows\build.yml) runs exactly this.
 # ==============================================================================
 param(
     [Parameter(Mandatory)][string]$Version,
@@ -27,8 +28,29 @@ $Stage = Join-Path $Dist 'stage'
 
 if (-not (Test-Path (Join-Path $Bin 'litestep.exe'))) { throw "No build in $Bin. Build litestep.sln first." }
 
-# The themes that ship (the repo also keeps reference material and drafts).
-$Themes = 'LiteStep Enhanced', 'Glass', 'Prototype-X', 'Windows-nModules'
+# The themes that ship: every folder under themes\ whose theme.json has mode "overlay"
+# (the default when the manifest has no mode). A "shell" theme cannot run on top of
+# Explorer and stays out; a folder without theme.json is skipped with a warning (a
+# theme in the repo should have one); a theme.json that is not valid JSON stops the
+# build. Sorted by name (ordinal) so every build stages the same list.
+$Themes = @()
+$themeDirs = @(Get-ChildItem (Join-Path $Root 'themes') -Directory |
+    Where-Object { $_.Name -notin 'original-2002', 'drafts' -and -not $_.Name.StartsWith('.') })
+[string[]]$names = @($themeDirs | ForEach-Object { $_.Name })
+[Array]::Sort($names, [StringComparer]::Ordinal)
+foreach ($name in $names) {
+    $manifest = Join-Path $Root "themes\$name\theme.json"
+    if (-not (Test-Path -LiteralPath $manifest -PathType Leaf)) {
+        Write-Warning "Theme '$name' has no theme.json; not packaged."
+        continue
+    }
+    try { $json = [IO.File]::ReadAllText($manifest) | ConvertFrom-Json -ErrorAction Stop }
+    catch { throw "themes\$name\theme.json is not valid JSON: $($_.Exception.Message)" }
+    $mode = if ($json.PSObject.Properties['mode'] -and $json.mode) { [string]$json.mode } else { 'overlay' }
+    if ($mode -eq 'overlay') { $Themes += $name }
+    else { Write-Host "Theme '$name' has mode '$mode'; not packaged." }
+}
+if (-not $Themes.Count) { throw 'No theme to package (no theme.json with mode overlay under themes\).' }
 
 if (Test-Path $Dist) { Remove-Item $Dist -Recurse -Force }
 New-Item -ItemType Directory -Force $Stage | Out-Null
