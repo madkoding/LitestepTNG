@@ -1,0 +1,22 @@
+; ==============================================================================
+;  config\module-map.rc  -  classic LiteStep modules and the nModules that replace them.
+;  When a theme loads a module of a classic theme (label-1.99.dll, popup2.dll...),
+;  litestep loads the nModule named here instead. The name on the left is the
+;  module's normalised name: file name only, lower case, no .dll, no "-<version>".
+;  The target is a folder of modules\ (the DLL name without .dll).
+;  The first line for a name wins, so a line in personal.rc (included before this
+;  file) overrides it; "*ModuleAlias popup2 popup2" keeps the original.
+;  Owned by the repo: deploy and the installer overwrite it.
+; ==============================================================================
+*ModuleAlias label     Label
+*ModuleAlias lsslider  Label
+*ModuleAlias popup     Popup
+*ModuleAlias popup2    Popup
+*ModuleAlias lslnkmenu Popup
+*ModuleAlias taskbar   TaskBar
+*ModuleAlias taskbar3  TaskBar
+*ModuleAlias vtray     SysTray
+*ModuleAlias ckvwm     VWM
+*ModuleAlias shortcut  Icon
+*ModuleAlias shortcut2 Icon
+*ModuleAlias jdesk     Icon
