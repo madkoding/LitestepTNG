@@ -136,8 +136,12 @@ yields the four themes in the repo. The script still fails when `theme-select.rc
 theme that does not ship. It produces `dist\LiteStepTNG-<v>-x64.zip` and, with Inno Setup 6
 installed, `dist\LiteStepTNG-<v>-x64-setup.exe` (`installer\LiteStepTNG.iss` only packs the
 staged folder — the list of what ships lives in the script). The installer is per user
-(no admin), installs to `%LOCALAPPDATA%\Programs\LiteStepTNG`, leaves Explorer as the
-shell, optionally adds the `Run` value, never overwrites
+(no admin), installs to `%LOCALAPPDATA%\Programs\LiteStepTNG`, optionally adds the `Run`
+value, and on Windows 11 (when `ShellAppRuntime.exe` exists) offers an unticked task that
+makes LiteStep this user's shell (HKCU Winlogon `Shell`, as `set-shell.ps1` writes; since
+2026-11-27). The task shows ticked when that value already names this copy; updating with it
+cleared, or uninstalling, deletes the value only if it still names this copy, so a shell the
+user picked since is kept. It never overwrites
 `theme-select.rc`, and stops only the LiteStep running from its own folder (`!Quit`
 first, so Explorer's taskbar comes back; kill as a last resort).
 

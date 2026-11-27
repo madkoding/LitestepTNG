@@ -24,7 +24,9 @@ Download the latest release from the [releases page](../../releases/latest):
 
 - **`LiteStepTNG-<version>-x64-setup.exe`** — the installer. It installs for the current
   user (no administrator rights), into `%LOCALAPPDATA%\Programs\LiteStepTNG`, and can
-  start LiteStep when you sign in. It does not change the Windows shell.
+  start LiteStep when you sign in. By default Explorer stays the Windows shell; on Windows 11
+  an optional (unticked) checkbox makes LiteStep the shell instead, from the next sign-in.
+  Uninstalling puts Explorer back.
 - **`LiteStepTNG-<version>-x64.zip`** — the same files, to unpack anywhere you can write
   to. Start it with `litestep.exe`.
 
@@ -188,9 +190,9 @@ folder"), not from the repository; the scripts in `tools\` take care of that:
 By default LiteStep runs on top of Explorer, which stays the Windows shell. (`-overlay`, the
 switch older versions needed, is still accepted and does nothing.)
 
-On Windows 11 LiteStep can also be the shell itself, with Explorer not running:
-`.\tools\set-shell.ps1 LiteStep` (from the next sign-in; `.\tools\set-shell.ps1 Explorer`
-undoes it). It then starts Windows' own `ShellAppRuntime.exe`, which is what lets Store apps
+On Windows 11 LiteStep can also be the shell itself, with Explorer not running: tick
+"Use LiteStep as the Windows shell" in the installer, or run `.\tools\set-shell.ps1 LiteStep`
+(from the next sign-in; `.\tools\set-shell.ps1 Explorer` or uninstalling undoes it). It then starts Windows' own `ShellAppRuntime.exe`, which is what lets Store apps
 and Settings show and which runs the programs that start with Windows, and paints the desktop
 background itself. Quitting LiteStep gives the session back to Explorer. This mode is new.
 
