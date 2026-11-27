@@ -8,8 +8,9 @@ don't re-derive what previous sessions already learned.
 ## 1. What this project is
 
 LiteStepTNG is a modern x64 port/evolution of the classic **LiteStep** Windows shell
-replacement, written in **C++14/17** with **Direct2D/DirectWrite** rendering. It can run
-as the Windows shell (replacing `explorer.exe`) or as an overlay.
+replacement, written in **C++14/17** with **Direct2D/DirectWrite** rendering. It runs on
+top of Explorer, which stays the Windows shell (§3); the old mode that replaced
+`explorer.exe` was removed on 2026-11-26.
 
 - **Language/stack:** C++ (MSVC), Direct2D/DirectWrite, Win32, C++/WinRT (for media),
   V8 embedded in the Core module (JS scripting), TagLib (media metadata).
@@ -32,7 +33,7 @@ modules/           the nModules module DLLs (see list below)
   Popup/           nPopup: popup menus (InfoItem, FolderItem, CommandItem, SeparatorItem)
   StartMenu/       start-menu popup variant (reuses Popup's item classes)
   Label/ Clock/    nLabel / clock labels
-  HotKey/ VWM/ Desk/ Icon/ Panels/ Wallpaper/ MediaInfo/ Calendar/ TaskSwitcher/
+  HotKey/ VWM/ Icon/ Panels/ Wallpaper/ MediaInfo/ Calendar/ TaskSwitcher/
   External/        third-party (v8, etc.)
   Notify/          nNotify: Windows notifications as boxes on the desktop
   Frames/          nFrames: skinned frames around other programs' windows (experimental)
@@ -76,10 +77,8 @@ msbuild litestep.sln /p:Configuration=Release /p:Platform=x64 /m /verbosity:mini
 .\tools\deploy.ps1 -Modules Core,VWM  # only those DLLs
 .\tools\deploy.ps1 -ThemesOnly
 ```
-It stops litestep (its DLLs are locked while it runs), copies, and starts it again with
-`-overlay`. Only themes already installed in the target are updated (`-Themes <name>` adds
-one): `Windows-nModules` and `Windows11-Dark` were written for litestep as the Windows shell,
-load `Desk.dll`, and must not be offered in the overlay install.
+It stops litestep (its DLLs are locked while it runs), copies, and starts it again.
+Only themes already installed in the target are updated (`-Themes <name>` adds one).
 
 **The repo is the source of the themes.** Edit `themes\<Name>\theme.rc` here and deploy;
 do not edit the deployed copy in the run folder (older sessions did, and then copied it back).
@@ -99,13 +98,12 @@ In a theme, use `$LiteStepDir$`, `$ThemeName$`, `$USERNAME$` and `%LOCALAPPDATA%
 paths instead of literal ones.
 
 ### Package and CI
-`.\tools\package.ps1 -Version <v>` stages a build plus the themes that work on top of
-Explorer (not `Desk.dll`, not the two shell-mode themes, not `original-2002\` or `drafts\`)
-into `dist\stage` and produces `dist\LiteStepTNG-<v>-x64.zip` and, with Inno Setup 6
+`.\tools\package.ps1 -Version <v>` stages a build plus the themes (not `original-2002\` or
+`drafts\`) into `dist\stage` and produces `dist\LiteStepTNG-<v>-x64.zip` and, with Inno Setup 6
 installed, `dist\LiteStepTNG-<v>-x64-setup.exe` (`installer\LiteStepTNG.iss` only packs the
 staged folder — the list of what ships lives in the script). The installer is per user
 (no admin), installs to `%LOCALAPPDATA%\Programs\LiteStepTNG`, leaves Explorer as the
-shell, optionally adds the `Run` value with `-overlay`, never overwrites
+shell, optionally adds the `Run` value, never overwrites
 `theme-select.rc`, and stops only the LiteStep running from its own folder (`!Quit`
 first, so Explorer's taskbar comes back; kill as a last resort).
 
@@ -126,23 +124,73 @@ back, which moves the user's windows away for a couple of seconds. Exit code = f
 
 ---
 
-## 3. Runtime architecture (IMPORTANT — changed 2026-11-21)
+## 3. Runtime architecture (IMPORTANT — changed 2026-11-21 and 2026-11-26)
 
-**Explorer is the Windows shell; litestep runs on top of it in overlay mode.**
+**Two modes, chosen by who owns the shell window when litestep starts.**
+- **On top of Explorer** (the default, and the setup of this machine): Explorer is the shell,
+  litestep is a program started from the `Run` key. Everything below is about this mode
+  unless it says otherwise.
+- **Session shell** (since 2026-11-26, `tools\set-shell.ps1 LiteStep`): litestep is the
+  Winlogon shell and Explorer does not run. See "Session shell" below.
 ```
 HKCU\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Shell   (no value; the HKLM default explorer.exe applies)
-HKCU\Software\Microsoft\Windows\CurrentVersion\Run\LiteStep = "<run folder>\litestep.exe" -overlay
+HKCU\Software\Microsoft\Windows\CurrentVersion\Run\LiteStep = "<run folder>\litestep.exe"
 ```
 The earlier setup (litestep as the Winlogon shell, explorer not running) was abandoned
 because too much of Windows depends on Explorer's immersive shell: UWP apps (Settings,
 Calculator), `ms-settings:` links, media-key routing, native virtual desktops. See §8 for
-what was tried. The old value is saved in `winlogon-shell-backup.txt` in the run folder.
+what was tried. On 2026-11-26 the code for it was removed: the start-up prompt, closing
+and restarting Explorer, `SetShellWindow`, the Winlogon prompt, `StartupRunner` (the Run
+keys and Startup folder, which Explorer runs), `ExplorerService`, the logon sound, the
+recovery menu's "Start Explorer as shell", the `LSOverlayMode` / `LSSetAsShell` /
+`LSNoShellWarning` / `LSNoStartup` settings, the `Desk.dll` module and the themes that
+needed it (`Windows11-Dark` was the same as Glass; `Windows-nModules` was ported).
+`-nostartup`, `-startup`, `-explorer` and `-closeexplorer` are still accepted and ignored;
+`-overlay` now means `-autostart` (see "Session shell"), so old `Run` values keep working. The tray service stays: it is
+what gives nTray the icons. In safe mode litestep exits at once.
+
+### Session shell (ShellAppRuntime)
+The old shell mode failed because nothing provided Explorer's *immersive shell*: Store
+apps started but their `ApplicationFrameHost` window stayed cloaked (§8). Windows 11 ships
+`ShellAppRuntime.exe` (and `CustomShellHost.exe`), the hosts it uses for kiosk shells. On
+2026-11-26, with Explorer closed, starting `ShellAppRuntime.exe` made it the owner of the
+shell window, and Calculator and Settings opened and showed (activated through
+`IApplicationActivationManager`; with no host at all, activation failed with 0x80040900).
+How litestep uses it (`litestep.cpp`):
+- `GetShellWindow()` is null at start-up => litestep is the session's shell. It starts
+  `LSShellHost` (default `%WINDIR%\System32\ShellAppRuntime.exe`, `""` = none) before
+  anything else and waits up to 10 s for it to own the shell window. litestep never calls
+  `SetShellWindow`: the shell window must be the host's.
+- The Run keys are run by ShellAppRuntime itself (about 40 s after sign-in, seen on the
+  first real sign-in; it ignores Explorer's `StartupHasBeenRun` marker), so litestep does
+  not run them: a `StartupRunner` tried on 2026-11-26 started them a second time.
+  ShellAppRuntime also starts the `Run\LiteStep` entry: a litestep started with
+  `-autostart` (or the older `-overlay`) exits when another one is running, instead of
+  replacing it as a manual start does. The installer writes `-autostart`.
+- nWallpaper paints the desktop (`DesktopBackground.cpp`, window class
+  `LSDesktopBackground`) only when no window holds a `SHELLDLL_DefView`. ShellAppRuntime
+  creates a `Progman` of its own, so "is there a Progman" is the wrong test. The window
+  stays at the bottom and runs `DesktopRightClick` / `DesktopMiddleClick`; `OnDesktop`
+  windows (ModuleKit) go right above it.
+- `!Quit` (or `LR_EXPLORER`) stops the host and starts explorer.exe, which then becomes the
+  shell. Sign-out and shut-down do not. Windows then starts the Winlogon shell again
+  (`userinit` launched a new litestep one second later, seen 2026-11-27), which finds
+  Explorer's shell window and runs on top of it: in this mode `!Quit` turns the session
+  into the usual "Explorer + LiteStep on top" rather than closing LiteStep.
+- A litestep restarted inside such a session (deploy, crash) is still the session's shell:
+  it finds `LSShellHost` owning the shell window (`_FindRunningShellHost`) and keeps a
+  handle to it for `!Quit`. Before that fix, a restarted litestep would have quit to a
+  session with no UI.
+- Tested without signing out (close Explorer gracefully with message 0x5B4 to its
+  `Shell_TrayWnd`, so Windows does not restart it; then start litestep): host started,
+  background painted, Calculator shown, `!Quit` handed the session back. A real sign-in
+  worked ("funciona perfecto como shell", the user, 2026-11-26) apart from the Run entry
+  restarting litestep, fixed above. Not checked one by one: `ms-settings:` links, toasts,
+  media keys, Explorer folder windows.
 
 Consequences:
 - **Restart litestep with:** `Stop-Process -Name litestep -Force`, then
-  `Start-Process <run folder>\litestep.exe -ArgumentList '-overlay'`. Nothing respawns
-  it any more. **Always pass `-overlay`**: without it litestep sees Explorer's taskbar and
-  shows a blocking Yes/No/Cancel prompt.
+  `Start-Process <run folder>\litestep.exe`. Nothing respawns it.
 - `litestep.exe !Bang args` (via `Start-Process ... -ArgumentList '!Bang args'`, so the
   command line starts with `!` unquoted) reaches the running instance in this mode and
   is the way to test bangs without touching the mouse.
@@ -159,14 +207,11 @@ Consequences:
   Broadcasting the change makes Explorer recompute its own value immediately (a fight
   litestep loses). AppBars are not usable: `SHAppBarMessage` is answered by litestep's own
   `Shell_TrayWnd` (tray service) and crashed in `shcore.dll`.
-- **Never load `Desk.dll` on top of Explorer.** It does not sit under Explorer's desktop: it
-  takes Explorer's `SHELLDLL_DefView` (the window that paints the wallpaper and the icons)
-  and re-parents it into its own window, giving it back only in `quitModule`. Every
-  restart here kills litestep (`Stop-Process`), so the view is destroyed with it: `Progman`
-  is left without children, the desktop is a flat dark grey on every monitor, and no
-  wallpaper chosen in Windows shows any more. Only restarting explorer.exe repairs it.
-  This happened on 2026-11-23 by switching to Glass / Prototype-X, which loaded it then;
-  no installed theme does now. Check with: does `Progman` have a `SHELLDLL_DefView` child?
+- **Explorer's desktop view must stay Explorer's.** The removed `Desk.dll` took Explorer's
+  `SHELLDLL_DefView` (the window that paints the wallpaper and the icons) and re-parented
+  it into its own window; killing litestep destroyed it, leaving a flat grey desktop until
+  explorer.exe restarted (2026-11-23). Nothing may re-parent that window again. Check with:
+  does a top-level window (normally `Progman`) have a `SHELLDLL_DefView` child?
 - **Desktop clicks:** the desktop is Explorer's. `DesktopRightClick <bang>` /
   `DesktopMiddleClick <bang>` (nHotKey, low-level mouse hook) run a bang for clicks on
   Explorer's desktop; SHIFT+click passes through to Explorer.
@@ -286,6 +331,41 @@ build, matching the original theme's preview screenshot (1024×768; not part of 
   `[System.IO.File]::WriteAllText($f,$t,(New-Object System.Text.UTF8Encoding($false)))`
   — or just the `Edit`/`Write` tools, which are safe.
 
+### Shadows (since 2026-11-27)
+- **Window shadows** (menus, notifications, bars, any top-level window):
+  `<Prefix>ShadowPreset none|subtle|classic|win11|macos|material|raytraced|panel|dock|pill|tray`
+  and per layer `<Prefix>Shadow<N>OffsetX|OffsetY|Blur|Spread|Opacity|Color|Enabled`, in px
+  (a layer key changes layer N of the preset). `ModuleKit/ShadowWindow.cpp` draws them in a
+  second window (class `LSShadow`: layered, click-through, kept right below its window,
+  same topmost band): a window can only paint inside its own rectangle, so the old code,
+  which drew scaled copies of the shape inside the window, never showed. The shape is the
+  state's rounded rectangle, or, when the background is a picture, the picture's alpha laid
+  out at the window's size exactly as `Brush` draws it (`ModuleKit/ShapeMask.cpp`: Stretch,
+  Tile, Center, Fit, Fill and Edges, copying `Brush::ComputeEdgeData`'s mapping, where the
+  middle of an Edges picture is scaled by the whole width), so LiteStep Enhanced's cut corners
+  and diagonal panel edges cast a matching shadow (the user asked for it: a plain rectangle
+  under them looked wrong). Spread grows a picture mask with a max filter. The shape is cut
+  out of the shadow (as CSS does), so translucent windows do not show their own shadow.
+  Check a shape by giving it `Shadow1Color #FFFF0000`, `Opacity 1`, `Blur 2`, `Spread 4` in
+  personal.rc: a red outline that must hug the drawing. `OnDesktop` windows skip `LSShadow`
+  windows when stacking.
+- **Text shadow** (any window): `<Prefix>TextShadowColor` (default none),
+  `TextShadowOffsetX|Y` (1), `TextShadowBlur` (px, 2; 0 = crisp copy).
+- **Desktop icon picture**: `<Icons>IconImageShadowColor|OffsetX|OffsetY|Blur`.
+- Text and picture shadows use Direct2D's shadow effect (`ModuleKit/DropShadow.cpp`), which
+  needs an `ID2D1DeviceContext`: the D2D factory is created as `ID2D1Factory1`
+  (`Factories.cpp`); with the 1.0 factory the render targets did not give one.
+- Each theme keeps its shadows in `shadows.rc`, included last. The user found the first
+  values too faint, then a wide spread "unnatural" (a grown shape reads as a glow): the
+  presets are now two layers without spread, a soft key shadow below and a short contact
+  shadow (2026-11-27).
+- The shadow follows the window's entry and exit animations: `Window` keeps
+  `mAnimationOpacity` and the shadow window takes it as its constant alpha
+  (`UpdateLayeredWindow` without a bitmap); it used to wait hidden until the animation
+  ended and then pop in.
+- `Settings::GetLine` returns false when the value comes from a style (`Group`) although it
+  fills the buffer: check the buffer, not the result (that hid every shadow set on a style).
+
 ### Theme files (layout since 2026-11-25)
 - `theme.rc` is a header plus `include` lines; each area has its own file of ~50–150 lines
   (`general.rc`, `styles.rc`, `bar-*.rc`, `popups.rc` = menu skin, `menus.rc`, `notify.rc`…).
@@ -326,7 +406,9 @@ build, matching the original theme's preview screenshot (1024×768; not part of 
   `zh-*`). `lsapi\lsapiInit.cpp` sets `SystemLanguage` from the first preferred UI language
   (display language, not the regional format); `step.rc` sets `Language $SystemLanguage$`
   after `personal.rc`, so `Language ja` in personal.rc forces one (handy for testing; remove
-  it after).
+  it after). A regional code there (`pt-BR`) works: when an included file such as
+  `lang\pt-BR.rc` does not exist, lsapi reads `lang\pt.rc` (`BaseLanguageFile` in
+  `SettingsFileParser.cpp`; `rc_effective.py` and Core's month names do the same).
 - Texts: `lang\<code>.rc`, one `Txt<Name> "<text>"` per text (76 today), included by step.rc
   before the theme, English after it (a missing text shows in English). Themes and
   `config\menus` write `"$TxtExplorer$"` etc., never literal words; product names
@@ -491,6 +573,14 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   so the boxes can replace the banners. To raise a test toast from a script, use the
   AppUserModelID of an app whose notifications are enabled in Windows (e.g. Terminal's). Private messages must stay clear of the `LM_`
   range, which starts at `WM_APP` (32768). Needs `stdcpp17` like Core.
+  Boxes are animated: they enter with `NotifyBoxShowAnimation*` (slide in from the right,
+  `ShowAnimationOffsetX`), leave with `NotifyBoxHideAnimation*` (`Window::HideAnimated`; a
+  closing box moves to `sClosing` and is deleted on `WM_NOTIFY_CLOSED` when the animation
+  ends), and the others close up with `Window::SetAnimation` (`NotifyMoveDuration`, ms).
+  Every theme loads it and styles it in its own `notify.rc` (LiteStep Enhanced with the
+  popup frame images, the others with colours, `CornerRadius*` and a Segoe Fluent Icons X,
+  U+E711, as the `Close` part's text). `NotifyTimeFormat` is formatted without the theme's
+  language, so month and day names come out in English: keep it numeric.
 - **Window frames (new module `modules/Frames`, `Frames.dll`, experimental):** covers the
   native title bar of other programs' windows with a skinned one (prefix `Frame`, parts
   `FrameTitle|Min|Max|Close`, `Active*` keys for the foreground window). Nothing is
@@ -570,6 +660,88 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   `SystemParametersInfo(SPI_SETDESKWALLPAPER, ..., SPIF_UPDATEINIFILE|SPIF_SENDCHANGE)` on a
   worker thread; the old code wrote the registry value and broadcast by hand, which makes
   Explorer redraw nothing. Verify through `SPI_GETDESKWALLPAPER` while switching themes.
+- **Entry/exit animations (ModuleKit):** `<Prefix>ShowAnimationDuration|Offset|OffsetX` (fade
+  and slide in when a hidden window is shown) and `<Prefix>HideAnimationDuration|Offset|OffsetX`,
+  used by `Window::HideAnimated(done)` (fade and slide out, then hide and call done; without a
+  duration it hides at once). Both run on `FrameClock`.
+- **The tray follows its icons (SysTray, `Tray.cpp`):** `OverflowAction Size*` used to grow
+  the tray only past the size the theme gave it. `<Tray>MinWidth` / `MinHeight` (default:
+  that size, so other themes keep growing only) is now the floor: LiteStep Enhanced sets
+  `MTrayMinWidth 72`, so its tray grows left with each icon and shrinks when one goes, the
+  right edge fixed, and draws `systraydark.png` in `Edges` mode (left 52, right 10) so only
+  the dark box stretches. Glass, Windows-nModules and Prototype-X keep grow-only: their tray
+  sits next to the taskbar inside the bar, and shrinking would leave a gap. Checked with
+  three `NotifyIcon`s from a test process: 212 px, 254 px with them, 212 px after.
+- **A taskbar on every monitor (TaskBar, `ModuleEntry.cpp`):** `<Taskbar>EveryMonitor true`
+  (every theme sets it) with more than one monitor keeps the taskbar on the primary
+  monitor's windows (`Monitor 0` unless the theme names one) and creates a copy
+  `<Taskbar>Screen<n>` per other monitor (MonitorInfo numbering, 0 = primary), which lists
+  only that monitor's windows: the old `Monitor` filter, with `LM_MONITORCHANGED` moving a
+  button when its window changes monitor. Before creating a copy the module writes, with
+  `LSSetVariable`, `<copy>Group <Taskbar>` (it inherits every key, Button and Thumbnail
+  children included), `<copy>Monitor <n>` and `<copy>X/Y/Width/Height` in pixels: top-level
+  windows measure percentages against the primary monitor, so the copy's geometry is worked
+  out against its own monitor here (`<Taskbar>ScreenX/ScreenY/ScreenWidth/ScreenHeight`
+  override it; Glass, Windows-nModules and Prototype-X use the full width, since their
+  primary bar leaves room for a start button and a tray). Explorer's secondary taskbars are
+  hidden by nCore, so the other monitors had no taskbar before. With
+  `<Taskbar>ReserveScreen` (default true) a 1 s timer keeps each copy's edge out of its
+  monitor's work area (`SPI_SETWORKAREA` without broadcast, as Core does for the primary;
+  restored with a broadcast on unload). `NCORE_DISPLAYCHANGE` with a different monitor
+  layout rebuilds every taskbar. Window positions are now rounded with `floorf`: `int(x+0.5f)`
+  truncated toward zero, so a bar on a monitor left of the primary started 1 px late.
+  Verified on three monitors: a window moved from the left monitor to the primary left the
+  left copy's bar and appeared on the primary one; the secondary work areas shrank by 26 px.
+- **Minimized windows as thumbnails (TaskBar, `MinimizedShelf.cpp`):** with
+  `MinimizedShelfEnabled true` (every theme sets it, in `minimized.rc`) each minimized task
+  window gets a small `OnDesktop` window (prefix `MinimizedShelf`) right above its own task
+  button (below it for a taskbar in the top half of the monitor), showing a DWM thumbnail of
+  its content: DWM keeps a minimized window's last frame. As wide as the button within
+  `MaxThumbWidth`, at most `ThumbHeight` high, `Gap` from the button, `Padding` around the
+  content. A first version put them all in one row above the taskbar; the user wanted each over
+  its task. The thumbnails follow their buttons (a 120 ms timer while any exist, since the
+  taskbar slides its buttons); `WindowManager::GetButtonRect` gives the button.
+  Minimize/restore come from `EVENT_SYSTEM_MINIMIZESTART/END` (out of context); windows
+  minimized earlier are picked up after `AddExisting` and in the maintenance pass; windows
+  parked by nVWM are skipped. `GetMinRect` answers with the thumbnail's rectangle, so the
+  minimize animation flies into it. A click restores the window (`ShowWindowAsync(SW_RESTORE)`
+  + `ForceForeground`). Verified on screen: Explorer and WhatsApp, minimized, each showed its
+  content over its own button. Windows' window animations were off on this machine; the user
+  had them turned on (Performance options) on 2026-11-27.
+  **Animated:** a thumbnail grows out of its button when its window is minimized and shrinks
+  back into it when the window returns. The window's `ShowAnimation*`/`HideAnimation*`
+  (themes: 220/180 ms, offset 10 toward the button, -10 in Prototype-X whose taskbar is at
+  the top) fade and slide the background; `Thumb::ApplyThumbnail` scales the DWM content
+  (55 % to 100 %, pinned to the button's side) and its opacity on the same curves, driven by
+  `Window::RequestFrames`. A restored window's thumbnail moves to `mClosing` and is deleted
+  by the 120 ms timer once `IsGone()`. The exit starts about 180 ms after the restore:
+  `EVENT_SYSTEM_MINIMIZEEND` arrives when Windows' own restore animation ends.
+  **Desktop layers:** the icon group covers the whole desktop and is OnDesktop too, and each
+  OnDesktop window used to restack itself right above the desktop, so the icons and the
+  thumbnails took turns at the bottom and every other click on a thumbnail landed on the icons
+  (found with a read-only `WH_MOUSE_LL` monitor logging the window under each press and
+  LiteStep's capture). `<Prefix>DesktopLayer <n>` (default 0, read in `Window::Initialize`,
+  kept as the window property `LSDesktopLayer` = n+1) keeps an OnDesktop window above every
+  OnDesktop window of a lower layer; the themes set `MinimizedShelfDesktopLayer 1`.
+  `DesktopInsertAfter` climbs from the background over shadows, hidden windows, the window
+  itself and lower layers. Check without the mouse: minimize a window of your own process and
+  compare the z-order positions of `MinimizedShelf` and `MIcons` while restacking each.
+  **Lost mouse capture:** a press on the icon group starts a rectangle selection that holds
+  the capture, and the right press that opens the menu is one. A capture that ended without
+  its release (taken by another window, a drag) left `Window::mCaptureHandler` set and the
+  selection open, so the next click (the first one on the menu or a thumbnail) went to the
+  icons. Now `Window` clears the handler on `WM_CAPTURECHANGED`, `TileGroup` cancels the
+  selection on it (and a press during a stale selection starts a new one), and `Popup::Show`
+  releases a capture held by any non-popup window. Checked without the mouse
+  (`WM_RBUTTONDOWN` posted to MIcons, then `!PopupContext`, read `GetGUIThreadInfo`).
+- Build with `/nr:false` when waiting for MSBuild to finish: `/m` leaves worker nodes
+  (`MSBuild.exe`) running for reuse, so "wait until MSBuild exits" never ends. Never pipe
+  MSBuild's output through a command that can be moved to the background: when nobody reads
+  the pipe any more, the `cl.exe` processes block writing to it and hang with no CPU. Write to
+  a log (`/flp:LogFile=...`) and start it with `Start-Process -PassThru` + `WaitForExit(ms)`.
+  For a fix in a few modules, build only their `.vcxproj` (ModuleKit first,
+  `/p:SolutionDir=<repo>\ /p:BuildProjectReferences=false`): seconds instead of minutes. A
+  change in a ModuleKit header recompiles every module; a change in a `.cpp` only relinks.
 - **Taskbar animation:** `<Taskbar>AnimationDuration` (ms) slides task buttons to their new
   place when tasks are added/removed (`TaskButton::SetTarget/StepAnimation`, timer in
   `Taskbar`). The thumbnail's own `ThumbnailAnimate` and the popup `ShowAnimation*` settings
@@ -637,8 +809,8 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   errors, so Display, Bluetooth and Windows Update have no working entry.
   `litestep.exe !Bang` from a command line does not reach the running instance here
   (its `FindWindow` for the main window fails), so it cannot be used to test bangs.
-  Gotchas: litestep shows a blocking Yes/No/Cancel prompt at startup if an explorer
-  `Shell_TrayWnd` exists; `explorer.exe ms-settings:` launchers linger as stuck processes.
+  Gotcha: `explorer.exe ms-settings:` launchers linger as stuck processes. (Shell mode
+  and its start-up prompt were removed on 2026-11-26, §3.)
 - **Do not synthesize mouse input while the user is at the machine** (they are usually
   using it): a test right-click landed on their browser. Verify with `WindowFromPoint` that
   the target belongs to litestep, and prefer screenshots of what the user already has open.

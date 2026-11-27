@@ -2,8 +2,11 @@
 ;  BARRA INFERIOR  -  TAREAS (abajo, full width) + BANDEJA (abajo derecha)
 ; ==============================================================================
 *nTaskbar MTasks
-; Sin MTasksMonitor la barra lista las ventanas de TODOS los monitores.
-; Para limitarla a uno: MTasksMonitor primary
+; Con varias pantallas, una copia de la barra en cada una con las ventanas de esa pantalla;
+; esta se queda con las de la principal. Cada copia reserva su borde de la pantalla
+; (MTasksReserveScreen false para no hacerlo). MTasksEveryMonitor false: una sola barra,
+; con las ventanas de todas las pantallas (o de una, con MTasksMonitor primary).
+MTasksEveryMonitor true
 MTasksX 0
 MTasksY 100%-26
 MTasksWidth 100%
@@ -73,7 +76,13 @@ MTrayBrushType Image
 ; Caja oscura (mismo degradado que el reloj): los iconos de bandeja actuales son blancos.
 ; El original claro sigue en systray.png.
 MTrayImage "$MMImg$systraydark.png"
-MTrayImageScalingMode Stretch
+; Solo se estira el centro de la caja oscura: la diagonal de la izquierda (52 px) y el borde
+; de la derecha (10 px) conservan su forma cuando la bandeja cambia de ancho.
+MTrayImageScalingMode Edges
+MTrayImageEdgesLeft 52
+MTrayImageEdgesRight 10
+MTrayImageEdgesTop 0
+MTrayImageEdgesBottom 0
 MTrayPaddingLeft 50
 MTrayPaddingTop 4
 MTrayPaddingRight 10
@@ -81,7 +90,10 @@ MTrayPaddingBottom 9
 MTrayStart TopRight
 MTrayPrimaryDirection Horizontal
 MTrayColumnSpacing 2
+; Crece hacia la izquierda con cada icono y se encoge cuando se van (el borde derecho queda
+; fijo). MTrayMinWidth: lo menos que mide (50 + 10 de margen + un icono).
 MTrayOverflowAction SizeLeft
+MTrayMinWidth 72
 MTrayIconSize 12
 MTrayOn RightClickUp None !PopupTray
 

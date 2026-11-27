@@ -241,7 +241,10 @@ void State::Settings::Load(const ::Settings * settings, const Settings * default
     std::vector<ShadowLayer> initialShadowLayers = defaultShadowLayersPtr ? *defaultShadowLayersPtr : std::vector<ShadowLayer>();
 
     WCHAR presetBuffer[MAX_LINE_LENGTH];
-    if (settings->GetLine(L"ShadowPreset", presetBuffer, _countof(presetBuffer), nullptr) && presetBuffer[0] != L'\0') {
+    // GetLine returns false for a value that comes from a style (<Prefix>Group), although it
+    // fills the buffer: look at the buffer.
+    settings->GetLine(L"ShadowPreset", presetBuffer, _countof(presetBuffer), L"");
+    if (presetBuffer[0] != L'\0') {
         WCHAR tokenBuffers[16][MAX_RCCOMMAND];
         LPTSTR tokenPtrs[16];
         for (int i = 0; i < 16; ++i) {
@@ -311,7 +314,8 @@ void State::Settings::Load(const ::Settings * settings, const Settings * default
 
         StringCchPrintf(key, _countof(key), L"Shadow%dEnabled", index + 1);
         WCHAR enabledBuffer[MAX_LINE_LENGTH];
-        if (settings->GetLine(key, enabledBuffer, _countof(enabledBuffer), nullptr) && enabledBuffer[0] != L'\0') {
+        settings->GetLine(key, enabledBuffer, _countof(enabledBuffer), L"");
+        if (enabledBuffer[0] != L'\0') {
             layer.enabled = LiteStep::ParseBool(enabledBuffer);
         } else {
             layer.enabled = layer.enabled || layer.opacity > 0.0f;
@@ -360,7 +364,16 @@ void State::Settings::Load(const ::Settings * settings, const Settings * default
     this->textRotation = settings->GetFloat(L"TextRotation", defaults->textRotation);
 
     this->fontStrokeWidth = settings->GetFloat(L"FontStrokeWidth", defaults->fontStrokeWidth);
-    
+
+    {
+        std::unique_ptr<IColorVal> defaultColor(Color::Create(Color::D2DToARGB(defaults->textShadow.color)));
+        std::unique_ptr<IColorVal> color(settings->GetColor(L"TextShadowColor", defaultColor.get()));
+        this->textShadow.color = color ? Color::ARGBToD2D(color->Evaluate()) : defaults->textShadow.color;
+        this->textShadow.offsetX = settings->GetFloat(L"TextShadowOffsetX", defaults->textShadow.offsetX);
+        this->textShadow.offsetY = settings->GetFloat(L"TextShadowOffsetY", defaults->textShadow.offsetY);
+        this->textShadow.blur = settings->GetFloat(L"TextShadowBlur", defaults->textShadow.blur);
+    }
+
     settings->GetString(L"TextTrimmingGranularity", buffer, _countof(buffer), trimmingGranularityMap.GetByA(defaults->textTrimmingGranularity, L"Character"));
     this->textTrimmingGranularity = ParseTrimmingGranularity(buffer);
     

@@ -1,0 +1,44 @@
+; ==============================================================================
+;  SOMBRAS
+;  <Prefijo>ShadowPreset none|subtle|classic|win11|macos|material|panel|dock|tray
+;  y, capa por capa, <Prefijo>Shadow<N>OffsetX/OffsetY/Blur/Spread/Opacity/Color
+;  (px; cambian la capa N del preset). Las ventanas de primer nivel la proyectan
+;  fuera de su rectangulo (ShadowWindow); con fondo de imagen sigue el dibujo (sus
+;  esquinas cortadas y bordes en diagonal), no el rectangulo (ShapeMask).
+; ==============================================================================
+
+; Menus (todos los popups usan el estilo MMMenu).
+MMMenuShadowPreset win11
+
+; Notificaciones.
+NotifyBoxShadowPreset win11
+
+; Paneles superiores: la sombra cae hacia el escritorio.
+MBarLeftShadowPreset subtle
+MBarLeftShadow1OffsetY 6
+MBarLeftShadow1Blur 24
+MBarLeftShadow1Opacity 0.55
+MBarRightShadowPreset subtle
+MBarRightShadow1OffsetY 6
+MBarRightShadow1Blur 24
+MBarRightShadow1Opacity 0.55
+
+; Bandeja y barra de tareas: la sombra sube hacia el escritorio.
+MTrayShadowPreset subtle
+MTrayShadow1OffsetY -6
+MTrayShadow1Blur 24
+MTrayShadow1Opacity 0.55
+MTasksShadowPreset subtle
+MTasksShadow1OffsetY -6
+MTasksShadow1Blur 24
+MTasksShadow1Opacity 0.55
+
+; Iconos del escritorio: sombra bajo el dibujo y bajo el nombre (ademas del contorno).
+MIconsIconImageShadowColor #F0000000
+MIconsIconImageShadowOffsetX 3
+MIconsIconImageShadowOffsetY 6
+MIconsIconImageShadowBlur 18
+MIconsIconTextShadowColor #E0000000
+MIconsIconTextShadowOffsetX 2
+MIconsIconTextShadowOffsetY 2
+MIconsIconTextShadowBlur 7

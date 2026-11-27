@@ -7,6 +7,7 @@
 #pragma once
 
 #include "IPainter.hpp"
+#include "DropShadow.hpp"
 
 class Overlay : IPainter {
 public:
@@ -22,6 +23,10 @@ public:
   void UpdatePosition(D2D1_RECT_F parentPosition);
 
   void SetSource(IWICBitmapSource *source);
+  // A drop shadow that follows the picture's transparency (DropShadow.hpp). The window paints
+  // it before its text (PaintShadow), so a caption stays above the shadow of its picture.
+  void SetShadow(const DropShadow::Params &shadow);
+  void PaintShadow(ID2D1RenderTarget *renderTarget);
   ID2D1BitmapBrush *GetBrush();
   int GetZOrder();
 
@@ -30,6 +35,7 @@ private:
   D2D1_RECT_F drawingPosition;
   ID2D1BitmapBrush *brush;
   IWICBitmapSource *source; // We need to keep the source image in order to be able to recreate the overlay.
+  DropShadow::Params mShadow;
   ID2D1RenderTarget *renderTarget;
   int zOrder;
 };

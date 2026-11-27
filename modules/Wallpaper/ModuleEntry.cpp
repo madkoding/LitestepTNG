@@ -8,11 +8,15 @@
 //                                       choice in Windows is left alone (and restored)
 //        ThemeWallpaperStyle <style>     Center|Tile|Stretch|Fit|Fill|Span
 // Bangs: !SetWallpaper "<file>" [style]   !SetWallpaperStyle <style>
+//
+// Without Explorer (LiteStep as the session's shell) it also paints the desktop's
+// background; see DesktopBackground.cpp.
 //-------------------------------------------------------------------------------------------------
 #include "../ModuleKit/LiteStep.h"
 #include "../ModuleKit/LSModule.hpp"
 
 #include "Bangs.h"
+#include "DesktopBackground.h"
 #include "ThemeWallpaper.h"
 #include "Version.h"
 
@@ -37,6 +41,7 @@ EXPORT_CDECL(int) initModuleW(HWND parent, HINSTANCE instance, LPCWSTR /* path *
   }
   Bangs::_Register();
   ThemeWallpaper::Apply();
+  DesktopBackground::Create();
 
   return 0;
 }
@@ -46,6 +51,7 @@ EXPORT_CDECL(int) initModuleW(HWND parent, HINSTANCE instance, LPCWSTR /* path *
 /// Called by the LiteStep core when this module is about to be unloaded.
 /// </summary>
 void quitModule(HINSTANCE /* instance */) {
+  DesktopBackground::Destroy();
   Bangs::_Unregister();
   gLSModule.DeInitalize();
 }

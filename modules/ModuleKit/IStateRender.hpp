@@ -23,4 +23,6 @@ public:
     virtual HRESULT ReCreateDeviceResources(ID2D1RenderTarget* renderTarget) = 0;
     virtual bool UpdateDWMColor(ARGB newColor, ID2D1RenderTarget* renderTarget) = 0;
     virtual void UpdateText(IStateWindowData *windowData) = 0;
+    // The shape and shadow layers of the window's current state (ShadowWindow.hpp).
+    virtual void GetShadowShape(IStateWindowData *windowData, struct ShadowShape &shape) = 0;
 };

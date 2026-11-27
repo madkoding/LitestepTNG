@@ -118,6 +118,24 @@ void Overlay::Paint(ID2D1RenderTarget* renderTarget) {
 }
 
 
+void Overlay::PaintShadow(ID2D1RenderTarget* renderTarget) {
+  if (this->brush != NULL && mShadow.Enabled()) {
+    ID2D1Bitmap *bitmap = nullptr;
+    this->brush->GetBitmap(&bitmap);
+    // A faded overlay (a dragged icon's ghost) casts a fainter shadow.
+    DropShadow::Params shadow = mShadow;
+    shadow.color.a *= this->brush->GetOpacity();
+    DropShadow::PaintBitmapShadow(renderTarget, bitmap, this->drawingPosition, shadow);
+    SAFERELEASE(bitmap);
+  }
+}
+
+
+void Overlay::SetShadow(const DropShadow::Params &shadow) {
+  mShadow = shadow;
+}
+
+
 void Overlay::SetSource(IWICBitmapSource* source) {
   SAFERELEASE(this->brush);
   SAFERELEASE(this->source);

@@ -1,0 +1,94 @@
+; ==============================================================================
+;  Glass - notifications (Notify.dll)
+;  Windows' notifications as boxes stacked down the right edge of the work area, in
+;  the style of the theme's menus: app name on top, title and text, the time it
+;  arrived at the bottom, and an X (the Segoe Fluent Icons close glyph).
+;  Try it without a real notification:  !NotifyTest "APP" "TITLE" "TEXT"
+;  Close the test boxes:                !NotifyClear test
+; ==============================================================================
+NotifyMarginTop 8
+NotifyMarginRight 8
+NotifyMarginBottom 8
+NotifySpacing 8
+NotifyTimeFormat "%d/%m/%Y  %H:%M"
+; true: on load, also show what is already in Windows' notification centre.
+NotifyShowExisting false
+; true: the X also removes the notification from Windows' notification centre.
+NotifyDismissFromSystem true
+; Clicking a box goes to the program that sent it (and, with true, closes the box).
+NotifyClickDismisses true
+; When the column is full: DropOldest takes the oldest off the desktop (it stays in
+; Windows' notification centre); Wait keeps new ones hidden until there is room.
+NotifyOverflow DropOldest
+
+NotifyBoxWidth 320
+NotifyBoxHeight 108
+; On the desktop, not above the windows.
+NotifyBoxAlwaysOnTop false
+NotifyBoxColor #F22B2B2B
+NotifyBoxCornerRadiusX 8
+NotifyBoxCornerRadiusY 8
+NotifyBoxFontColor #00000000
+NotifyBoxHoverColor #F2333333
+NotifyBoxShowAnimationDuration 320
+NotifyBoxShowAnimationOffset 0
+NotifyBoxShowAnimationOffsetX 60
+NotifyBoxHideAnimationDuration 220
+NotifyBoxHideAnimationOffsetX 60
+
+; Name of the app.
+NotifyBoxTitleX 14
+NotifyBoxTitleY 8
+NotifyBoxTitleWidth 100%-52
+NotifyBoxTitleHeight 16
+NotifyBoxTitleFont $UIFont$
+NotifyBoxTitleFontSize 10
+NotifyBoxTitleFontColor $TextDim$
+NotifyBoxTitleTextAlign Left
+NotifyBoxTitleTextVerticalAlign Middle
+NotifyBoxTitleTextEllipsis true
+
+; The X. CloseArea is its click zone, invisible and larger than the glyph: the whole
+; top right corner closes the box without opening the program.
+NotifyBoxCloseAreaX 100%-44
+NotifyBoxCloseAreaY 0
+NotifyBoxCloseAreaWidth 44
+NotifyBoxCloseAreaHeight 32
+NotifyBoxCloseX 100%-30
+NotifyBoxCloseY 6
+NotifyBoxCloseWidth 20
+NotifyBoxCloseHeight 20
+NotifyBoxCloseFont "Segoe Fluent Icons"
+NotifyBoxCloseFontSize 9
+NotifyBoxCloseFontColor $TextDim$
+NotifyBoxCloseTextAlign Center
+NotifyBoxCloseTextVerticalAlign Middle
+NotifyBoxCloseText ""
+NotifyBoxCloseHoverColor #FF3A3A3A
+NotifyBoxCloseHoverFontColor $TextColor$
+NotifyBoxCloseCornerRadiusX 4
+NotifyBoxCloseCornerRadiusY 4
+
+; Title and text of the notification.
+NotifyBoxTextX 14
+NotifyBoxTextY 28
+NotifyBoxTextWidth 100%-28
+NotifyBoxTextHeight 100%-50
+NotifyBoxTextFont $UIFont$
+NotifyBoxTextFontSize 12
+NotifyBoxTextFontColor $TextColor$
+NotifyBoxTextTextAlign Left
+NotifyBoxTextTextVerticalAlign Top
+NotifyBoxTextWordWrapping Wrap
+NotifyBoxTextTextEllipsis true
+
+; When it arrived.
+NotifyBoxTimeX 14
+NotifyBoxTimeY 100%-22
+NotifyBoxTimeWidth 100%-28
+NotifyBoxTimeHeight 16
+NotifyBoxTimeFont $UIFont$
+NotifyBoxTimeFontSize 9
+NotifyBoxTimeFontColor $TextDim$
+NotifyBoxTimeTextAlign Left
+NotifyBoxTimeTextVerticalAlign Middle

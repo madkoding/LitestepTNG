@@ -12,6 +12,7 @@
 #include "LiteStep.h"
 #include "MessageHandler.hpp"
 #include "Window.hpp"
+#include "ShadowWindow.hpp"
 #include "WindowSettings.hpp"
 
 #include "../CoreCom/Core.h"
@@ -30,6 +31,78 @@
 
 using std::map;
 
+
+// Window property of OnDesktop windows: their DesktopLayer + 1 (0 = not an OnDesktop window).
+static const WCHAR kDesktopLayerProp[] = L"LSDesktopLayer";
+
+static bool IsShadowWindow(HWND window)
+{
+    WCHAR className[32];
+    return GetClassNameW(window, className, _countof(className)) &&
+        wcscmp(className, ShadowWindow::ClassName()) == 0;
+}
+
+/// <summary>
+/// Where an OnDesktop window goes in the stacking order: right above the desktop and above
+/// every OnDesktop window of a lower DesktopLayer. The desktop is nWallpaper's background
+/// window (LSDesktopBackground) when there is one, else the bottom (Explorer's desktop is
+/// under everything). Returns the window to insert after, or nullptr when the window is
+/// already in place. Without layers, two OnDesktop windows took turns at the bottom (each
+/// restack put the window right above the desktop), so the desktop icons, which cover the
+/// whole desktop, hid the minimized thumbnails every other click.
+/// </summary>
+static HWND DesktopInsertAfter(HWND self)
+{
+    const UINT_PTR layer = UINT_PTR(GetPropW(self, kDesktopLayerProp));
+    HWND below = FindWindowW(L"LSDesktopBackground", nullptr);
+    if (below == nullptr)
+    {
+        // Climb from the bottom instead.
+        below = GetWindow(self, GW_HWNDLAST);
+        if (below == nullptr || below == self)
+        {
+            return nullptr;
+        }
+        const UINT_PTR bottomLayer = UINT_PTR(GetPropW(below, kDesktopLayerProp));
+        if (bottomLayer == 0 || bottomLayer >= layer)
+        {
+            // Explorer's desktop, or nothing lower than this window: go under everything.
+            HWND first = GetWindow(below, GW_HWNDPREV);
+            return first == self ? nullptr : HWND_BOTTOM;
+        }
+    }
+    for (;;)
+    {
+        // The next window up, past drop shadows (each sits right below its own window) and
+        // hidden windows (a hidden window without a layer used to stop the climb, so a new
+        // thumbnail went under the desktop icons).
+        // The window itself is passed over too: where it is now must not decide where it goes
+        // (a thumbnail created hidden sat right on the background, and being "already right
+        // above the desktop" kept it under the icons).
+        HWND first = GetWindow(below, GW_HWNDPREV);
+        HWND next = first;
+        while (next != nullptr && (next == self || IsShadowWindow(next) || !IsWindowVisible(next)))
+        {
+            next = GetWindow(next, GW_HWNDPREV);
+        }
+        // Climb over OnDesktop windows of a lower layer (property = layer + 1).
+        const UINT_PTR nextLayer = next != nullptr ? UINT_PTR(GetPropW(next, kDesktopLayerProp)) : 0;
+        if (nextLayer != 0 && nextLayer < layer)
+        {
+            below = next;
+            continue;
+        }
+        // Its place: between `below` and `next`. Already there?
+        for (HWND w = first; w != nullptr && w != next; w = GetWindow(w, GW_HWNDPREV))
+        {
+            if (w == self)
+            {
+                return nullptr;
+            }
+        }
+        return first != nullptr ? first : HWND_TOP;
+    }
+}
 
 /// <summary>
 /// Constructor used to create a DrawableWindow for a pre-existing window. Used by nDesk.
@@ -354,13 +427,16 @@ void Window::StepShowAnimation() {
   float eased = 1.0f - (1.0f - t) * (1.0f - t) * (1.0f - t);
 
   SetLayeredWindowAttributes(this->window, 0, BYTE(255.0f * eased + 0.5f), LWA_ALPHA);
+  mAnimationOpacity = eased;
 
   // Slide relative to mPosition, so a resize/move during the animation is respected.
-  if (mWindowSettings.showAnimationOffset != 0) {
-    float offset = mWindowSettings.showAnimationOffset * (1.0f - eased);
-    SetWindowPos(this->window, nullptr, int(mPosition.x + 0.5f), int(mPosition.y + offset + 0.5f),
+  if (mWindowSettings.showAnimationOffset != 0 || mWindowSettings.showAnimationOffsetX != 0) {
+    float offsetY = mWindowSettings.showAnimationOffset * (1.0f - eased);
+    float offsetX = mWindowSettings.showAnimationOffsetX * (1.0f - eased);
+    SetWindowPos(this->window, nullptr, int(floorf(mPosition.x + offsetX + 0.5f)), int(floorf(mPosition.y + offsetY + 0.5f)),
       0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
   }
+  UpdateShadow();
 
   if (t >= 1.0f) {
     EndShowAnimation();
@@ -373,6 +449,7 @@ void Window::StepShowAnimation() {
 /// </summary>
 void Window::EndShowAnimation() {
   mShowAnimating = false;
+  mAnimationOpacity = 1.0f;
   UpdateFrameSubscription();
 
   if (mShowAnimationAddedLayered) {
@@ -382,9 +459,10 @@ void Window::EndShowAnimation() {
     SetLayeredWindowAttributes(this->window, 0, 255, LWA_ALPHA);
   }
 
-  SetWindowPos(this->window, nullptr, int(mPosition.x + 0.5f), int(mPosition.y + 0.5f), 0, 0,
+  SetWindowPos(this->window, nullptr, int(floorf(mPosition.x + 0.5f)), int(floorf(mPosition.y + 0.5f)), 0, 0,
     SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
   RedrawWindow(this->window, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW);
+  UpdateShadow();
 }
 
 
@@ -741,6 +819,14 @@ LRESULT WINAPI Window::HandleMessage(HWND window, UINT msg, WPARAM wParam, LPARA
         }
     }
 
+    // The capture went to another window (or was released): stop routing the mouse to the
+    // handler that asked for it. Without this a lost capture (a drag, another window taking
+    // it) left every later click going to that handler. The message still reaches msgHandler.
+    if (msg == WM_CAPTURECHANGED && !mIsChild && HWND(lParam) != window)
+    {
+        mCaptureHandler = nullptr;
+    }
+
     // Handle DrawableWindow messages.
     switch (msg)
     {
@@ -793,6 +879,8 @@ LRESULT WINAPI Window::HandleMessage(HWND window, UINT msg, WPARAM wParam, LPARA
                         ValidateRect(this->window, nullptr);
                     }
                 }
+
+                UpdateShadow();
 
                 // Paint actual owned/child windows.
                 //EnumChildWindows(this->window, [] (HWND hwnd, LPARAM) -> BOOL
@@ -854,12 +942,18 @@ LRESULT WINAPI Window::HandleMessage(HWND window, UINT msg, WPARAM wParam, LPARA
             }
             else if (mWindowSettings.onDesktop)
             {
-                // Whatever asks for it, the window stays at the bottom: the shell keeps
-                // its own desktop window under everything, so the bottom of the
-                // stacking order is right above the desktop.
+                // Whatever asks for it, the window stays right above the desktop.
                 LPWINDOWPOS windowPos = LPWINDOWPOS(lParam);
-                windowPos->hwndInsertAfter = HWND_BOTTOM;
-                windowPos->flags &= ~SWP_NOZORDER;
+                HWND insertAfter = DesktopInsertAfter(window);
+                if (insertAfter == nullptr)
+                {
+                    windowPos->flags |= SWP_NOZORDER;
+                }
+                else
+                {
+                    windowPos->hwndInsertAfter = insertAfter;
+                    windowPos->flags &= ~SWP_NOZORDER;
+                }
             }
         }
         return 0;
@@ -869,6 +963,12 @@ LRESULT WINAPI Window::HandleMessage(HWND window, UINT msg, WPARAM wParam, LPARA
             //PostMessage(window, WM_PAINT, 0, 0);
         }
         return 0;
+    }
+
+    // Moved, resized, shown, hidden or restacked: the shadow follows.
+    if (msg == WM_WINDOWPOSCHANGED)
+    {
+        UpdateShadow();
     }
 
     if (msg == FrameClock::Message())
@@ -912,6 +1012,29 @@ LRESULT WINAPI Window::HandleMessage(HWND window, UINT msg, WPARAM wParam, LPARA
 }
 
 
+
+/// <summary>
+/// Shows the drop shadow of a top-level window under it (see ShadowWindow.hpp).
+/// </summary>
+void Window::UpdateShadow()
+{
+    if (mIsChild || !this->initialized || this->window == nullptr || mStateRender == nullptr || mWindowData == nullptr)
+    {
+        return;
+    }
+    ShadowShape shape;
+    mStateRender->GetShadowShape(mWindowData, shape);
+    if (shape.layers.empty() && !mShadow)
+    {
+        return;
+    }
+    if (!mShadow)
+    {
+        mShadow.reset(new ShadowWindow());
+    }
+    mShadow->Update(this->window, shape, this->visible, mAnimationOpacity);
+}
+
 /// <summary>
 /// Hides the window.
 /// </summary>
@@ -931,6 +1054,97 @@ void Window::Hide()
     {
         RECT r = { (LONG)drawingArea.left, (LONG)drawingArea.top, (LONG)drawingArea.right, (LONG)drawingArea.bottom };
         mParent->Repaint(&r);
+    }
+}
+
+
+/// <summary>
+/// Hides the window with its exit animation, then calls done.
+/// </summary>
+void Window::HideAnimated(std::function<void()> done)
+{
+    if (mIsChild || mWindowSettings.hideAnimationDuration <= 0 || !IsWindowVisible(this->window))
+    {
+        Hide();
+        if (done)
+        {
+            done();
+        }
+        return;
+    }
+    if (mHideAnimating)
+    {
+        // Already leaving: the newest caller is told when it is gone.
+        mHideDone = done;
+        return;
+    }
+    if (mShowAnimating)
+    {
+        EndShowAnimation();
+    }
+
+    LONG_PTR exStyle = GetWindowLongPtr(this->window, GWL_EXSTYLE);
+    mHideAnimationAddedLayered = (exStyle & WS_EX_LAYERED) == 0;
+    if (mHideAnimationAddedLayered)
+    {
+        SetWindowLongPtr(this->window, GWL_EXSTYLE, exStyle | WS_EX_LAYERED);
+    }
+    SetLayeredWindowAttributes(this->window, 0, 255, LWA_ALPHA);
+
+    mHideDone = done;
+    mHideAnimating = true;
+    mShowAnimationClock.Clock();
+    UpdateFrameSubscription();
+}
+
+
+/// <summary>
+/// One frame of the exit animation: an ease-in curve, so the window starts slowly and
+/// leaves fast, fading out while it slides by HideAnimationOffset[X].
+/// </summary>
+void Window::StepHideAnimation()
+{
+    float t = Clamp(0.0f, mShowAnimationClock.GetTime() * 1000.0f / mWindowSettings.hideAnimationDuration, 1.0f);
+    float eased = t * t * t;
+
+    mAnimationOpacity = 1.0f - eased;
+    SetLayeredWindowAttributes(this->window, 0, BYTE(255.0f * mAnimationOpacity + 0.5f), LWA_ALPHA);
+    if (mWindowSettings.hideAnimationOffset != 0 || mWindowSettings.hideAnimationOffsetX != 0)
+    {
+        SetWindowPos(this->window, nullptr,
+            int(floorf(mPosition.x + mWindowSettings.hideAnimationOffsetX * eased + 0.5f)),
+            int(floorf(mPosition.y + mWindowSettings.hideAnimationOffset * eased + 0.5f)),
+            0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+    }
+    UpdateShadow();
+
+    if (t < 1.0f)
+    {
+        return;
+    }
+
+    mHideAnimating = false;
+    UpdateFrameSubscription();
+    Hide();
+    // Back to normal for the next time it is shown.
+    if (mHideAnimationAddedLayered)
+    {
+        SetWindowLongPtr(this->window, GWL_EXSTYLE, GetWindowLongPtr(this->window, GWL_EXSTYLE) & ~WS_EX_LAYERED);
+        mHideAnimationAddedLayered = false;
+    }
+    else
+    {
+        SetLayeredWindowAttributes(this->window, 0, 255, LWA_ALPHA);
+    }
+    mAnimationOpacity = 1.0f;
+    SetWindowPos(this->window, nullptr, int(floorf(mPosition.x + 0.5f)), int(floorf(mPosition.y + 0.5f)), 0, 0,
+        SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+
+    std::function<void()> done;
+    done.swap(mHideDone);
+    if (done)
+    {
+        done();
     }
 }
 
@@ -969,7 +1183,15 @@ void Window::Initialize(WindowSettings &windowSettings, IStateRender *stateRende
     // OnDesktop
     if (!mIsChild && mWindowSettings.onDesktop)
     {
-        SetWindowPos(this->window, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+        // <Prefix>DesktopLayer (default 0): an OnDesktop window stays above every OnDesktop
+        // window of a lower layer (the desktop icons are 0).
+        const int desktopLayer = (std::max)(0, mSettings->GetInt(L"DesktopLayer", 0));
+        SetPropW(this->window, kDesktopLayerProp, HANDLE(UINT_PTR(desktopLayer) + 1));
+        HWND insertAfter = DesktopInsertAfter(this->window);
+        if (insertAfter != nullptr)
+        {
+            SetWindowPos(this->window, insertAfter, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+        }
     }
 
     // Set the text.
@@ -1042,6 +1264,12 @@ void Window::Paint(bool &inAnimation, D2D1_RECT_F *updateRect)
         for (IPainter *painter : this->prePainters)
         {
             painter->Paint(mRenderTarget);
+        }
+
+        // The overlays' shadows go under the text; the overlays themselves above it.
+        for (Overlay *overlay : this->overlays)
+        {
+            overlay->PaintShadow(mRenderTarget);
         }
 
         // Paint the active state's text.
@@ -1494,7 +1722,7 @@ void Window::UpdateFrameSubscription()
     {
         return;
     }
-    bool wanted = mShowAnimating || mAnimating || mChildAnimating || !mFrameHandlers.empty();
+    bool wanted = mShowAnimating || mHideAnimating || mAnimating || mChildAnimating || !mFrameHandlers.empty();
     if (wanted != mFrameSubscribed)
     {
         mFrameSubscribed = wanted;
@@ -1518,6 +1746,10 @@ void Window::OnFrame()
     if (mShowAnimating)
     {
         StepShowAnimation();
+    }
+    if (mHideAnimating)
+    {
+        StepHideAnimation();
     }
     if (mAnimating)
     {
@@ -1764,7 +1996,7 @@ void Window::SetPosition(Distance x, Distance y, Distance width, Distance height
 
   // Position the window and/or set the backarea.
   if (!mIsChild) {
-    SetWindowPos(this->window, 0, int(mPosition.x + 0.5f), int(mPosition.y + 0.5f), int(mSize.width + 0.5f), int(mSize.height + 0.5f), SWP_NOZORDER | SWP_NOACTIVATE);
+    SetWindowPos(this->window, 0, int(floorf(mPosition.x + 0.5f)), int(floorf(mPosition.y + 0.5f)), int(mSize.width + 0.5f), int(mSize.height + 0.5f), SWP_NOZORDER | SWP_NOACTIVATE);
     this->drawingArea = D2D1::RectF(0, 0, mSize.width, mSize.height);
     if (mRenderTarget) {
       VERIFY_HR(mRenderTarget->Resize(D2D1::SizeU(UINT32(mSize.width + 0.5f), UINT32(mSize.height + 0.5f))));
@@ -1831,7 +2063,11 @@ void Window::Show(int nCmdShow)
         }
         else if (mWindowSettings.onDesktop)
         {
-            SetWindowPos(this->window, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+            HWND insertAfter = DesktopInsertAfter(this->window);
+            if (insertAfter != nullptr)
+            {
+                SetWindowPos(this->window, insertAfter, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+            }
         }
     }
     this->visible = true;

@@ -21,6 +21,9 @@ public:
   // shows its background around the icon and not only below it. Default: 0
   int mIconOffsetTop;
   float mGhostOpacity;
+  // Shadow of the icon's picture: <Prefix>IconImageShadowColor (default transparent = none),
+  // <Prefix>IconImageShadowOffsetX / Y (default 1 / 2), <Prefix>IconImageShadowBlur (px, default 4).
+  DropShadow::Params mShadow;
 
 public:
   void Load(Settings *settings);

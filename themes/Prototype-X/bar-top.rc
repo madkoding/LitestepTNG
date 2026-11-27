@@ -32,6 +32,12 @@ PXTasksY 0
 PXTasksWidth 100%-474
 PXTasksHeight 26
 PXTasksAlwaysOnTop true
+; Con varias pantallas, una copia de la barra en cada una con las ventanas de esa pantalla
+; (esta se queda con las de la principal). Las copias no tienen inicio ni bandeja: ocupan
+; todo el ancho, y reservan su borde de la pantalla (PXTasksReserveScreen false para no).
+PXTasksEveryMonitor true
+PXTasksScreenX 0
+PXTasksScreenWidth 100%
 PXTasksBrushType Image
 PXTasksImage "$PXImg$bar_mid.png"
 PXTasksImageScalingMode Tile

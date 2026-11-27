@@ -8,6 +8,12 @@ TaskbarMainY 100%-54
 TaskbarMainWidth 100%-320
 TaskbarMainHeight 54
 TaskbarMainAlwaysOnTop true
+; Con varias pantallas, una copia de la barra en cada una con las ventanas de esa pantalla
+; (esta se queda con las de la principal). Las copias no tienen inicio ni bandeja: ocupan
+; todo el ancho, y reservan su borde de la pantalla (TaskbarMainReserveScreen false para no).
+TaskbarMainEveryMonitor true
+TaskbarMainScreenX 0
+TaskbarMainScreenWidth 100%
 TaskbarMainBlurBehind true
 TaskbarMainColor #DD101820
 TaskbarMainFont "Segoe UI"
@@ -46,11 +52,11 @@ ClockLabelHeight 54
 ClockLabelAlwaysOnTop true
 ClockLabelColor #00101820
 ClockLabelFont "Segoe UI Semibold"
-ClockLabelFontSize 20
+ClockLabelFontSize 14
 ClockLabelFontColor #FFFFFFFF
 ClockLabelTextVerticalAlign Middle
 ClockLabelTextAlign Center
-ClockLabelText [Time('%a %b %d %H:%M')]
+ClockLabelText "[Time('%a %b %d %H:%M')]"
 ClockLabelOn LeftDoubleClick None !Execute [$WINDIR$\System32\control.exe timedate.cpl]
 
 *nLabel StartButton

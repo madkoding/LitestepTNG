@@ -26,7 +26,7 @@ Download the latest release from the [releases page](../../releases/latest):
   user (no administrator rights), into `%LOCALAPPDATA%\Programs\LiteStepTNG`, and can
   start LiteStep when you sign in. It does not change the Windows shell.
 - **`LiteStepTNG-<version>-x64.zip`** — the same files, to unpack anywhere you can write
-  to. Start it with `litestep.exe -overlay`.
+  to. Start it with `litestep.exe`.
 
 Requirements: Windows 10 version 2004 or newer, or Windows 11, 64-bit.
 
@@ -39,20 +39,37 @@ is started again.
 
 ## What is in it
 
-- **Themes:** LiteStep Enhanced (default), Glass and Prototype-X. Change the theme from
-  the menu, or by editing `ThemeName` in `theme-select.rc`.
+- **Themes:** LiteStep Enhanced (default), Glass, Prototype-X and Windows-nModules. Change
+  the theme from the menu, or by editing `ThemeName` in `theme-select.rc`.
+- **Languages:** English, Spanish, Portuguese, French, German, Italian, Chinese and
+  Japanese, chosen from the Windows display language (`Language` in `personal.rc` forces
+  one).
 - **Bars and labels** (`nLabel`, `Clock`): clock, date, live text such as `[CPU]`,
   `[GPU]`, `[Memory]`, `[VRAM]` and `[NowPlaying]`, sliders for volume and track position.
 - **Task list and tray** (`nTaskbar`, `nTray`). Explorer's own taskbar is hidden while
   LiteStep runs (`HideExplorerTaskbar false` in a theme keeps it).
+  - **One taskbar per monitor:** with several monitors, each one gets its own copy of the
+    taskbar, listing the windows on that monitor, and maximized windows stop at it
+    (`<Taskbar>EveryMonitor`).
+  - **Minimized windows as thumbnails:** a minimized window shows a live picture of its
+    content over its own task button. The picture grows out of the button when the window
+    is minimized and shrinks back into it when the window returns; click it to restore the
+    window (`MinimizedShelfEnabled`).
+  - **The tray grows with its icons.** In LiteStep Enhanced it also shrinks when one goes;
+    the other themes keep a minimum size, since their tray sits in the bar next to the
+    taskbar (`<Tray>MinWidth`).
+- **Shadows and animations:** menus, notifications, bars and desktop icons cast soft
+  shadows that follow their shape, cut corners included, and fade in and out with their
+  windows' animations (`<Prefix>ShadowPreset`, `TextShadowColor`). Notifications slide in
+  and out, and task buttons slide into place.
 - **Popup menus** (`nPopup`, `StartMenu`): programs, folders, favourites, recent
   documents, themes.
 - **Media control:** buttons that drive the player you choose (the rotation is configured
   in the theme) through the Windows media session.
 - **Virtual desktops** (`VWM`): four desktops with a transition; right-click a desktop
   button, or press Win+Shift+1..4, to send the active window there.
-- **Notifications** (`Notify`): Windows toasts shown as theme boxes; click one to go to
-  its program, or close it with the X.
+- **Notifications** (`Notify`): Windows toasts shown as theme boxes, in every theme; click
+  one to go to its program, or close it with the X.
 - **Desktop icons** (`Icon`): the Desktop folder drawn in the theme's style, with
   thumbnails and drag and drop.
 - **Window frames** (`Frames`, experimental): a themed frame around other programs'
@@ -84,7 +101,7 @@ flowchart TB
     end
 
     subgraph core["LiteStep core"]
-        exe["litestep.exe -overlay<br/>module loader, bangs, tray service"]
+        exe["litestep.exe<br/>module loader, bangs, tray service"]
         lsapi["lsapi.dll<br/>settings, bangs, messages"]
         exe --- lsapi
     end
@@ -142,8 +159,14 @@ folder"), not from the repository; the scripts in `tools\` take care of that:
 .\tools\package.ps1 -Version 1.2.3                # zip + installer (Inno Setup 6) in dist\
 ```
 
-Always start LiteStep with `-overlay`. Without it, LiteStep sees Explorer's taskbar and
-asks what to do.
+By default LiteStep runs on top of Explorer, which stays the Windows shell. (`-overlay`, the
+switch older versions needed, is still accepted and does nothing.)
+
+On Windows 11 LiteStep can also be the shell itself, with Explorer not running:
+`.\tools\set-shell.ps1 LiteStep` (from the next sign-in; `.\tools\set-shell.ps1 Explorer`
+undoes it). It then starts Windows' own `ShellAppRuntime.exe`, which is what lets Store apps
+and Settings show and which runs the programs that start with Windows, and paints the desktop
+background itself. Quitting LiteStep gives the session back to Explorer. This mode is new.
 
 Every push is built and packaged by GitHub Actions (`.github\workflows\build.yml`);
 pushing a tag `v<version>` publishes a release.
@@ -167,8 +190,8 @@ step.rc       the loader: theme-select.rc, the optional personal.rc, then the th
 
 - Themes are `theme.rc` files for the nModules suite. Use `$LiteStepDir$`, `$ThemeName$`
   and `$USERNAME$` instead of literal paths.
-- Do not load `Desk.dll` on top of Explorer: it takes over Explorer's desktop view. It is
-  not included in the releases.
+- The desktop (wallpaper, icons) is Explorer's. A module must never re-parent Explorer's
+  desktop view: that is why the old `Desk.dll` was removed.
 - Modules are built against `lsapi\lsapi.h` and link `ModuleKit`.
 - The core also contains an experimental declarative engine ("Theme Engine V2",
   `litestep\themev2`, files `theme.lsx` / `theme.lsxstyle`). The themes shipped here do

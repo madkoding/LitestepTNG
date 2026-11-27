@@ -25,6 +25,11 @@ static void LoadTimeLocale() {
     { L"de", L"de-DE" }, { L"it", L"it-IT" }, { L"zh", L"zh-CN" }, { L"ja", L"ja-JP" } };
   WCHAR language[16];
   LiteStep::GetPrefixedRCString(L"", L"Language", language, L"en", _countof(language));
+  // "pt-BR" counts as "pt", as for the language files (lsapi's include falls back the same way).
+  wchar_t *dash = wcschr(language, L'-');
+  if (dash != nullptr) {
+    *dash = L'\0';
+  }
   for (const auto &entry : kLocales) {
     if (_wcsicmp(language, entry.code) == 0) {
       sTimeLocale = _wcreate_locale(LC_TIME, entry.locale);

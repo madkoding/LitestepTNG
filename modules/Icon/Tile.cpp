@@ -232,6 +232,7 @@ void Tile::SetThumbnail(LoadThumbnailResponse &thumbnail) {
   } else {
     ASSERT(false);
   }
+  mIconOverlay->SetShadow(mTileSettings.mShadow);
   mWindow->Repaint();
 }
 

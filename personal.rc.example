@@ -11,6 +11,12 @@
 ;  add to the theme's instead of replacing them.
 ; ==============================================================================
 
+; Language of the menus and texts. Default: the Windows display language when
+; it is one of these, else English: en es pt fr de it zh ja (zh = Simplified
+; Chinese). A regional code such as pt-BR or es-CL uses its base language.
+; Changing it needs a recycle of LiteStep.
+;Language es
+
 ; The label in the middle of the top bar (LiteStep Enhanced). Default: your
 ; Windows user name followed by "'S DESKTOP".
 ;MUserText "MY DESKTOP"
