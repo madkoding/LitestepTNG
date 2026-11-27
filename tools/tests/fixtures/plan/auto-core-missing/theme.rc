@@ -1,0 +1,2 @@
+; Label is mapped but Core.dll is not installed: the Core item is missing.
+*NetLoadModule label-1.99

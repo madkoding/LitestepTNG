@@ -1,0 +1,9 @@
+{
+  "theme": "bits32",
+  "items": [
+    { "kind": "module", "name": "old64", "status": "ok", "resolved": "old64.dll" },
+    { "kind": "module", "name": "geekamp-1.9.7", "status": "blocked", "reason": "32-bit module; LiteStepTNG is 64-bit" },
+    { "kind": "module", "name": "label-1.99", "status": "blocked", "reason": "32-bit module; LiteStepTNG is 64-bit" }
+  ],
+  "warnings": []
+}

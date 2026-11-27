@@ -1,0 +1,2 @@
+; A 2002 theme: no Core line. Label is mapped, so the shell loads Core.dll first.
+*NetLoadModule label-1.99

@@ -8,22 +8,28 @@
 #   - name = file name only, lower case, no .dll, no trailing "-<digit>..." (ConvertTo-ModuleKey);
 #   - no *ModuleAlias for it, or the theme already names the target (its file name sans .dll
 #     equals the target and it has no folder, the run folder, or a $Variable$ folder): the DLL as
-#     written -> ok if it exists, else missing; a bare name (no folder, no extension) stands for
-#     <run folder>\<name>.dll;
+#     written -> ok if it exists, else missing; a name with no folder stands for
+#     <run folder>\<name> (+ .dll unless it has it; Expand-ModuleLocation);
 #   - <run folder>\<Target>.dll exists -> mapped;
 #   - else the original exists -> ok, with note "original used, nModule not installed";
 #   - else missing, named after the target nModule.
-#   Desk is blocked when the theme's mode is overlay (the default).
+#   Desk is blocked when the theme's mode is overlay (the default). A DLL that would be ok but is
+#   32-bit (PE header) is blocked: the shell skips it on a *Net line.
 #
-# Item order: the manifest's modules (manifest order), then the modules the theme's files load
-# that the manifest does not list (LoadModule lines in file order, following include, then
-# *NetLoadModule, then *NetInstallModule lines, as litestep reads them), then the manifest's
-# fonts. Two modules that resolve to the same file are reported once (the first).
+# Item order: an implicit Core item (see below), the manifest's modules (manifest order), then
+# the modules the theme's files load that the manifest does not list (LoadModule lines in file
+# order, following include, then *NetLoadModule, then *NetInstallModule lines, as litestep reads
+# them), then the manifest's fonts. Two modules that resolve to the same file are reported once
+# (the first). When a module is mapped and the theme loads no Core, the shell loads Core.dll
+# first (ModuleManager::_AddCoreForNModules), so the plan starts with a Core item (ok or
+# missing, note "loaded for the nModules").
 # Without a manifest (or with one that is not valid JSON) the modules come from the scan only
 # and there are no fonts.
 
 $script:DeskReason = "takes over Explorer's desktop"
 $script:FallbackNote = 'original used, nModule not installed'
+$script:Bits32Reason = '32-bit module; LiteStepTNG is 64-bit'
+$script:CoreNote = 'loaded for the nModules'
 # Properties Get-ItemProperty adds to every registry key; not font names.
 $script:RegistryPropertyNames = 'PSPath', 'PSParentPath', 'PSChildName', 'PSDrive', 'PSProvider'
 
@@ -73,7 +79,7 @@ function Add-ModuleAliases([hashtable]$Map, [string]$Path) {
         $tokens = Split-RcLine $line
         if ($tokens.Count -ne 3 -or $tokens[0] -ne '*ModuleAlias') { continue }
         $from = ConvertTo-ModuleKey $tokens[1]
-        if ($from -and -not $Map.ContainsKey($from)) { $Map[$from] = $tokens[2] }
+        if ($from -and $tokens[2] -and -not $Map.ContainsKey($from)) { $Map[$from] = $tokens[2] }
     }
 }
 
@@ -146,15 +152,50 @@ function Get-ModuleDisplayName([string]$Location) {
     return $name
 }
 
+# The file a module location stands for (ModuleResolver::ExpandLocation): a name with no folder
+# (no \, /, : or $) is <run folder>\<name>, plus .dll unless it ends with it; anything else as
+# written.
+function Expand-ModuleLocation([string]$Location, [string]$RunPrefix) {
+    if ($Location.IndexOfAny([char[]]'\/:$') -ge 0) { return $Location }
+    if ($Location.EndsWith('.dll', [StringComparison]::OrdinalIgnoreCase)) { return $RunPrefix + $Location }
+    return $RunPrefix + $Location + '.dll'
+}
+
+# 32 or 64 from a DLL's PE header (ModuleResolver::ReadArchitecture): MZ, e_lfanew at 0x3C,
+# "PE\0\0", IMAGE_FILE_HEADER (Machine), optional header magic 0x10b / 0x20b. $null when the
+# file cannot be read or is not a PE file (the tests use empty files as stand-ins for DLLs).
+function Get-DllArchitecture([string]$Path) {
+    try {
+        $stream = [IO.File]::OpenRead($Path)
+        try {
+            $buffer = New-Object byte[] 4096
+            $size = $stream.Read($buffer, 0, $buffer.Length)
+        }
+        finally { $stream.Dispose() }
+    }
+    catch { return $null }
+    if ($size -lt 0x40 -or $buffer[0] -ne 0x4D -or $buffer[1] -ne 0x5A) { return $null }
+    $pe = [BitConverter]::ToUInt32($buffer, 0x3C)
+    if ($pe -gt $size -or $size - $pe -lt 24 -or $buffer[$pe] -ne 0x50 -or $buffer[$pe + 1] -ne 0x45 -or
+        $buffer[$pe + 2] -ne 0 -or $buffer[$pe + 3] -ne 0) { return $null }
+    $machine = [BitConverter]::ToUInt16($buffer, $pe + 4)
+    if ($size - $pe -ge 26) {
+        $magic = [BitConverter]::ToUInt16($buffer, $pe + 24)
+        if ($magic -eq 0x10b) { return 32 }
+        if ($magic -eq 0x20b) { return 64 }
+        return $null
+    }
+    if ($machine -eq 0x14c) { return 32 }
+    return $null
+}
+
 # Resolves one module location (as written, variables expanded) to a plan item. Returns
 # @{ Key = <lower-case resolved path, for duplicates>; Item = [ordered] item }.
 function Resolve-PlanModule([string]$Location, [hashtable]$Map, [string]$RunPrefix, [string]$Mode,
     [object]$Url = $null, [object]$Sha256 = $null) {
     $display = Get-ModuleDisplayName $Location
     $key = ConvertTo-ModuleKey $Location
-    $endsWithDll = $Location.EndsWith('.dll', [StringComparison]::OrdinalIgnoreCase)
-    $isBare = ($Location.IndexOfAny([char[]]'\/:$') -lt 0) -and -not $endsWithDll
-    $original = if ($isBare) { $RunPrefix + $Location + '.dll' } else { $Location }
+    $original = Expand-ModuleLocation $Location $RunPrefix
     $shortName = {
         param([string]$path)
         if ($path.StartsWith($RunPrefix, [StringComparison]::OrdinalIgnoreCase) -and
@@ -169,6 +210,17 @@ function Resolve-PlanModule([string]$Location, [hashtable]$Map, [string]$RunPref
         if ($note) { $item.note = $note }
         $item.url = $Url
         $item.sha256 = $Sha256
+        return $item
+    }
+    # An item for a DLL that exists; a 32-bit one is blocked (the shell skips it on a *Net line
+    # and could not load it from a LoadModule line).
+    $ok = {
+        param([string]$path, [string]$note)
+        if ((Get-DllArchitecture $path) -eq 32) {
+            return [ordered]@{ kind = 'module'; name = $display; status = 'blocked'; reason = $script:Bits32Reason }
+        }
+        $item = [ordered]@{ kind = 'module'; name = $display; status = 'ok'; resolved = (& $shortName $path) }
+        if ($note) { $item.note = $note }
         return $item
     }
 
@@ -188,8 +240,7 @@ function Resolve-PlanModule([string]$Location, [hashtable]$Map, [string]$RunPref
 
     if (-not $target -or $isTargetItself) {
         if (Test-Path -LiteralPath $original -PathType Leaf) {
-            return @{ Key = $original.ToLowerInvariant()
-                Item = [ordered]@{ kind = 'module'; name = $display; status = 'ok'; resolved = (& $shortName $original) } }
+            return @{ Key = $original.ToLowerInvariant(); Item = (& $ok $original $null) }
         }
         return @{ Key = $original.ToLowerInvariant(); Item = (& $missing $display $null) }
     }
@@ -200,9 +251,7 @@ function Resolve-PlanModule([string]$Location, [hashtable]$Map, [string]$RunPref
             Item = [ordered]@{ kind = 'module'; name = $display; status = 'mapped'; resolved = ($target + '.dll') } }
     }
     if (Test-Path -LiteralPath $original -PathType Leaf) {
-        return @{ Key = $original.ToLowerInvariant()
-            Item = [ordered]@{ kind = 'module'; name = $display; status = 'ok'; resolved = (& $shortName $original)
-                note = $script:FallbackNote } }
+        return @{ Key = $original.ToLowerInvariant(); Item = (& $ok $original $script:FallbackNote) }
     }
     return @{ Key = $targetPath.ToLowerInvariant(); Item = (& $missing $target ('replaces ' + $display)) }
 }
@@ -298,7 +347,7 @@ function Get-ThemePlan {
     $map = Get-ModuleMap $LiteStepDir
     foreach ($tokens in $scan.Aliases) {
         $from = ConvertTo-ModuleKey $tokens[1]
-        if ($from -and -not $map.ContainsKey($from)) { $map[$from] = $tokens[2] }
+        if ($from -and $tokens[2] -and -not $map.ContainsKey($from)) { $map[$from] = $tokens[2] }
     }
 
     $items = New-Object System.Collections.Generic.List[object]
@@ -311,12 +360,29 @@ function Get-ThemePlan {
         $seen[$r.Key] = $true
         $items.Add($r.Item)
     }
+    # The shell loads Core.dll first when one of the theme's lines was mapped (even a line it then
+    # skips as a duplicate) and the theme loads no Core (ModuleManager::_AddCoreForNModules):
+    # every nModule needs nCore.
+    $anyMapped = $false
     foreach ($location in @($scan.Load) + @($scan.NetLoad) + @($scan.NetInstall)) {
         $r = Resolve-PlanModule $location $map $runPrefix $mode
+        if ($r.Item.status -eq 'mapped') { $anyMapped = $true }
         if ($seen.ContainsKey($r.Key)) { continue }
         $seen[$r.Key] = $true
         $items.Add($r.Item)
         if ($manifest) { $warnings.Add("theme.json does not list $($r.Item.name), which the theme loads.") }
+    }
+    $loadsCore = @(@($scan.Load) + @($scan.NetLoad) + @($scan.NetInstall) |
+        Where-Object { (Get-ModuleDisplayName $_) -ieq 'Core' }).Count -gt 0
+    $coreKey = ($runPrefix + 'Core.dll').ToLowerInvariant()
+    if ($anyMapped -and -not $loadsCore -and -not $seen.ContainsKey($coreKey)) {
+        if (Test-Path -LiteralPath ($runPrefix + 'Core.dll') -PathType Leaf) {
+            $core = [ordered]@{ kind = 'module'; name = 'Core'; status = 'ok'; resolved = 'Core.dll'; note = $script:CoreNote }
+        }
+        else {
+            $core = [ordered]@{ kind = 'module'; name = 'Core'; status = 'missing'; note = $script:CoreNote; url = $null; sha256 = $null }
+        }
+        $items.Insert(0, $core)
     }
     foreach ($entry in $manifestFonts) {
         $name = if ($entry -is [string]) { $entry } else { [string](Get-JsonProperty $entry 'name') }
