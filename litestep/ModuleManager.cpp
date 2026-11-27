@@ -312,7 +312,10 @@ static ModuleResolver::Architecture ReadFileArchitecture(const std::wstring& sPa
 {
     ModuleResolver::Architecture architecture = ModuleResolver::Architecture::Unknown;
 
-    HANDLE hFile = CreateFileW(sPath.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
+    // Share everything: a DLL another program holds open must still be readable here,
+    // or the check says Unknown and the loader's 32-bit box comes back.
+    HANDLE hFile = CreateFileW(sPath.c_str(), GENERIC_READ,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
         OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
     if (hFile != INVALID_HANDLE_VALUE)
@@ -329,6 +332,31 @@ static ModuleResolver::Architecture ReadFileArchitecture(const std::wstring& sPa
     }
 
     return architecture;
+}
+
+
+// True while Explorer's desktop view (the window that draws the wallpaper and
+// the icons) exists. Desk.dll took that window and re-parented it into its own;
+// killing litestep then left a flat grey desktop until explorer.exe restarted
+// (AGENTS.md §3). In a session where LiteStep is the shell, ShellAppRuntime makes
+// a Progman of its own, so "is there a Progman" is not the test.
+static bool ExplorerDesktopIsPresent()
+{
+    // Explorer moves the view between Progman and a WorkerW (wallpaper slideshows),
+    // so every top-level window is asked, not just the known classes.
+    bool bFound = false;
+
+    EnumWindows([](HWND hWnd, LPARAM lParam) -> BOOL
+    {
+        if (FindWindowExW(hWnd, nullptr, L"SHELLDLL_DefView", nullptr) != nullptr)
+        {
+            *reinterpret_cast<bool*>(lParam) = true;
+            return FALSE;  // found: stop
+        }
+        return TRUE;
+    }, reinterpret_cast<LPARAM>(&bFound));
+
+    return bFound;
 }
 
 
@@ -415,6 +443,17 @@ Module* ModuleManager::_MakeModule(LPCWSTR pwzLocation, DWORD dwFlags,
     {
         Logger::Log(L"Modules: %ls is a 32-bit module and LiteStepTNG is 64-bit; "
             L"skipping it.", resolution.location.c_str());
+        return nullptr;
+    }
+
+    // Desk.dll on top of Explorer takes Explorer's desktop view (see
+    // ExplorerDesktopIsPresent). Any line, LoadModule included: it was removed
+    // from this build, but a theme may still bring its own copy.
+    if (ModuleResolver::NormalizeName(resolution.location) == L"desk" &&
+        ExplorerDesktopIsPresent())
+    {
+        Logger::Log(L"Modules: %ls would take Explorer's desktop; skipping it.",
+            resolution.location.c_str());
         return nullptr;
     }
 

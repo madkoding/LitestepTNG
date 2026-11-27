@@ -526,9 +526,16 @@ manifest and the plan only describe and report.
   items) -> write `theme-select.rc` -> restart. The downloader reads only the plan: it acts on
   `missing` items, writes into the run folder and asks the shell to recycle; it does not need
   to know about aliases, because the resolver maps names at load time. Fetching, `sha256`
-  checks and extraction are a follow-up; so are refusing an explicit `Desk.dll` at runtime in
-  overlay mode (only the plan blocks it today) and generating the installer's font note from
-  the manifests.
+  checks and extraction are a follow-up.
+- **Desk.dll is refused at runtime** (2026-11-27), on any line, while Explorer's desktop view
+  exists (a top-level window with a `SHELLDLL_DefView` child; `ExplorerDesktopIsPresent` in
+  `ModuleManager.cpp`): it would take that view (§3). In a session where LiteStep is the shell
+  there is no such view and it is not refused. Checked both ways: on a session shell it reached
+  the loader; with a fake `SHELLDLL_DefView` window held by a test process, the log said
+  "would take Explorer's desktop; skipping it".
+- **Installer font note** (2026-11-27): `package.ps1` writes it from the shipped themes'
+  `requires.fonts` into `dist\fontnote.isi`, included by `installer\LiteStepTNG.iss`; no fonts =
+  no note.
 
 ### Languages (since 2026-11-26)
 - Supported: `en` (default and fallback), `es pt fr de it zh ja` (zh = Simplified for every
@@ -966,7 +973,7 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   header box (`MMMenuLnk*` in theme.rc) was not visually verified.
 
 - **Theme installation follow-ups** (§5 "Theme installation", §6 resolver): the downloader
-  of `missing` plan items; refusing `Desk.dll` at runtime in overlay mode; a 32-bit DLL named
+  of `missing` plan items; a 32-bit DLL named
   by a `LoadModule` line still shows `Module::Init`'s modal (only `*Net` lines are skipped);
   translating classic module configuration is a non-goal. (A classic theme without Core now
   gets it implicitly, see §5.)
