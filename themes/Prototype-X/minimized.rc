@@ -3,6 +3,7 @@
 ;  (TaskBar.dll, MinimizedShelf*). Clic en una: la ventana vuelve.
 ; ==============================================================================
 MinimizedShelfEnabled true
+MinimizedShelfDesktopLayer 1
 MinimizedShelfThumbHeight 120
 MinimizedShelfMaxThumbWidth 220
 MinimizedShelfPadding 6

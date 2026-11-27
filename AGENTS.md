@@ -680,8 +680,24 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   + `ForceForeground`). Verified on screen: Explorer and WhatsApp, minimized, each showed its
   content over its own button. Windows' window animations were off on this machine; the user
   had them turned on (Performance options) on 2026-11-27.
+  **Desktop layers:** the icon group covers the whole desktop and is OnDesktop too, and each
+  OnDesktop window used to restack itself right above the desktop, so the icons and the
+  thumbnails took turns at the bottom and every other click on a thumbnail landed on the icons
+  (found with a read-only `WH_MOUSE_LL` monitor logging the window under each press and
+  LiteStep's capture). `<Prefix>DesktopLayer <n>` (default 0, read in `Window::Initialize`,
+  kept as the window property `LSDesktopLayer` = n+1) keeps an OnDesktop window above every
+  OnDesktop window of a lower layer; the themes set `MinimizedShelfDesktopLayer 1`.
+  `DesktopInsertAfter` climbs from the background over shadows, hidden windows, the window
+  itself and lower layers. Check without the mouse: minimize a window of your own process and
+  compare the z-order positions of `MinimizedShelf` and `MIcons` while restacking each.
 - Build with `/nr:false` when waiting for MSBuild to finish: `/m` leaves worker nodes
-  (`MSBuild.exe`) running for reuse, so "wait until MSBuild exits" never ends.
+  (`MSBuild.exe`) running for reuse, so "wait until MSBuild exits" never ends. Never pipe
+  MSBuild's output through a command that can be moved to the background: when nobody reads
+  the pipe any more, the `cl.exe` processes block writing to it and hang with no CPU. Write to
+  a log (`/flp:LogFile=...`) and start it with `Start-Process -PassThru` + `WaitForExit(ms)`.
+  For a fix in a few modules, build only their `.vcxproj` (ModuleKit first,
+  `/p:SolutionDir=<repo>\ /p:BuildProjectReferences=false`): seconds instead of minutes. A
+  change in a ModuleKit header recompiles every module; a change in a `.cpp` only relinks.
 - **Taskbar animation:** `<Taskbar>AnimationDuration` (ms) slides task buttons to their new
   place when tasks are added/removed (`TaskButton::SetTarget/StepAnimation`, timer in
   `Taskbar`). The thumbnail's own `ThumbnailAnimate` and the popup `ShowAnimation*` settings

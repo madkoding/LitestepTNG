@@ -32,32 +32,76 @@
 using std::map;
 
 
+// Window property of OnDesktop windows: their DesktopLayer + 1 (0 = not an OnDesktop window).
+static const WCHAR kDesktopLayerProp[] = L"LSDesktopLayer";
+
+static bool IsShadowWindow(HWND window)
+{
+    WCHAR className[32];
+    return GetClassNameW(window, className, _countof(className)) &&
+        wcscmp(className, ShadowWindow::ClassName()) == 0;
+}
+
 /// <summary>
-/// Where an OnDesktop window goes in the stacking order: right above the desktop. With
-/// Explorer that is the bottom (its desktop window is under everything). Without it,
-/// nWallpaper's background window (LSDesktopBackground) holds the bottom, so the window
-/// goes right above that one. Returns nullptr when the window is already there.
+/// Where an OnDesktop window goes in the stacking order: right above the desktop and above
+/// every OnDesktop window of a lower DesktopLayer. The desktop is nWallpaper's background
+/// window (LSDesktopBackground) when there is one, else the bottom (Explorer's desktop is
+/// under everything). Returns the window to insert after, or nullptr when the window is
+/// already in place. Without layers, two OnDesktop windows took turns at the bottom (each
+/// restack put the window right above the desktop), so the desktop icons, which cover the
+/// whole desktop, hid the minimized thumbnails every other click.
 /// </summary>
 static HWND DesktopInsertAfter(HWND self)
 {
-    HWND background = FindWindowW(L"LSDesktopBackground", nullptr);
-    if (background == nullptr)
+    const UINT_PTR layer = UINT_PTR(GetPropW(self, kDesktopLayerProp));
+    HWND below = FindWindowW(L"LSDesktopBackground", nullptr);
+    if (below == nullptr)
     {
-        return HWND_BOTTOM;
+        // Climb from the bottom instead.
+        below = GetWindow(self, GW_HWNDLAST);
+        if (below == nullptr || below == self)
+        {
+            return nullptr;
+        }
+        const UINT_PTR bottomLayer = UINT_PTR(GetPropW(below, kDesktopLayerProp));
+        if (bottomLayer == 0 || bottomLayer >= layer)
+        {
+            // Explorer's desktop, or nothing lower than this window: go under everything.
+            HWND first = GetWindow(below, GW_HWNDPREV);
+            return first == self ? nullptr : HWND_BOTTOM;
+        }
     }
-    HWND above = GetWindow(background, GW_HWNDPREV);
-    // Skip drop shadows (ShadowWindow): they sit right below their own window.
-    WCHAR className[32];
-    while (above != nullptr && GetClassNameW(above, className, _countof(className)) &&
-        wcscmp(className, ShadowWindow::ClassName()) == 0)
+    for (;;)
     {
-        above = GetWindow(above, GW_HWNDPREV);
+        // The next window up, past drop shadows (each sits right below its own window) and
+        // hidden windows (a hidden window without a layer used to stop the climb, so a new
+        // thumbnail went under the desktop icons).
+        // The window itself is passed over too: where it is now must not decide where it goes
+        // (a thumbnail created hidden sat right on the background, and being "already right
+        // above the desktop" kept it under the icons).
+        HWND first = GetWindow(below, GW_HWNDPREV);
+        HWND next = first;
+        while (next != nullptr && (next == self || IsShadowWindow(next) || !IsWindowVisible(next)))
+        {
+            next = GetWindow(next, GW_HWNDPREV);
+        }
+        // Climb over OnDesktop windows of a lower layer (property = layer + 1).
+        const UINT_PTR nextLayer = next != nullptr ? UINT_PTR(GetPropW(next, kDesktopLayerProp)) : 0;
+        if (nextLayer != 0 && nextLayer < layer)
+        {
+            below = next;
+            continue;
+        }
+        // Its place: between `below` and `next`. Already there?
+        for (HWND w = first; w != nullptr && w != next; w = GetWindow(w, GW_HWNDPREV))
+        {
+            if (w == self)
+            {
+                return nullptr;
+            }
+        }
+        return first != nullptr ? first : HWND_TOP;
     }
-    if (above == self)
-    {
-        return nullptr;
-    }
-    return above != nullptr ? above : HWND_BOTTOM;
 }
 
 /// <summary>
@@ -1131,6 +1175,10 @@ void Window::Initialize(WindowSettings &windowSettings, IStateRender *stateRende
     // OnDesktop
     if (!mIsChild && mWindowSettings.onDesktop)
     {
+        // <Prefix>DesktopLayer (default 0): an OnDesktop window stays above every OnDesktop
+        // window of a lower layer (the desktop icons are 0).
+        const int desktopLayer = (std::max)(0, mSettings->GetInt(L"DesktopLayer", 0));
+        SetPropW(this->window, kDesktopLayerProp, HANDLE(UINT_PTR(desktopLayer) + 1));
         HWND insertAfter = DesktopInsertAfter(this->window);
         if (insertAfter != nullptr)
         {

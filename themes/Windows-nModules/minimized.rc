@@ -3,6 +3,7 @@
 ;  (TaskBar.dll, MinimizedShelf*). Click one to bring its window back.
 ; ==============================================================================
 MinimizedShelfEnabled true
+MinimizedShelfDesktopLayer 1
 MinimizedShelfThumbHeight 120
 MinimizedShelfMaxThumbWidth 220
 MinimizedShelfPadding 6

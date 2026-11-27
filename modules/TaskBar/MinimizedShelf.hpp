@@ -16,7 +16,8 @@
 //   MinimizedShelfGap <px>               between the thumbnail and its button, default 6
 //   MinimizedShelfPadding <px>           around the content, inside the background, default 6
 //   and every window setting (Color, CornerRadius*, ShadowPreset, ShowAnimation*...) for the
-//   thumbnails, which are kept on the desktop (OnDesktop) unless the theme says otherwise.
+//   thumbnails, which are kept on the desktop (OnDesktop; the themes set DesktopLayer 1 to
+//   keep them above the desktop icons) unless the theme says otherwise.
 //-------------------------------------------------------------------------------------------------
 #pragma once
 
