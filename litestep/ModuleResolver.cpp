@@ -37,10 +37,6 @@ namespace {
             ToLowerAscii(s.substr(s.size() - kDllLength)) == kDll;
     }
 
-    bool IsBareName(const std::wstring& location) {
-        return location.find_first_of(L"\\/:$") == std::wstring::npos && !EndsWithDll(location);
-    }
-
     // True when location already names <appPath><target>.dll: same file name (case-insensitive)
     // and no folder, appPath itself, or a folder still written as a $Variable$ (unknown here,
     // so it is left as written). A classic module with that name elsewhere is not the target.
@@ -159,8 +155,9 @@ namespace ModuleResolver {
             return Resolution{ target, Outcome::Mapped };
         }
 
-        const std::wstring original =
-            IsBareName(location) ? appPath + location + kDll : location;
+        // A folderless name (with or without .dll) is looked for in the app folder, as the plan
+        // does; LoadLibrary would search the working directory and the PATH instead.
+        const std::wstring original = ExpandLocation(location, appPath);
         if (exists(original)) {
             return Resolution{ original, Outcome::KeptOriginal };
         }

@@ -164,6 +164,15 @@ static void test_falls_back_to_original() {
     Resolution full = Resolve(L"C:\\themes\\x\\label-1.99.dll", map, kApp, fs2.Exists());
     CheckOutcome(full.outcome, Outcome::KeptOriginal, T);
     CheckEqual(full.location, L"C:\\themes\\x\\label-1.99.dll", T, "location of a full path");
+
+    // A file name with .dll and no folder is looked for in the app folder too, as the plan
+    // does (Expand-ModuleLocation), not in litestep's working directory.
+    AliasMap popup = MapOf({L"*ModuleAlias popup2 Popup"});
+    FakeFiles fs3;
+    fs3.files.insert(kApp + L"popup2.dll");
+    Resolution dll = Resolve(L"popup2.dll", popup, kApp, fs3.Exists());
+    CheckOutcome(dll.outcome, Outcome::KeptOriginal, T);
+    CheckEqual(dll.location, kApp + L"popup2.dll", T, "location of a folderless .dll");
 }
 
 static void test_unknown_bare_name_is_missing() {
