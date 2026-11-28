@@ -603,6 +603,15 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   `MediaGetPermille(what)` / `MediaSetPermille(what, permille)` (0 = volume, 1 = track).
   Do **not** use `!KeyCombo MEDIA_*` for player buttons: simulated media keys are routed
   by explorer.exe and go nowhere when litestep is the shell.
+  **The keyboard's own volume and media keys** reach every shell hook window as
+  `HSHELL_APPCOMMAND` when no window handled them; litestep turns that into `LM_APPCOMMAND`,
+  which no module listened to, so in a session shell (ShellAppRuntime) the keys did nothing.
+  Core now registers it (`MediaControl::HandleAppCommand`): volume up/down use the device's
+  step (`VolumeStepUp/Down`, 2 %), mute toggles, play/pause/stop/next/prev go to the media
+  queue. It does nothing when `GetShellWindow()` belongs to explorer.exe, which handles them
+  itself (checked on every key, so a session handed over by `!Quit` is followed). There is no
+  volume OSD. Checked with `keybd_event(VK_VOLUME_UP...)`: 56 % -> 58 % -> 56 %, mute on/off;
+  a test window registered with `RegisterShellHookWindow` shows the `APPCOMMAND` codes.
 - **Media player rotation (Core):** `*MediaPlayer <Name> "<exe | shell:AppsFolder\id>" [match]`
   lines list the players in rotation order; only installed ones are kept (several lines
   with one name = alternative paths). The selected one decides which media session the

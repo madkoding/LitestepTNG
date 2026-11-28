@@ -444,6 +444,69 @@ static void MediaVolumeBang(HWND, LPCWSTR args) {
 
 
 /// <summary>
+/// True when explorer.exe owns the shell window: it then handles the volume and media keys.
+/// Checked on every key, so a session handed to Explorer by !Quit is followed.
+/// </summary>
+static bool ExplorerIsShell() {
+  HWND shell = GetShellWindow();
+  if (shell == nullptr) return false;
+  DWORD processId = 0;
+  GetWindowThreadProcessId(shell, &processId);
+  bool explorer = false;
+  if (HANDLE process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, processId)) {
+    WCHAR path[MAX_PATH];
+    DWORD length = _countof(path);
+    if (QueryFullProcessImageNameW(process, 0, path, &length)) {
+      explorer = _wcsicmp(PathFindFileNameW(path), L"explorer.exe") == 0;
+    }
+    CloseHandle(process);
+  }
+  return explorer;
+}
+
+
+bool MediaControl::HandleAppCommand(LPARAM lParam) {
+  if (ExplorerIsShell()) {
+    return false;
+  }
+
+  switch (GET_APPCOMMAND_LPARAM(lParam)) {
+  case APPCOMMAND_VOLUME_UP:
+  case APPCOMMAND_VOLUME_DOWN:
+  case APPCOMMAND_VOLUME_MUTE:
+    if (IAudioEndpointVolume *volume = OpenEndpointVolume()) {
+      switch (GET_APPCOMMAND_LPARAM(lParam)) {
+      case APPCOMMAND_VOLUME_UP:
+        // The device's own step (2% on most), as Windows does. Raising the volume unmutes.
+        volume->SetMute(FALSE, nullptr);
+        volume->VolumeStepUp(nullptr);
+        break;
+      case APPCOMMAND_VOLUME_DOWN:
+        volume->VolumeStepDown(nullptr);
+        break;
+      default: {
+          BOOL muted = FALSE;
+          volume->GetMute(&muted);
+          volume->SetMute(!muted, nullptr);
+        }
+        break;
+      }
+      volume->Release();
+    }
+    return true;
+
+  case APPCOMMAND_MEDIA_PLAY_PAUSE: QueueMedia(MediaCmd::PlayPause); return true;
+  case APPCOMMAND_MEDIA_PLAY:       QueueMedia(MediaCmd::Play);      return true;
+  case APPCOMMAND_MEDIA_PAUSE:      QueueMedia(MediaCmd::Pause);     return true;
+  case APPCOMMAND_MEDIA_STOP:       QueueMedia(MediaCmd::Stop);      return true;
+  case APPCOMMAND_MEDIA_NEXTTRACK:  QueueMedia(MediaCmd::Next);      return true;
+  case APPCOMMAND_MEDIA_PREVIOUSTRACK: QueueMedia(MediaCmd::Prev);   return true;
+  }
+  return false;
+}
+
+
+/// <summary>
 /// !MediaSeek 0..100 jumps to that percentage of the current track.
 /// </summary>
 static void MediaSeekBang(HWND, LPCWSTR args) {
