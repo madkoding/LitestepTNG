@@ -812,6 +812,20 @@ All are in `modules/` unless noted. Run `git diff` for exact hunks.
   the dark box stretches. Glass, Windows-nModules and Prototype-X keep grow-only: their tray
   sits next to the taskbar inside the bar, and shrinking would leave a gap. Checked with
   three `NotifyIcon`s from a test process: 212 px, 254 px with them, 212 px after.
+- **The volume icon (SysTray, `TrayIcon.cpp`):** the tray service loads `stobject.dll`'s
+  service object inside litestep, and it adds Windows' legacy icons from DLLs in litestep's own
+  process: Bluetooth (`bthprops.cpl`, works) and volume (`SndVolSSO.dll`, whose click handler
+  does nothing on Windows 11: no menu, no flyout; Explorer's own volume button opens Quick
+  Settings instead). Clicks reached the icon and were forwarded correctly (checked with a
+  temporary log in `SendCallback`); the SSO ignored them. The tray now handles that icon
+  itself, recognised by the module owning its window (`GWLP_HINSTANCE` == `SndVolSSO.dll`; the
+  tooltip is translated): left click runs `SndVol.exe -f MAKELPARAM(x, y)`, the classic flyout
+  anchored above the icon; right click shows a menu with `TxtVolumeMixer`
+  (`ms-settings:apps-volume`) and `TxtSound` (`ms-settings:sound`).
+  `ms-actioncenter:controlcenter` (Quick Settings) was tried first and opens nothing while
+  Explorer's taskbar is hidden. Tray clicks can be tested without the mouse by posting
+  `WM_MOUSEMOVE` + button messages with client coordinates to the `MTray` window; a menu
+  shown that way opens at the real cursor (`GetCursorPos`), so look for a `#32768` window.
 - **A taskbar on every monitor (TaskBar, `ModuleEntry.cpp`):** `<Taskbar>EveryMonitor true`
   (every theme sets it) with more than one monitor keeps the taskbar on the primary
   monitor's windows (`Monitor 0` unless the theme names one) and creates a copy

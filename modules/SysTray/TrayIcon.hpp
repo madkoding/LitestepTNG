@@ -34,6 +34,8 @@ public:
 
 private:
   void UpdateIcon();
+  bool IsLegacyVolumeIcon() const;
+  void HandleVolumeClick(UINT message);
 
 public:
   LRESULT WINAPI HandleMessage(HWND, UINT, WPARAM, LPARAM, LPVOID);
