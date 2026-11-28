@@ -23,4 +23,8 @@ namespace MediaControl {
 
   // The .rc files were read again.
   void Refresh();
+
+  // A keyboard's volume and media keys (LM_APPCOMMAND, from the shell hook). Handled only
+  // when Explorer is not the shell, since Explorer acts on them itself. True = handled.
+  bool HandleAppCommand(LPARAM lParam);
 }

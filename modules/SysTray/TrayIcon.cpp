@@ -125,6 +125,75 @@ void TrayIcon::SendCallback(UINT message, WPARAM /* wParam */, LPARAM /* lParam 
 
 
 /// <summary>
+/// True for the volume icon of SndVolSSO.dll, the shell service object that LiteStep's tray
+/// service loads (through stobject.dll) inside litestep.exe. On Windows 11 its click handler
+/// does nothing (Explorer's own volume button opens Quick Settings instead), so the tray
+/// handles its clicks itself. Matched by the module that owns the icon's window, not by its
+/// tooltip, which is translated.
+/// </summary>
+bool TrayIcon::IsLegacyVolumeIcon() const {
+  DWORD processId = 0;
+  GetWindowThreadProcessId(mIconData.window, &processId);
+  if (processId != GetCurrentProcessId()) {
+    return false;
+  }
+  HMODULE sndVol = GetModuleHandleW(L"SndVolSSO.dll");
+  return sndVol != nullptr &&
+    HMODULE(GetWindowLongPtrW(mIconData.window, GWLP_HINSTANCE)) == sndVol;
+}
+
+
+static void OpenUri(LPCWSTR uri) {
+  ShellExecuteW(nullptr, L"open", uri, nullptr, nullptr, SW_SHOWNORMAL);
+}
+
+
+/// <summary>
+/// Left click: the volume flyout. Right click: a menu with the volume mixer and the sound settings.
+/// </summary>
+void TrayIcon::HandleVolumeClick(UINT message) {
+  if (message == WM_LBUTTONUP) {
+    // The classic volume flyout, anchored at the point given as MAKELPARAM(x, y): it opens
+    // above that point, so the middle of the icon's top edge. (Windows 11's Quick Settings,
+    // ms-actioncenter:controlcenter, does not open while Explorer's taskbar is hidden.)
+    RECT r;
+    mWindow->GetScreenRect(&r);
+    WCHAR args[32];
+    StringCchPrintfW(args, _countof(args), L"-f %d",
+      (int)MAKELPARAM((r.left + r.right) / 2, r.top));
+    ShellExecuteW(nullptr, L"open", L"SndVol.exe", args, nullptr, SW_SHOWNORMAL);
+    return;
+  }
+
+  WCHAR mixer[128], sound[128];
+  LiteStep::GetRCString(L"TxtVolumeMixer", mixer, L"Volume mixer", _countof(mixer));
+  LiteStep::GetRCString(L"TxtSound", sound, L"Sound", _countof(sound));
+
+  enum { ID_MIXER = 1, ID_SOUND };
+  HMENU menu = CreatePopupMenu();
+  AppendMenuW(menu, MF_STRING, ID_MIXER, mixer);
+  AppendMenuW(menu, MF_STRING, ID_SOUND, sound);
+
+  // TrackPopupMenu needs its owner in the foreground, or the menu does not close on an
+  // outside click. The tray window is WS_EX_NOACTIVATE, so it is brought forward here.
+  HWND owner = mWindow->GetWindowHandle();
+  SetForegroundWindow(owner);
+  POINT pt;
+  GetCursorPos(&pt);
+  int choice = TrackPopupMenu(menu, TPM_RETURNCMD | TPM_RIGHTBUTTON | TPM_BOTTOMALIGN,
+    pt.x, pt.y, 0, owner, nullptr);
+  PostMessage(owner, WM_NULL, 0, 0);
+  DestroyMenu(menu);
+
+  if (choice == ID_MIXER) {
+    OpenUri(L"ms-settings:apps-volume");
+  } else if (choice == ID_SOUND) {
+    OpenUri(L"ms-settings:sound");
+  }
+}
+
+
+/// <summary>
 /// Handles window messages for the icon's window.
 /// </summary>
 LRESULT WINAPI TrayIcon::HandleMessage(HWND window, UINT message, WPARAM wParam, LPARAM lParam, LPVOID) {
@@ -152,6 +221,13 @@ LRESULT WINAPI TrayIcon::HandleMessage(HWND window, UINT message, WPARAM wParam,
 
     if (message == WM_RBUTTONDOWN || message == WM_LBUTTONDOWN) {
       ((Tray*)mParent)->HideTip();
+    }
+
+    if (IsLegacyVolumeIcon()) {
+      if (message == WM_LBUTTONUP || message == WM_RBUTTONUP) {
+        HandleVolumeClick(message);
+      }
+      return 0;
     }
 
     AllowSetForegroundWindow(mIconData.processId);

@@ -27,7 +27,7 @@
 
 
 // The messages we want from the core
-static const UINT gLSMessages[] = { LM_GETREVID, LM_REFRESH, 0 };
+static const UINT gLSMessages[] = { LM_GETREVID, LM_REFRESH, LM_APPCOMMAND, 0 };
 HWND ghWndMsgHandler = nullptr;
 
 // Class pointers
@@ -182,6 +182,10 @@ static LRESULT WINAPI MainProc(HWND window, UINT message, WPARAM wParam, LPARAM 
   case LM_REFRESH:
     MediaControl::Refresh();
     return 0;
+
+  case LM_APPCOMMAND:
+    // Volume and media keys reach the shell hook when no window handled them.
+    return MediaControl::HandleAppCommand(lParam) ? TRUE : FALSE;
 
   case WM_SETTINGCHANGE:
     if (wParam == SPI_SETWORKAREA) {
